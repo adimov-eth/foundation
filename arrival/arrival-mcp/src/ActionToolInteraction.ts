@@ -3,9 +3,9 @@ import dedent from "dedent";
 import { omit, zip } from "lodash-es";
 import * as z from "zod";
 
-import { ToolInteraction } from "./ToolInteraction";
+import { ToolInteraction } from "./ToolInteraction.js";
 import invariant from "tiny-invariant";
-import { MCPClientInfo } from "./hono/HonoMCPServer";
+import { MCPClientInfo } from "./hono/HonoMCPServer.js";
 import { SetRequired } from "type-fest";
 
 type Dezod<T extends Record<string, z.ZodType>> = {

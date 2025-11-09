@@ -11,7 +11,7 @@
  * - Traversable (traverse)
  */
 
-import { env as lipsGlobalEnv, LString, nil, Pair } from "./lips";
+import { env as lipsGlobalEnv, LString, nil, Pair } from "./lips.js";
 
 type Fn = (...args: any[]) => any;
 
@@ -24,7 +24,7 @@ const FL = {
   of: "fantasy-land/of",
   ap: "fantasy-land/ap",
   chain: "fantasy-land/chain",
-  concat: "fantasy-land/concat"
+  concat: "fantasy-land/concat",
 };
 
 export function applyFantasyLandPatches(): void {
@@ -48,7 +48,7 @@ function patchPairClass(): void {
     },
     [FL.chain](f: Fn) {
       return chainPair(f, this);
-    }
+    },
   });
 
   Pair[FL.of] = function of(value: any) {
@@ -95,7 +95,9 @@ function traversePair(of: Fn, f: Fn, pair: any): any {
   const mappedCar = f(pair.car);
   const mappedCdr = traversePair(of, f, pair.cdr);
 
-  return mappedCar?.[FL.ap] ? mappedCar[FL.ap](mappedCdr) : of(Pair(mappedCar, mappedCdr));
+  return mappedCar?.[FL.ap]
+    ? mappedCar[FL.ap](mappedCdr)
+    : of(Pair(mappedCar, mappedCdr));
 }
 
 function chainPair(f: Fn, pair: any): any {

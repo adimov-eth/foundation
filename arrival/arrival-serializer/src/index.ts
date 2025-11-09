@@ -4,4 +4,4 @@
  * S-expression serializer for Arrival
  */
 
-export * from "./serializer";
+export * from "./serializer.js";

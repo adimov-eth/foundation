@@ -3,9 +3,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { exec } from "../lips";
-import { sandboxedEnv } from "../sandbox-env";
-import { lipsToJs } from "../rosetta";
+import { exec } from "../lips.js";
+import { sandboxedEnv } from "../sandbox-env.js";
+import { lipsToJs } from "../rosetta.js";
 
 async function execOne(expr: string, env = sandboxedEnv): Promise<any> {
   const results = await exec(expr, { env });

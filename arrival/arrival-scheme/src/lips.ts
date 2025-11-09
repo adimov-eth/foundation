@@ -5,7 +5,7 @@
  * https://github.com/jcubic/lips
  */
 // @ts-nocheck
-import { createRosettaWrapper } from "./rosetta";
+import { createRosettaWrapper } from "./rosetta.js";
 
 let env;
 // -------------------------------------------------------------------------

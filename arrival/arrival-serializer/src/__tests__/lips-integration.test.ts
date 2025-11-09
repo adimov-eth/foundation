@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toSExprString } from "../serializer";
+import { toSExprString } from "../serializer.js";
 // Import what we can from lips
 import { exec, LBigInteger, lipsToJs, LString, LSymbol, Nil, Pair, sandboxedEnv } from "@here.build/arrival-scheme";
 // Import custom matchers

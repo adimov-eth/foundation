@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ActionToolInteraction } from "../ActionToolInteraction";
+import { ActionToolInteraction } from "../ActionToolInteraction.js";
 import type { Context } from "hono";
 import * as z from "zod";
 

@@ -5,7 +5,7 @@
  * Provides Environment.defineRosetta() for declarative function wrapping.
  */
 
-import { nil, Pair } from "./lips";
+import { nil, Pair } from "./lips.js";
 
 interface RosettaOptions {
   forceBigInt?: boolean;

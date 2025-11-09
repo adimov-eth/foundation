@@ -10,9 +10,9 @@ import {
   LString,
   LSymbol,
   nil
-} from "./lips";
-import { RAMDA_FUNCTIONS } from "./ramda-functions";
-import { SAFE_BUILTINS } from "./safe_builtins";
+} from "./lips.js";
+import { RAMDA_FUNCTIONS } from "./ramda-functions.js";
+import { SAFE_BUILTINS } from "./safe_builtins.js";
 
 export const sandboxedEnv = new Environment(
   {

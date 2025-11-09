@@ -3,8 +3,8 @@ import type { Context } from "hono";
 import invariant from "tiny-invariant";
 import type { Constructor } from "type-fest";
 
-import type { ToolInteraction } from "./ToolInteraction";
-import { MCPClientInfo } from "./hono/HonoMCPServer";
+import type { ToolInteraction } from "./ToolInteraction.js";
+import { MCPClientInfo } from "./hono/HonoMCPServer.js";
 
 function asArray<T>(value: T | T[]): T[] {
   return Array.isArray(value) ? value : [value];

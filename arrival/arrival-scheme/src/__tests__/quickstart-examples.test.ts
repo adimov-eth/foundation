@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { exec, sandboxedEnv, lipsToJs, jsToLips } from "../index";
+import { exec, sandboxedEnv, lipsToJs, jsToLips } from "../index.js";
 
 describe("Quick Start Examples", () => {
   it("Basic execution example", async () => {

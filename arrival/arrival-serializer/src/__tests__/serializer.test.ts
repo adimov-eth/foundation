@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sexpr, slist, smap, toSExpr, toSExprString } from "../serializer";
+import { sexpr, slist, smap, toSExpr, toSExprString } from "../serializer.js";
 
 describe("S-Expression Serializer", () => {
   describe("new interface with Symbol.toSExpr", () => {

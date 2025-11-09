@@ -1,6 +1,6 @@
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import type { Context } from "hono";
-import { MCPClientInfo } from "./hono/HonoMCPServer";
+import { MCPClientInfo } from "./hono/HonoMCPServer.js";
 
 export type UserlandCallToolResult = File | string | object;
 

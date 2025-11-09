@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { ActionToolInteraction } from "../ActionToolInteraction";
+import { ActionToolInteraction } from "../ActionToolInteraction.js";
 import * as z from "zod";
 import type { Context } from "hono";
 

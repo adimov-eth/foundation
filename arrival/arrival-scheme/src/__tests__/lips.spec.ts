@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { env as global_environment, exec, LNumber, nil, Pair, parse, tokenize } from "../lips";
+import { env as global_environment, exec, LNumber, nil, Pair, parse, tokenize } from "../lips.js";
 import * as path from "node:path";
 
 

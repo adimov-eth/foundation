@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { describe, it, expect } from "vitest";
-import { ActionToolInteraction, ActionCall } from "../ActionToolInteraction";
+import { ActionToolInteraction, ActionCall } from "../ActionToolInteraction.js";
 import * as z from "zod";
 import type { Context } from "hono";
 

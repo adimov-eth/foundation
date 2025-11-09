@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MCPServer } from "../MCPServer";
-import { ToolInteraction } from "../ToolInteraction";
+import { MCPServer } from "../MCPServer.js";
+import { ToolInteraction } from "../ToolInteraction.js";
 import type { Context } from "hono";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";

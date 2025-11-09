@@ -2,7 +2,7 @@
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 
-import { env as globalEnv, nil, Pair } from "./lips";
+import { env as globalEnv, nil, Pair } from "./lips.js";
 
 type Fn = (...args: any[]) => any;
 

@@ -6,8 +6,8 @@ import type { NonEmptyTuple } from "type-fest";
 import * as z from "zod";
 import { format } from "date-fns";
 
-import { ToolInteraction } from "./ToolInteraction";
-import { MCPClientInfo } from "./hono/HonoMCPServer";
+import { ToolInteraction } from "./ToolInteraction.js";
+import { MCPClientInfo } from "./hono/HonoMCPServer.js";
 
 export interface DiscoveryQuery {
   expr: string;

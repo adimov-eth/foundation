@@ -11,7 +11,7 @@
 
 import fs from "fs";
 import { describe, expect, test } from "vitest";
-import { env, exec, nil } from "../lips";
+import { env, exec, nil } from "../lips.js";
 import * as path from "node:path";
 
 const package_root = path.resolve(import.meta.dirname, "../..");

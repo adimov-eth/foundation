@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DiscoveryToolInteraction } from "../DiscoveryToolInteraction";
+import { DiscoveryToolInteraction } from "../DiscoveryToolInteraction.js";
 import type { Context } from "hono";
 import * as z from "zod";
 

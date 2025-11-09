@@ -1,5 +1,5 @@
 import { SSEStreamingApi, streamSSE } from "hono/streaming";
-import { MCPServer } from "../MCPServer";
+import { MCPServer } from "../MCPServer.js";
 import { JSONRPCRequest, ServerResult } from "@modelcontextprotocol/sdk/types.js";
 
 export type MCPClientInfo = Record<string, any>;

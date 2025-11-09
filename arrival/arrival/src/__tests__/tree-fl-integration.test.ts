@@ -9,9 +9,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { Tree, tree } from "./tree";
+import { Tree, tree } from "./tree.js";
 import { exec, lipsToJs, sandboxedEnv } from "@here.build/arrival-scheme";
-import { execSerialized } from "../execSerialized";
+import { execSerialized } from "../execSerialized.js";
 
 describe("Tree + Fantasy Land Integration", () => {
   describe("Tree data structure", () => {

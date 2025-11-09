@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:arxiv.org)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run build:*)",
+      "Bash(pnpm test:*)",
+      "Bash(node -e:*)",
+      "Bash(pnpm start)",
+      "Bash(done)",
+      "Bash(__NEW_LINE__ cat /Users/adimov/Developer/foundation/arrival/arrival-scheme/src/index.ts)",
+      "Bash(pm2 restart:*)",
+      "mcp__discovery__code-discovery",
+      "Bash(cat:*)",
+      "Bash(git commit:*)",
+      "Bash(pm2 status:*)",
+      "Bash(pm2 logs:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "preprocessor",
+    "discovery"
+  ]
+}

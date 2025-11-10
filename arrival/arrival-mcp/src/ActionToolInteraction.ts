@@ -82,26 +82,24 @@ export abstract class ActionToolInteraction<ExecutionContext extends Record<stri
             ✓ Valid: {component, item, actions: [action<component, item, elementId?>, action<component, item?>] - since all actions are valid with current context, it will be executed.
           ` + this.additionalNotes ? dedent`\n${this.additionalNotes}` : '',
           items: {
-            type: {
-              oneOf: await Promise.all(
-                Object.entries(this.actions).map(
-                  async ([action, { description, context, optionalContext, args }]) => ({
-                    type: "array",
-                    description: dedent`
-                      ${typeof description === "string" ? description : await description()}.
-                      ${context.length > 0 ? `Required context: ${context.join(", ")}` : ''}
-                      ${optionalContext.length > 0 ? `Optional context: ${[...optionalContext].join(", ")})` : ""}
-                    `,
-                    items: [
-                      {
-                        const: action,
-                      },
-                      ...args.map((arg) => omit(z.toJSONSchema(arg, {io: "input"}), "$schema")),
-                    ],
-                  }),
-                ),
+            oneOf: await Promise.all(
+              Object.entries(this.actions).map(
+                async ([action, { description, context, optionalContext, args }]) => ({
+                  type: "array",
+                  description: dedent`
+                    ${typeof description === "string" ? description : await description()}.
+                    ${context.length > 0 ? `Required context: ${context.join(", ")}` : ''}
+                    ${optionalContext.length > 0 ? `Optional context: ${[...optionalContext].join(", ")})` : ""}
+                  `,
+                  prefixItems: [
+                    {
+                      const: action,
+                    },
+                    ...args.map((arg) => omit(z.toJSONSchema(arg, {io: "input"}), "$schema")),
+                  ],
+                }),
               ),
-            },
+            ),
           },
         },
         ...Object.fromEntries(

@@ -172,8 +172,8 @@ export class CodeActionTool extends ActionToolInteraction<ExecutionContext> {
             props: {
                 filePath: z.string().describe('File to add import to'),
                 moduleSpecifier: z.string().describe('Module to import from'),
-                namedImports: z.array(z.string()).describe('Named imports (empty array if none)'),
-                defaultImport: z.string().describe('Default import name (empty string if none)'),
+                namedImports: z.array(z.string()).default([]).describe('Named imports'),
+                defaultImport: z.string().default('').describe('Default import name'),
             },
             handler: async (context, { filePath, moduleSpecifier, namedImports, defaultImport }) => {
                 const project = await this.getProject(context);

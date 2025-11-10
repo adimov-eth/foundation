@@ -8,6 +8,9 @@
 import { DiscoveryToolInteraction } from '@here.build/arrival-mcp';
 import { Project } from 'ts-morph';
 import * as z from 'zod';
+import { readFileSync, statSync } from 'fs';
+import { glob } from 'glob';
+import { resolve, relative } from 'path';
 import { cata } from './catamorphism.js';
 import {
   countAlg,
@@ -50,7 +53,7 @@ import {
  */
 export class CodeDiscovery extends DiscoveryToolInteraction<Record<string, never>> {
   static readonly name = 'code-discovery';
-  readonly description = 'Compositional codebase exploration via catamorphisms';
+  readonly description = 'Codebase exploration: filesystem primitives + compositional AST analysis';
 
   private project: Project | null = null;
 
@@ -72,7 +75,14 @@ export class CodeDiscovery extends DiscoveryToolInteraction<Record<string, never
    */
   private async getSourceFile(filePath: string, tsConfigPath?: string) {
     const project = await this.getProject(tsConfigPath);
-    const sourceFile = project.getSourceFile(filePath);
+    // Try to get existing source file first
+    let sourceFile = project.getSourceFile(filePath);
+
+    // If not found, add it to the project
+    if (!sourceFile) {
+      sourceFile = project.addSourceFileAtPath(resolve(filePath));
+    }
+
     if (!sourceFile) {
       throw new Error(`File not found: ${filePath}`);
     }
@@ -80,6 +90,134 @@ export class CodeDiscovery extends DiscoveryToolInteraction<Record<string, never
   }
 
   async registerFunctions() {
+    // ========================================
+    // Filesystem Primitives
+    // ========================================
+
+    this.registerFunction(
+      'list-files',
+      'List files matching glob pattern',
+      [z.string()],
+      async (pattern: string) => {
+        return await glob(pattern, { nodir: true });
+      }
+    );
+
+    this.registerFunction(
+      'read-file',
+      'Read file content as string',
+      [z.string()],
+      (filePath: string) => {
+        return readFileSync(resolve(filePath), 'utf-8');
+      }
+    );
+
+    this.registerFunction(
+      'file-stats',
+      'Get file statistics (size, modified time, etc.)',
+      [z.string()],
+      (filePath: string) => {
+        const stats = statSync(resolve(filePath));
+        return {
+          size: stats.size,
+          modified: stats.mtime.toISOString(),
+          created: stats.birthtime.toISOString(),
+          isFile: stats.isFile(),
+          isDirectory: stats.isDirectory(),
+        };
+      }
+    );
+
+    this.registerFunction(
+      'grep-content',
+      'Search for pattern in file content',
+      [z.string(), z.string()],
+      (pattern: string, filePath: string) => {
+        const content = readFileSync(resolve(filePath), 'utf-8');
+        const regex = new RegExp(pattern, 'gm');
+        const matches: Array<{ line: number; text: string; match: string }> = [];
+
+        const lines = content.split('\n');
+        lines.forEach((lineText, idx) => {
+          const lineMatches = lineText.match(regex);
+          if (lineMatches) {
+            matches.push({
+              line: idx + 1,
+              text: lineText.trim(),
+              match: lineMatches[0],
+            });
+          }
+        });
+
+        return matches;
+      }
+    );
+
+    // ========================================
+    // Composition Helpers
+    // ========================================
+
+    this.registerFunction(
+      'member',
+      'Check if item is in list',
+      [z.any(), z.any()],
+      (item: any, list: any) => {
+        if (!list) return false;
+        if (Array.isArray(list)) {
+          return list.some(x => {
+            // Handle string comparison
+            if (typeof x === 'string' && typeof item === 'string') {
+              return x === item;
+            }
+            // Handle deep equality for objects
+            return JSON.stringify(x) === JSON.stringify(item);
+          });
+        }
+        return false;
+      }
+    );
+
+    this.registerFunction(
+      'string-contains?',
+      'Check if string contains substring',
+      [z.string(), z.string()],
+      (str: string, substr: string) => {
+        return str.includes(substr);
+      }
+    );
+
+    this.registerFunction(
+      'string-starts-with?',
+      'Check if string starts with prefix',
+      [z.string(), z.string()],
+      (str: string, prefix: string) => {
+        return str.startsWith(prefix);
+      }
+    );
+
+    this.registerFunction(
+      'string-ends-with?',
+      'Check if string ends with suffix',
+      [z.string(), z.string()],
+      (str: string, suffix: string) => {
+        return str.endsWith(suffix);
+      }
+    );
+
+    this.registerFunction(
+      'string-match',
+      'Test if string matches regex pattern',
+      [z.string(), z.string()],
+      (pattern: string, str: string) => {
+        try {
+          const regex = new RegExp(pattern);
+          return regex.test(str);
+        } catch {
+          return false;
+        }
+      }
+    );
+
     // ========================================
     // Count Algebra
     // ========================================

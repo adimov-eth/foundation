@@ -19,5 +19,6 @@ export { cata, monoidAlg, sum, flatten, type CodeAlg } from './catamorphism.js';
 // Algebras
 export * from './algebras/index.js';
 
-// Discovery tool
+// Tools
 export { CodeDiscovery } from './discovery-tool.js';
+export { CodeActionTool } from './action-tool.js';

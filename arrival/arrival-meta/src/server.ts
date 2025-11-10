@@ -11,9 +11,10 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { HonoMCPServer } from '@here.build/arrival-mcp';
 import { CodeDiscovery } from './discovery-tool.js';
+import { CodeActionTool } from './action-tool.js';
 
-// Create MCP server with CodeDiscovery tool
-const mcpServer = new HonoMCPServer(CodeDiscovery);
+// Create MCP server with both Discovery and Action tools
+const mcpServer = new HonoMCPServer(CodeDiscovery, CodeActionTool);
 
 // Create Hono app
 const app = new Hono();
@@ -83,9 +84,10 @@ app
   .delete('/', mcpServer.delete);
 
 // Start server
-console.log(`🔍 CodeDiscovery MCP Server starting on ${baseUrl}`);
+console.log(`🔍 arrival-meta MCP Server starting on ${baseUrl}`);
+console.log(`  Tools: code-discovery (26 functions: 4 filesystem + 5 helpers + 17 AST), code-action (6 actions)`);
 console.log(`\nTo add to Claude Code:`);
-console.log(`  claude mcp add --transport http code-discovery ${baseUrl}\n`);
+console.log(`  claude mcp add --transport http arrival-meta ${baseUrl}\n`);
 
 serve({
   fetch: app.fetch,

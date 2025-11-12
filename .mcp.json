@@ -1,8 +1,13 @@
 {
   "mcpServers": {
-    "discovery": {
+    "periphery": {
       "type": "http",
-      "url": "http://localhost:3000"
+      "url": "http://localhost:7777",
+      "approvedTools": true
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
     }
   }
 }

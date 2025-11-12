@@ -122,11 +122,11 @@ describe('Act Actions', () => {
         const filePath = join(srcDir, 'format-test.ts');
         writeFileSync(filePath, `export   const   value  =   42;`);
 
-        const tool = new Act({}, {});
-        const handler = (tool as any).actions['format-file'].handler;
-        const result = await handler({}, { filePath });
+        const tool = new Act({}, {}, { actions: [['format-file', filePath]] });
+        const results = await tool.executeTool();
 
-        expect(result.action).toBe('format-file');
+        expect(Array.isArray(results)).toBe(true);
+        expect(results[0].action).toBe('format-file');
 
         const formatted = require('fs').readFileSync(filePath, 'utf-8');
         expect(formatted).not.toContain('   ');
@@ -147,13 +147,13 @@ export function main() {
 }
 `);
 
-        const tool = new Act({}, {});
-        const handler = (tool as any).actions['rename-symbol'].handler;
-        const result = await handler({}, { filePath, oldName: 'oldName', newName: 'newName' });
+        const tool = new Act({}, {}, { actions: [['rename-symbol', filePath, 'oldName', 'newName']] });
+        const results = await tool.executeTool();
 
-        expect(result.action).toBe('rename-symbol');
-        expect(result.oldName).toBe('oldName');
-        expect(result.newName).toBe('newName');
+        expect(Array.isArray(results)).toBe(true);
+        expect(results[0].action).toBe('rename-symbol');
+        expect(results[0].oldName).toBe('oldName');
+        expect(results[0].newName).toBe('newName');
 
         const content = require('fs').readFileSync(filePath, 'utf-8');
         expect(content).toContain('const newName = 42');
@@ -170,16 +170,12 @@ import { resolve } from 'path';
 export const x = resolve('.');
 `);
 
-        const tool = new Act({}, {});
-        const handler = (tool as any).actions['add-import'].handler;
-
-        // Add resolve (already exists) + join (new)
-        await handler({}, {
-            filePath,
-            moduleSpecifier: 'path',
-            namedImports: ['resolve', 'join'],
-            defaultImport: ''
+        const tool = new Act({}, {}, {
+            actions: [['add-import', filePath, 'path', ['resolve', 'join'], '']]
         });
+        const results = await tool.executeTool();
+
+        expect(Array.isArray(results)).toBe(true);
 
         const content = require('fs').readFileSync(filePath, 'utf-8');
         const resolveCount = (content.match(/\bresolve\b/g) || []).length;
@@ -197,12 +193,12 @@ import { resolve, join } from 'path';
 export const x = resolve('.');
 `);
 
-        const tool = new Act({}, {});
-        const handler = (tool as any).actions['remove-unused-imports'].handler;
-        const result = await handler({}, { filePath });
+        const tool = new Act({}, {}, { actions: [['remove-unused-imports', filePath]] });
+        const results = await tool.executeTool();
 
-        expect(result.removed).toContain('join');
-        expect(result.removed).not.toContain('resolve');
+        expect(Array.isArray(results)).toBe(true);
+        expect(results[0].removed).toContain('join');
+        expect(results[0].removed).not.toContain('resolve');
 
         const content = require('fs').readFileSync(filePath, 'utf-8');
         expect(content).toContain('resolve');

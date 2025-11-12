@@ -30,6 +30,7 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
     readonly description = 'Safe code transformations via batch actions (atomic validation)';
 
     private projects: Map<string, Project> = new Map();
+    private modifiedFiles: Set<SourceFile> = new Set();
 
     constructor(context: any, state: Record<string, any> = {}, executionContext?: any) {
         super(context, state, executionContext);
@@ -104,7 +105,8 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                 }
 
                 symbol.rename(newName);
-                await sourceFile.save();
+                this.modifiedFiles.add(sourceFile);
+                
 
                 return {
                     action: 'rename-symbol',
@@ -155,7 +157,8 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                     });
                 }
 
-                await sourceFile.save();
+                
+                this.modifiedFiles.add(sourceFile);
 
                 return {
                     action: 'add-import',
@@ -202,7 +205,8 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                     }
                 }
 
-                await sourceFile.save();
+                this.modifiedFiles.add(sourceFile);
+                
 
                 return {
                     action: 'remove-unused-imports',
@@ -224,8 +228,9 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
             handler: async (context, { filePath }) => {
                 const [sourceFile] = await this.loadSourceFile(context, filePath);
 
+                this.modifiedFiles.add(sourceFile);
                 sourceFile.formatText();
-                await sourceFile.save();
+                
 
                 return {
                     action: 'format-file',
@@ -233,5 +238,24 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                 };
             },
         });
+    }
+
+    async act(actions: any[], transformedActionArgs: any[][]) {
+        this.modifiedFiles.clear();
+
+        const results = await super.act(actions, transformedActionArgs);
+
+        // If super.act returned error object, don't save (rollback)
+        if (typeof results === 'object' && 'success' in results && results.success === false) {
+            return results;
+        }
+
+        // All actions succeeded - commit by saving all modified files
+        for (const sourceFile of this.modifiedFiles) {
+            await sourceFile.save();
+        }
+
+        this.modifiedFiles.clear();
+        return results;
     }
 }

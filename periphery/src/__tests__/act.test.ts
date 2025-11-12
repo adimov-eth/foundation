@@ -8,6 +8,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { Act } from '../act.js';
+import { findWorkspaceRoot } from '../utils.js';
 
 describe('Act Auto-Discovery', () => {
     const testDir = join(process.cwd(), '__test-workspace__');
@@ -63,8 +64,7 @@ export const value = 100;
     });
 
     it('auto-discovers workspace root', () => {
-        const tool = new Act({}, {});
-        const root = (tool as any).findWorkspaceRoot();
+        const root = findWorkspaceRoot();
         expect(root).toContain('foundation');
     });
 

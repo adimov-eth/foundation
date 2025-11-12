@@ -13,6 +13,7 @@ import * as z from 'zod';
 import { join, dirname, relative, isAbsolute, resolve } from "path";
 import { existsSync } from "fs";
 import { glob } from "glob";
+import { walkUpUntil, findWorkspaceRoot } from "./utils.js";
 
 type ExecutionContext = {
     projectPath?: string;  // Optional - will auto-discover if not provided
@@ -35,28 +36,9 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
         this.registerActions();
     }
 
-    private walkUpUntil(startDir: string, predicate: (dir: string) => boolean): string | null {
-        let currentDir = startDir;
-
-        while (true) {
-            if (predicate(currentDir)) return currentDir;
-
-            const parent = dirname(currentDir);
-            if (parent === currentDir) return null;
-            currentDir = parent;
-        }
-    }
-
-    private findWorkspaceRoot(): string {
-        return this.walkUpUntil(
-            process.cwd(),
-            dir => existsSync(join(dir, 'pnpm-workspace.yaml')) || existsSync(join(dir, '.git'))
-        ) ?? process.cwd();
-    }
-
     private async findProjectPath(filePath: string): Promise<string> {
-        const absPath = isAbsolute(filePath) ? filePath : resolve(this.findWorkspaceRoot(), filePath);
-        const found = this.walkUpUntil(
+        const absPath = isAbsolute(filePath) ? filePath : resolve(findWorkspaceRoot(), filePath);
+        const found = walkUpUntil(
             dirname(absPath),
             dir => existsSync(join(dir, 'tsconfig.json'))
         );
@@ -88,7 +70,7 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
 
     private async loadSourceFile(context: ExecutionContext, filePath: string): Promise<[SourceFile, string]> {
         const [project, projectPath] = await this.loadProject(context, filePath);
-        const absolutePath = isAbsolute(filePath) ? filePath : resolve(this.findWorkspaceRoot(), filePath);
+        const absolutePath = isAbsolute(filePath) ? filePath : resolve(findWorkspaceRoot(), filePath);
         const sourceFile = project.getSourceFile(absolutePath);
 
         if (!sourceFile) {

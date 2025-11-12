@@ -16,23 +16,11 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import type { Context } from 'hono';
+import { findWorkspaceRoot } from "./utils.js";
 
 // Get project root by walking up to find .git or pnpm-workspace.yaml
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-function findWorkspaceRoot(startDir: string): string {
-    let dir = startDir;
-    while (true) {
-        if (existsSync(join(dir, 'pnpm-workspace.yaml')) || existsSync(join(dir, '.git'))) {
-            return dir;
-        }
-        const parent = dirname(dir);
-        if (parent === dir) return startDir; // Reached root
-        dir = parent;
-    }
-}
-
 const projectRoot = findWorkspaceRoot(__dirname);
 
 console.log(`📁 Project root: ${projectRoot}`);

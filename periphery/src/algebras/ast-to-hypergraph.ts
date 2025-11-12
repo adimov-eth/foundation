@@ -20,28 +20,28 @@ import type { HyperGraph } from '../hypergraph.js';
  * Edge: subclass → superclass
  */
 export const metadataToInheritanceGraph = (metadata: Metadata): HyperGraph => {
-  const edgeList: string[][] = [];
+    const edgeList: string[][] = [];
 
-  for (const cls of metadata.classes) {
-    // For each superclass, create edge: cls → superclass
-    for (const superclass of cls.extends) {
-      edgeList.push([cls.name, superclass]);
+    for (const cls of metadata.classes) {
+        // For each superclass, create edge: cls → superclass
+        for (const superclass of cls.extends) {
+            edgeList.push([cls.name, superclass]);
+        }
+
+        // For each interface, create edge: cls → interface
+        for (const iface of cls.implements) {
+            edgeList.push([cls.name, iface]);
+        }
     }
 
-    // For each interface, create edge: cls → interface
-    for (const iface of cls.implements) {
-      edgeList.push([cls.name, iface]);
+    // Also add interfaces extending other interfaces
+    for (const iface of metadata.interfaces) {
+        for (const superIface of iface.extends) {
+            edgeList.push([iface.name, superIface]);
+        }
     }
-  }
 
-  // Also add interfaces extending other interfaces
-  for (const iface of metadata.interfaces) {
-    for (const superIface of iface.extends) {
-      edgeList.push([iface.name, superIface]);
-    }
-  }
-
-  return edges(edgeList);
+    return edges(edgeList);
 };
 
 /**
@@ -51,17 +51,17 @@ export const metadataToInheritanceGraph = (metadata: Metadata): HyperGraph => {
  * This is a simplified version - full call graph would require more analysis.
  */
 export const metadataToCallGraph = (metadata: Metadata): HyperGraph => {
-  const edgeList: string[][] = [];
+    const edgeList: string[][] = [];
 
-  // Connect classes to types they reference (extends/implements)
-  for (const cls of metadata.classes) {
-    const referencedTypes = new Set([...cls.extends, ...cls.implements]);
-    for (const type of referencedTypes) {
-      edgeList.push([cls.name, type]);
+    // Connect classes to types they reference (extends/implements)
+    for (const cls of metadata.classes) {
+        const referencedTypes = new Set([...cls.extends, ...cls.implements]);
+        for (const type of referencedTypes) {
+            edgeList.push([cls.name, type]);
+        }
     }
-  }
 
-  return edges(edgeList);
+    return edges(edgeList);
 };
 
 /**
@@ -71,8 +71,8 @@ export const metadataToCallGraph = (metadata: Metadata): HyperGraph => {
  * Edge: importer → imported module
  */
 export const dependencyGraphToHG = (depGraph: DependencyGraph): HyperGraph => {
-  const edgeList: string[][] = depGraph.edges.map(e => [e.from, e.to]);
-  return edges(edgeList);
+    const edgeList: string[][] = depGraph.edges.map(e => [e.from, e.to]);
+    return edges(edgeList);
 };
 
 /**
@@ -81,13 +81,13 @@ export const dependencyGraphToHG = (depGraph: DependencyGraph): HyperGraph => {
  * Converts type relationship graph to hypergraph.
  */
 export const typeGraphToHG = (typeGraph: TypeGraph): HyperGraph => {
-  const edgeList: string[][] = [];
+    const edgeList: string[][] = [];
 
-  for (const relation of typeGraph.relations) {
-    edgeList.push([relation.from, relation.to]);
-  }
+    for (const relation of typeGraph.relations) {
+        edgeList.push([relation.from, relation.to]);
+    }
 
-  return edges(edgeList);
+    return edges(edgeList);
 };
 
 /**
@@ -97,30 +97,30 @@ export const typeGraphToHG = (typeGraph: TypeGraph): HyperGraph => {
  * Useful for visualizing Plexus model hierarchy.
  */
 export const plexusModelGraph = (metadata: Metadata): HyperGraph => {
-  const edgeList: string[][] = [];
-  const plexusClasses = metadata.classes.filter(c =>
-    c.extends.some(s => s.includes('PlexusModel'))
-  );
+    const edgeList: string[][] = [];
+    const plexusClasses = metadata.classes.filter(c =>
+        c.extends.some(s => s.includes('PlexusModel'))
+    );
 
-  // Connect each PlexusModel subclass to PlexusModel
-  for (const cls of plexusClasses) {
-    const plexusBase = cls.extends.find(s => s.includes('PlexusModel'));
-    if (plexusBase) {
-      edgeList.push([cls.name, plexusBase]);
+    // Connect each PlexusModel subclass to PlexusModel
+    for (const cls of plexusClasses) {
+        const plexusBase = cls.extends.find(s => s.includes('PlexusModel'));
+        if (plexusBase) {
+            edgeList.push([cls.name, plexusBase]);
+        }
     }
-  }
 
-  // Also include inheritance between PlexusModel subclasses
-  for (const cls of plexusClasses) {
-    for (const superclass of cls.extends) {
-      // If superclass is also a PlexusModel subclass
-      if (plexusClasses.some(c => c.name === superclass)) {
-        edgeList.push([cls.name, superclass]);
-      }
+    // Also include inheritance between PlexusModel subclasses
+    for (const cls of plexusClasses) {
+        for (const superclass of cls.extends) {
+            // If superclass is also a PlexusModel subclass
+            if (plexusClasses.some(c => c.name === superclass)) {
+                edgeList.push([cls.name, superclass]);
+            }
+        }
     }
-  }
 
-  return edges(edgeList);
+    return edges(edgeList);
 };
 
 /**
@@ -129,13 +129,13 @@ export const plexusModelGraph = (metadata: Metadata): HyperGraph => {
  * Overlays multiple graph types for comprehensive visualization.
  */
 export const combinedCodeGraph = (
-  metadata: Metadata,
-  depGraph: DependencyGraph,
-  typeGraph: TypeGraph
+    metadata: Metadata,
+    depGraph: DependencyGraph,
+    typeGraph: TypeGraph
 ): HyperGraph => {
-  return overlays([
-    metadataToInheritanceGraph(metadata),
-    dependencyGraphToHG(depGraph),
-    typeGraphToHG(typeGraph),
-  ]);
+    return overlays([
+        metadataToInheritanceGraph(metadata),
+        dependencyGraphToHG(depGraph),
+        typeGraphToHG(typeGraph),
+    ]);
 };

@@ -302,3 +302,63 @@ This works because ts-morph operations are in-memory until `.save()`. True atomi
 - No noticeable difference vs single actions
 - ts-morph handles multi-file efficiently
 
+
+---
+
+## Session 3: Compositional Workflow (discover → act) ✓
+
+### Duplication Elimination
+
+**Discovery phase**: Used discover tool to find duplicate implementations
+```scheme
+(define server-functions (@ (extract-metadata "periphery/src/server.ts") :functions))
+(define act-methods (@ (car (find-classes "periphery/src/act.ts")) :methods))
+; Result: Both have findWorkspaceRoot with identical logic
+```
+
+**Refactoring sequence**:
+1. Created `periphery/src/utils.ts` with shared functions
+2. Used act to add imports (2 batches):
+   - `["add-import", "server.ts", "./utils.js", ["findWorkspaceRoot"], ""]`
+   - `["add-import", "act.ts", "./utils.js", ["walkUpUntil", "findWorkspaceRoot"], ""]`
+3. Used sed to replace `this.method()` calls with imported functions
+4. Used sed to remove duplicate implementations
+5. Used act to format all 3 files: `[["format-file", "utils.ts"], ["format-file", "act.ts"], ["format-file", "server.ts"]]`
+6. Updated tests to import public function instead of accessing private method
+
+**Before**:
+- `act.ts`: 37 lines of duplicate code (walkUpUntil + findWorkspaceRoot methods)
+- `server.ts`: 11 lines of duplicate code (findWorkspaceRoot function)
+- **Total**: 48 lines duplicated
+
+**After**:
+- `utils.ts`: 25 lines (single implementation)
+- Both files import from utils
+- **Net reduction**: 23 lines eliminated
+
+**Edge cases discovered**:
+- act tool has `add-import` but no `remove-function` action
+- Had to use manual sed for removing duplicate implementations
+- Method-to-function conversion required updating all call sites (this.x → x)
+- Tests accessing private methods broke (good - forced better test design)
+
+**Verification**:
+- All 56 tests passing
+- Build clean
+- Server restarts successfully
+- Imports resolve correctly
+
+### What This Proves
+
+**Compositional workflow works**:
+1. discover identifies duplication
+2. Write creates shared implementation
+3. act adds imports
+4. Manual cleanup removes duplicates (limitation: no remove-function action)
+5. act formats everything
+
+**Real improvement**: -23 LOC, single source of truth for workspace utilities
+
+**Missing action discovered**: `remove-function` would complete the workflow
+- Would eliminate manual sed step
+- Make refactoring fully automated via act tool

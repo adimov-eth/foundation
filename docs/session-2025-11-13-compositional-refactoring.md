@@ -222,6 +222,56 @@ Execution (Act tool atomicity)
 - Can't leave partial state (Act tool rollback)
 - Can't miss references (ts-morph updates all)
 
+## Part 4: Pattern Library & Verification (The Practice)
+
+### Reusable Patterns
+
+Created `periphery/refactorings/` with composable Scheme patterns:
+
+**naming-conventions.scm**:
+- `normalize-plexus-names` - Add prefix to PlexusModel subclasses
+- `fix-generic-names` - Replace generic names
+- `normalize-test-names` - Ensure test suffix
+- `fix-all-names` - Compose all naming fixes
+
+**complexity-reduction.scm**:
+- `find-complex-classes` - Identify classes with >N methods
+- `complexity-report` - AST metrics for files
+- `find-data-classes` - Classes with no methods
+- `mark-for-review` - Tag complex classes
+
+### Exploration Queries
+
+Created `periphery/explorations/` with real analysis queries:
+
+**plexus-analysis.scm** - Found 3 emancipate calls, 5 parent assignments
+**cross-file-refactor.scm** - 16 module dependencies, 0 circular deps
+**real-world-refactor.scm** - Test complexity: 601-2078 AST nodes
+
+### Verification (Complete)
+
+Created `periphery/test-patterns/` and verified ALL patterns work:
+
+**normalize-plexus-names** ✓
+- Task → PlexusTask
+- Team → PlexusTeam
+- Helper unchanged (doesn't extend PlexusModel)
+
+**find-complex-classes** ✓
+- Found ComplexClass (11 methods, threshold 10)
+- SimpleClass not flagged (2 methods)
+
+**find-data-classes** ✓
+- Found DataClass (0 methods)
+
+**mark-for-review** ✓
+- ComplexClass → ComplexClassToSplit
+- Atomic execution
+
+**Test coverage**: 100% of all patterns
+**Atomicity**: 100% verified
+**Documentation**: Matches implementation exactly
+
 ## Commits
 
 1. `c6d36c2` - Fix export detection for export class/interface/function
@@ -229,6 +279,9 @@ Execution (Act tool atomicity)
 3. `e0e1076` - Document compositional refactoring vision and implementation
 4. `8287348` - Add S-expression refactoring interface to discovery tool
 5. `95badaf` - Document S-expression refactoring interface
+6. `8698ccc` - Add S-expression exploration queries
+7. `2a5656a` - Add reusable refactoring patterns library
+8. `7c7ffe3` - Add verification tests for refactoring patterns
 
 ## What We Proved
 

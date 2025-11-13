@@ -749,6 +749,146 @@ Use for: Adding cross-graph relationships`,
                 return this.serializeHyperGraph(connected);
             }
         );
+
+        // ========================================
+        // Refactoring Primitives
+        // ========================================
+
+        this.registerFunction(
+            'get-refactorable-classes',
+            `Extract class metadata in refactoring-friendly format.
+
+Returns: List of {:file :name :extends :methods}
+
+Example: (get-refactorable-classes "src/models.ts")
+Use for: Planning refactorings on classes`,
+            [z.string(), z.string().optional()],
+            async (filePath: string, tsConfigPath?: string) => {
+                const sourceFile = await this.loadSourceFile(filePath, tsConfigPath);
+                const metadata = cata(extractAlg)(sourceFile);
+
+                return metadata.classes.map(cls => ({
+                    file: this.resolvePath(filePath),
+                    name: cls.name,
+                    extends: cls.extends,
+                    implements: cls.implements,
+                    methods: cls.methods,
+                }));
+            }
+        );
+
+        this.registerFunction(
+            'extends?',
+            `Create predicate that checks if class extends given base class.
+
+Returns: Predicate function
+
+Example: (filter (extends? "PlexusModel") classes)
+Use for: Filtering classes by inheritance`,
+            [z.string()],
+            (baseClass: string) => {
+                return (cls: any) => {
+                    if (typeof cls === 'object' && cls !== null && 'extends' in cls) {
+                        const ext = cls.extends;
+                        return Array.isArray(ext) && ext.includes(baseClass);
+                    }
+                    return false;
+                };
+            }
+        );
+
+        this.registerFunction(
+            'has-method?',
+            `Create predicate that checks if class has given method.
+
+Returns: Predicate function
+
+Example: (filter (has-method? "complete") classes)
+Use for: Filtering classes by methods`,
+            [z.string()],
+            (methodName: string) => {
+                return (cls: any) => {
+                    if (typeof cls === 'object' && cls !== null && 'methods' in cls) {
+                        const methods = cls.methods;
+                        return Array.isArray(methods) && methods.includes(methodName);
+                    }
+                    return false;
+                };
+            }
+        );
+
+        this.registerFunction(
+            'prefix',
+            `Create transform that adds prefix to name.
+
+Returns: Transform function
+
+Example: (refactor! classes (prefix "Plexus"))
+Use for: Adding prefixes to class names`,
+            [z.string()],
+            (pre: string) => {
+                return (name: string) => `${pre}${name}`;
+            }
+        );
+
+        this.registerFunction(
+            'suffix',
+            `Create transform that adds suffix to name.
+
+Returns: Transform function
+
+Example: (refactor! classes (suffix "Model"))
+Use for: Adding suffixes to class names`,
+            [z.string()],
+            (suf: string) => {
+                return (name: string) => `${name}${suf}`;
+            }
+        );
+
+        this.registerFunction(
+            'refactor!',
+            `Execute refactoring atomically via Act tool.
+
+Takes list of classes and name transform function.
+Plans and executes rename actions atomically.
+
+Example: (refactor! plexus-classes (prefix "Plexus"))
+Result: All classes renamed + all references updated
+
+ATOMIC: All succeed or all roll back.`,
+            [z.array(z.any()), z.function()],
+            async (classes: Array<{ file: string; name: string }>, transform: (name: string) => string) => {
+                // Import Act tool dynamically to avoid circular dependency
+                const { Act } = await import('./act.js');
+
+                // Plan rename actions
+                const actions = classes.map(cls => [
+                    'rename-symbol',
+                    cls.file,
+                    cls.name,
+                    transform(cls.name),
+                ]);
+
+                // Execute atomically
+                const tool = new Act({}, this.state, { actions });
+                const results = await tool.executeTool();
+
+                // Check for failure
+                if (typeof results === 'object' && 'success' in results && !results.success) {
+                    throw new Error(`Refactoring failed: ${results.message}`);
+                }
+
+                return {
+                    success: true,
+                    actionsExecuted: actions.length,
+                    renames: classes.map(cls => ({
+                        from: cls.name,
+                        to: transform(cls.name),
+                        file: cls.file,
+                    })),
+                };
+            }
+        );
     }
 
     /**

@@ -107,7 +107,8 @@ app
 
 // Start server
 console.log(`🔍 Periphery MCP Server starting on ${baseUrl}`);
-console.log(`  Tools: discover (38 functions), act (4 actions)`);
+console.log(`  Tools: discover (44 functions), act (6 actions)`);
+console.log(`  New: Compositional refactoring via S-expressions!`);
 console.log(`\nTo add to Claude Code:`);
 console.log(`  claude mcp add --transport http periphery ${baseUrl}\n`);
 

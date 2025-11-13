@@ -72,7 +72,14 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
     private async loadSourceFile(context: ExecutionContext, filePath: string): Promise<[SourceFile, string]> {
         const [project, projectPath] = await this.loadProject(context, filePath);
         const absolutePath = isAbsolute(filePath) ? filePath : resolve(findWorkspaceRoot(), filePath);
-        const sourceFile = project.getSourceFile(absolutePath);
+
+        // Try to get existing source file
+        let sourceFile = project.getSourceFile(absolutePath);
+
+        // If not found, add it explicitly (for files outside tsconfig include)
+        if (!sourceFile) {
+            sourceFile = project.addSourceFileAtPath(absolutePath);
+        }
 
         if (!sourceFile) {
             throw new Error(`File not found: ${filePath}`);
@@ -94,7 +101,19 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                 newName: z.string().describe('New symbol name'),
             },
             handler: async (context, { filePath, oldName, newName }) => {
-                const [sourceFile] = await this.loadSourceFile(context, filePath);
+                const [sourceFile, projectPath] = await this.loadSourceFile(context, filePath);
+                const [project] = await this.loadProject(context, filePath);
+
+                // Load all .ts files in same directory for cross-file rename
+                const absolutePath = sourceFile.getFilePath();
+                const dir = dirname(absolutePath);
+                const tsFiles = await glob(`${dir}/**/*.ts`);
+
+                for (const file of tsFiles) {
+                    if (!project.getSourceFile(file)) {
+                        project.addSourceFileAtPath(file);
+                    }
+                }
 
                 const symbol = sourceFile
                     .getDescendantsOfKind(SyntaxKind.Identifier)
@@ -105,14 +124,24 @@ export class Act extends ActionToolInteraction<ExecutionContext> {
                 }
 
                 symbol.rename(newName);
-                this.modifiedFiles.add(sourceFile);
-                
+
+                // Track all modified files - find files that reference the symbol
+                const modifiedFiles = project.getSourceFiles().filter(sf => {
+                    return sf.getDescendantsOfKind(SyntaxKind.Identifier)
+                        .some(id => id.getText() === newName);
+                });
+
+                const modifiedPaths = modifiedFiles.map(sf => sf.getFilePath());
+
+                for (const sf of modifiedFiles) {
+                    this.modifiedFiles.add(sf);
+                }
 
                 return {
                     action: 'rename-symbol',
                     oldName,
                     newName,
-                    files: [filePath],
+                    files: modifiedPaths,
                 };
             },
         });

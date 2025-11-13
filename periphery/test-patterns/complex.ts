@@ -17,7 +17,7 @@ export class ComplexClassToSplit {
     method11(): void {}
 }
 
-export class DataClass {
+export class DataClassModel {
     name: string;
     value: number;
 }

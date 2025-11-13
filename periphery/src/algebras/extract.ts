@@ -104,7 +104,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
     emptyMetadata,
     combineMetadata,
     {
-        ClassDecl: (name, heritage, members, typeParams) => {
+        ClassDecl: (name, heritage, members, typeParams, isExported) => {
             // Combine children's metadata
             const childMeta = [...heritage, ...members, ...typeParams].reduce(
                 combineMetadata,
@@ -139,13 +139,20 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 typeParams: typeParamNames,
             };
 
+            const exports: ExportMeta[] = isExported ? [{
+                type: 'export',
+                to: null,
+                named: [name],
+            }] : [];
+
             return {
                 ...childMeta,
                 classes: [classMeta, ...childMeta.classes],
+                exports: [...exports, ...childMeta.exports],
             };
         },
 
-        InterfaceDecl: (name, heritage, members, typeParams) => {
+        InterfaceDecl: (name, heritage, members, typeParams, isExported) => {
             const childMeta = [...heritage, ...members, ...typeParams].reduce(
                 combineMetadata,
                 emptyMetadata
@@ -167,9 +174,16 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 typeParams: typeParamNames,
             };
 
+            const exports: ExportMeta[] = isExported ? [{
+                type: 'export',
+                to: null,
+                named: [name],
+            }] : [];
+
             return {
                 ...childMeta,
                 interfaces: [interfaceMeta, ...childMeta.interfaces],
+                exports: [...exports, ...childMeta.exports],
             };
         },
 
@@ -193,7 +207,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
         },
 
-        FunctionDecl: (name, params, returnType, body) => {
+        FunctionDecl: (name, params, returnType, body, isExported) => {
             const childMeta = [
                 ...params,
                 ...(returnType ? [returnType] : []),
@@ -207,9 +221,16 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 hasBody: body !== null,
             };
 
+            const exports: ExportMeta[] = (isExported && name) ? [{
+                type: 'export',
+                to: null,
+                named: [name],
+            }] : [];
+
             return {
                 ...childMeta,
                 functions: [functionMeta, ...childMeta.functions],
+                exports: [...exports, ...childMeta.exports],
             };
         },
 

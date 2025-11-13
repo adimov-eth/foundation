@@ -46,14 +46,16 @@ export type CodeAlg<A> = {
         name: string,
         heritage: A[],
         members: A[],
-        typeParams: A[]
+        typeParams: A[],
+        isExported: boolean
     ) => A;
 
     InterfaceDecl: (
         name: string,
         heritage: A[],
         members: A[],
-        typeParams: A[]
+        typeParams: A[],
+        isExported: boolean
     ) => A;
 
     MethodDecl: (
@@ -73,7 +75,8 @@ export type CodeAlg<A> = {
         name: string | null,
         params: A[],
         returnType: A | null,
-        body: A | null
+        body: A | null,
+        isExported: boolean
     ) => A;
 
     VariableStmt: (declarations: A[]) => A;
@@ -136,14 +139,16 @@ export type CodePara<A> = {
         name: string,
         heritage: [A, Node][],
         members: [A, Node][],
-        typeParams: [A, Node][]
+        typeParams: [A, Node][],
+        isExported: boolean
     ) => A;
 
     InterfaceDecl: (
         name: string,
         heritage: [A, Node][],
         members: [A, Node][],
-        typeParams: [A, Node][]
+        typeParams: [A, Node][],
+        isExported: boolean
     ) => A;
 
     MethodDecl: (
@@ -163,7 +168,8 @@ export type CodePara<A> = {
         name: string | null,
         params: [A, Node][],
         returnType: [A, Node] | null,
-        body: [A, Node] | null
+        body: [A, Node] | null,
+        isExported: boolean
     ) => A;
 
     VariableStmt: (declarations: [A, Node][]) => A;
@@ -241,7 +247,8 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const implementsTypes = node.getImplements().map(go);
             const members = node.getMembers().map(go);
             const typeParams = node.getTypeParameters().map(go);
-            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams);
+            const isExported = node.isExported();
+            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported);
         }
 
         // Interface declaration
@@ -250,7 +257,8 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const heritage = node.getExtends().map(go);
             const members = node.getMembers().map(go);
             const typeParams = node.getTypeParameters().map(go);
-            return alg.InterfaceDecl(name, heritage, members, typeParams);
+            const isExported = node.isExported();
+            return alg.InterfaceDecl(name, heritage, members, typeParams, isExported);
         }
 
         // Method declaration
@@ -285,11 +293,13 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const params = node.getParameters().map(go);
             const returnType = node.getReturnTypeNode();
             const body = node.getBody();
+            const isExported = node.isExported();
             return alg.FunctionDecl(
                 name,
                 params,
                 returnType ? go(returnType) : null,
-                body ? go(body) : null
+                body ? go(body) : null,
+                isExported
             );
         }
 
@@ -389,7 +399,8 @@ export const para = <A>(alg: CodePara<A>) => {
             const implementsTypes = foldChildren(node.getImplements());
             const members = foldChildren(node.getMembers());
             const typeParams = foldChildren(node.getTypeParameters());
-            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams);
+            const isExported = node.isExported();
+            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported);
         }
 
         // Interface declaration
@@ -398,7 +409,8 @@ export const para = <A>(alg: CodePara<A>) => {
             const heritage = foldChildren(node.getExtends());
             const members = foldChildren(node.getMembers());
             const typeParams = foldChildren(node.getTypeParameters());
-            return alg.InterfaceDecl(name, heritage, members, typeParams);
+            const isExported = node.isExported();
+            return alg.InterfaceDecl(name, heritage, members, typeParams, isExported);
         }
 
         // Method declaration
@@ -433,11 +445,13 @@ export const para = <A>(alg: CodePara<A>) => {
             const params = foldChildren(node.getParameters());
             const returnType = node.getReturnTypeNode();
             const body = node.getBody();
+            const isExported = node.isExported();
             return alg.FunctionDecl(
                 name,
                 params,
                 returnType ? [go(returnType), returnType] : null,
-                body ? [go(body), body] : null
+                body ? [go(body), body] : null,
+                isExported
             );
         }
 
@@ -526,11 +540,11 @@ export const monoidAlg = <A>(
     const combineAll = (xs: A[]): A => xs.reduce(concat, empty);
 
     return {
-        ClassDecl: cases.ClassDecl ?? ((_name, heritage, members, typeParams) =>
+        ClassDecl: cases.ClassDecl ?? ((_name, heritage, members, typeParams, _isExported) =>
             combineAll([...heritage, ...members, ...typeParams])
         ),
 
-        InterfaceDecl: cases.InterfaceDecl ?? ((_name, heritage, members, typeParams) =>
+        InterfaceDecl: cases.InterfaceDecl ?? ((_name, heritage, members, typeParams, _isExported) =>
             combineAll([...heritage, ...members, ...typeParams])
         ),
 
@@ -542,7 +556,7 @@ export const monoidAlg = <A>(
             combineAll([...(type ? [type] : []), ...(initializer ? [initializer] : [])])
         ),
 
-        FunctionDecl: cases.FunctionDecl ?? ((_name, params, returnType, body) =>
+        FunctionDecl: cases.FunctionDecl ?? ((_name, params, returnType, body, _isExported) =>
             combineAll([...params, ...(returnType ? [returnType] : []), ...(body ? [body] : [])])
         ),
 

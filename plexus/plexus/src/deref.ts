@@ -1,14 +1,14 @@
 // Dereference both tuple and legacy object references
 // eslint-disable-next-line sonarjs/function-return-type
 import * as Y from "yjs";
-import type { AllowedYJSValue, AllowedYValue } from "./proxy-runtime-types";
+import type { AllowedYJSValue, AllowedYValue } from "./proxy-runtime-types.js";
 import invariant from "tiny-invariant";
-import { YJS_GLOBALS } from "./YJS_GLOBALS";
-import { entityClasses } from "./globals";
-import { documentEntityCaches } from "./entity-cache";
-import { isTupleReference } from "./utils";
-import { ConcretePlexusConstructor } from "./PlexusModel";
-import { getDependencyDoc } from "./plexus-registry";
+import { YJS_GLOBALS } from "./YJS_GLOBALS.js";
+import { entityClasses } from "./globals.js";
+import { documentEntityCaches } from "./entity-cache.js";
+import { isTupleReference } from "./utils/index.js";
+import { ConcretePlexusConstructor } from "./PlexusModel.js";
+import { getDependencyDoc } from "./plexus-registry.js";
 
 export const deref = (doc: Y.Doc, pointer: AllowedYValue | undefined): AllowedYJSValue => {
   if (pointer == null) {

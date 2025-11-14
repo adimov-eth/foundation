@@ -21,7 +21,7 @@
  * - createTrackedFunction: Main API for React integration
  */
 
-import {flushNotifications, isTransacting, pendingNotifications} from "./utils";
+import {flushNotifications, isTransacting, pendingNotifications} from "./utils/index.js";
 
 // Special symbols for tracking comprehensive access patterns
 export const ACCESS_ALL_SYMBOL = Symbol("ACCESS_ALL");

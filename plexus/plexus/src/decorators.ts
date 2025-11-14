@@ -1,4 +1,4 @@
-import { PlexusConstructor, PlexusModel } from "./PlexusModel";
+import { PlexusConstructor, PlexusModel } from "./PlexusModel.js";
 import {
   AllowedYJSValue,
   backingStorageSymbol,
@@ -6,19 +6,19 @@ import {
   informAdoptionSymbol,
   requestEmancipationSymbol,
   requestOrphanizationSymbol,
-} from "./proxy-runtime-types";
+} from "./proxy-runtime-types.js";
 import invariant from "tiny-invariant";
-import { entityClasses } from "./globals";
-import { __untracked__, trackAccess, trackModification } from "./tracking";
+import { entityClasses } from "./globals.js";
+import { __untracked__, trackAccess, trackModification } from "./tracking.js";
 import {
   DefaultedMap,
   DefaultedWeakMap,
   maybeReference,
   maybeTransacting,
-} from "./utils";
-import { buildRecordProxy } from "./proxies/materialized-map";
-import { buildSetProxy } from "./proxies/materialized-set";
-import { buildArrayProxy } from "./proxies/materialized-array";
+} from "./utils/index.js";
+import { buildRecordProxy } from "./proxies/materialized-map.js";
+import { buildSetProxy } from "./proxies/materialized-set.js";
+import { buildArrayProxy } from "./proxies/materialized-array.js";
 
 const argsAreClassDecoratorArgs = <
   Model extends PlexusModel,

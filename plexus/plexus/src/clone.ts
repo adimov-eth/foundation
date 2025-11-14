@@ -1,6 +1,6 @@
-import { isPlexusEntity } from "./proxy-runtime-types";
-import { __untracked__, ACCESS_ALL_SYMBOL, trackAccess } from "./tracking";
-import { type ConcretePlexusConstructor, PlexusModel } from "./PlexusModel";
+import { isPlexusEntity } from "./proxy-runtime-types.js";
+import { __untracked__, ACCESS_ALL_SYMBOL, trackAccess } from "./tracking.js";
+import { type ConcretePlexusConstructor, PlexusModel } from "./PlexusModel.js";
 
 // Global clone transaction mapping for handling cycles and deduplication
 let cloneTransactionMapping: WeakMap<any, any> | null = null;

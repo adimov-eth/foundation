@@ -7,13 +7,13 @@ import {
   ReadonlyField,
   requestAdoptionSymbol,
   requestOrphanizationSymbol
-} from "../proxy-runtime-types";
-import { maybeReference, maybeTransacting } from "../utils";
-import { ACCESS_ALL_SYMBOL, ACCESS_INDICES_SET_SYMBOL, trackAccess, trackModification } from "../tracking";
-import { YJS_GLOBALS } from "../YJS_GLOBALS";
-import { PlexusModel } from "../PlexusModel";
-import { deref } from "../deref";
-import { undoManagerNotifications } from "../Plexus";
+} from "../proxy-runtime-types.js";
+import { maybeReference, maybeTransacting } from "../utils/index.js";
+import { ACCESS_ALL_SYMBOL, ACCESS_INDICES_SET_SYMBOL, trackAccess, trackModification } from "../tracking.js";
+import { YJS_GLOBALS } from "../YJS_GLOBALS.js";
+import { PlexusModel } from "../PlexusModel.js";
+import { deref } from "../deref.js";
+import { undoManagerNotifications } from "../Plexus.js";
 
 export type MaterializedRecordProxyInitTarget = {
   owner: PlexusModel;

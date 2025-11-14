@@ -1,8 +1,8 @@
 import type { OptionalKeysOf, UnionToIntersection } from "type-fest";
 import type * as Y from "yjs";
-import { curryMaybeReference } from "./utils";
-import { DependencyId } from "./Plexus";
-import { PlexusModel } from "./PlexusModel";
+import { curryMaybeReference } from "./utils/index.js";
+import { DependencyId } from "./Plexus.js";
+import { PlexusModel } from "./PlexusModel.js";
 
 export const isPlexusEntity = Symbol("is Plexus proxy");
 export const referenceSymbol = Symbol("reference");

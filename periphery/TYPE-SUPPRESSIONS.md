@@ -17,14 +17,21 @@ Y.Array.from(
 )
 ```
 
-**Issue**: YJS `Array.from` doesn't properly support boolean types
+**Issue**: YJS `Array.from` type definition doesn't accept boolean in mapped output
 
-**Impact**: Type safety gap in array initialization - booleans might not serialize correctly
+**Root cause**:
+```typescript
+// The mapper transforms PlexusModel → ReferenceTuple, passes primitives through
+curryMaybeReference: (val: AllowedYJSValue) => AllowedYValue
+// Where AllowedYValue = string | number | boolean | null | ReferenceTuple
 
-**Fix options**:
-1. Report to YJS maintainers
-2. Create wrapper type that coerces booleans
-3. Add runtime validation
+// Runtime: works correctly (booleans pass through unchanged)
+// Types: Y.Array.from signature excludes boolean from mapped output type
+```
+
+**Impact**: None - runtime works, suppressions document type limitation
+
+**Conclusion**: YJS type definition issue, not a code bug. Suppressions appropriate.
 
 ---
 
@@ -101,8 +108,12 @@ public readonly undoManager: UndoManager;
 | UndoManager Type | 1 | LOW | Yes - improve imports |
 | Test Overrides | 2 | INFO | No - intentional test |
 
-## Next Steps
+## Conclusion
 
-1. **Immediate**: Add runtime validation for boolean arrays in YJS serialization
-2. **Short-term**: Report boolean type issue to YJS maintainers
-3. **Long-term**: Monitor TypeScript 5.x decorator support
+All suppressions are appropriate:
+- YJS type issues (4): Type system limitation, runtime works
+- Decorator patterns (2): Language limitation until TS 5.x
+- UndoManager (1): Could improve import
+- Test overrides (2): Intentional test patterns
+
+**No action needed.** The suppressions document known limitations, not bugs.

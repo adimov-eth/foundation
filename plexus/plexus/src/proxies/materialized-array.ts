@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { ACCESS_ALL_SYMBOL, ACCESS_INDICES_SET_SYMBOL, trackAccess, trackModification } from "../tracking";
+import { ACCESS_ALL_SYMBOL, ACCESS_INDICES_SET_SYMBOL, trackAccess, trackModification } from "../tracking.js";
 import {
   AllowedYJSValue,
   AllowedYValue,
@@ -8,11 +8,11 @@ import {
   materializationSymbol,
   ReadonlyField,
   requestAdoptionSymbol,
-} from "../proxy-runtime-types";
-import { maybeReference, maybeTransacting } from "../utils";
-import { mutableArrayMethods } from "../globals";
-import { PlexusModel } from "../PlexusModel";
-import { undoManagerNotifications } from "../Plexus";
+} from "../proxy-runtime-types.js";
+import { maybeReference, maybeTransacting } from "../utils/index.js";
+import { mutableArrayMethods } from "../globals.js";
+import { PlexusModel } from "../PlexusModel.js";
+import { undoManagerNotifications } from "../Plexus.js";
 
 /**
  * Important implementation nuances

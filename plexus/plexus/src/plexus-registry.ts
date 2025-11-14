@@ -5,8 +5,8 @@
 
 import * as Y from "yjs";
 // noinspection ES6PreferShortImport
-import { DefaultedWeakMap } from "./utils/defaulted-collections";
-import type { DependencyId, DependencyVersion } from "./Plexus";
+import { DefaultedWeakMap } from "./utils/defaulted-collections.js";
+import type { DependencyId, DependencyVersion } from "./Plexus.js";
 
 // Track which docs have Plexus instances.
 // Any is only used because we have some issues with cyclic imports here

@@ -6,12 +6,12 @@ import {
   materializationSymbol,
   ReadonlyField,
   requestAdoptionSymbol
-} from "../proxy-runtime-types";
-import { maybeReference, maybeTransacting } from "../utils";
-import { ACCESS_ALL_SYMBOL, trackAccess, trackModification } from "../tracking";
-import { deref } from "../deref";
-import { PlexusModel } from "../PlexusModel";
-import { undoManagerNotifications } from "../Plexus";
+} from "../proxy-runtime-types.js";
+import { maybeReference, maybeTransacting } from "../utils/index.js";
+import { ACCESS_ALL_SYMBOL, trackAccess, trackModification } from "../tracking.js";
+import { deref } from "../deref.js";
+import { PlexusModel } from "../PlexusModel.js";
+import { undoManagerNotifications } from "../Plexus.js";
 
 export type MaterializedSetProxyInitTarget = {
   owner: PlexusModel;

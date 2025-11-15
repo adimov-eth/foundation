@@ -8,7 +8,7 @@
 import { DiscoveryToolInteraction } from '@here.build/arrival-mcp';
 import { Project, type SourceFile } from 'ts-morph';
 import * as z from 'zod';
-import { readFileSync, statSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { glob } from 'glob';
 import { resolve, relative, isAbsolute, join, dirname } from 'path';
 import { cata } from './catamorphism.js';
@@ -18,20 +18,13 @@ import { findPatterns as findPatternsImpl } from './algebras/patterns.js';
 import { dependencyAlg } from './algebras/dependencies.js';
 import { typeAlg } from './algebras/types.js';
 import {
-    metadataToInheritanceGraph,
-    metadataToCallGraph,
-    dependencyGraphToHG,
-    typeGraphToHG,
-    plexusModelGraph,
-} from './algebras/ast-to-hypergraph.js';
-import {
     hypergraphToDOT,
     hypergraphToAdjacency,
     hypergraphMetrics,
     toCycles,
     toPathChecker,
 } from './algebras/hypergraph-interpreters.js';
-import { overlay, connect, type HyperGraph } from './hypergraph.js';
+import { empty, vertex, edge, overlay, connect, vertices, edges as edgeList, type HyperGraph } from './hypergraph.js';
 
 type DiscoveryContext = {
     projectPath?: string;
@@ -259,77 +252,45 @@ Example: (cata-with-path 'dependencies "src/index.ts" (parse-file "src/index.ts"
             }
         );
 
+        // ========================================
+        // Hypergraph Construction Primitives
+        // ========================================
+
         this.registerFunction(
-            'file-stats',
-            'Get file statistics',
+            'hg-empty',
+            'Empty hypergraph',
+            [],
+            () => this.serializeHyperGraph(empty)
+        );
+
+        this.registerFunction(
+            'hg-vertex',
+            'Create vertex in hypergraph',
             [z.string()],
-            (filePath: string) => {
-                const stats = statSync(this.resolvePath(filePath));
-                return {
-                    size: stats.size,
-                    modified: stats.mtime.toISOString(),
-                    created: stats.birthtime.toISOString(),
-                    isFile: stats.isFile(),
-                    isDirectory: stats.isDirectory(),
-                };
-            }
-        );
-
-        // ========================================
-        // Hypergraph Builders
-        // ========================================
-
-        this.registerFunction(
-            'build-inheritance-graph',
-            `Build inheritance hypergraph from extract metadata.
-
-Example: (build-inheritance-graph (cata 'extract (parse-file "file.ts")))
-Compose with: overlay-graphs, hypergraph-to-dot`,
-            [z.any()],
-            (metadata: any) => {
-                const hg = metadataToInheritanceGraph(metadata);
-                return this.serializeHyperGraph(hg);
-            }
+            (v: string) => this.serializeHyperGraph(vertex(v))
         );
 
         this.registerFunction(
-            'build-call-graph',
-            'Build call graph from extract metadata',
-            [z.any()],
-            (metadata: any) => {
-                const hg = metadataToCallGraph(metadata);
-                return this.serializeHyperGraph(hg);
-            }
+            'hg-edge',
+            `Create hyperedge connecting vertices.
+
+Example: (hg-edge "Task" "PlexusModel") ; Task → PlexusModel`,
+            [z.array(z.string())],
+            (vs: string[]) => this.serializeHyperGraph(edge(...vs))
         );
 
         this.registerFunction(
-            'build-dependency-graph-hg',
-            'Convert dependency graph to hypergraph',
-            [z.any()],
-            (depGraph: any) => {
-                const hg = dependencyGraphToHG(depGraph);
-                return this.serializeHyperGraph(hg);
-            }
+            'hg-vertices',
+            'Create graph with multiple vertices',
+            [z.array(z.string())],
+            (vs: string[]) => this.serializeHyperGraph(vertices(vs))
         );
 
         this.registerFunction(
-            'build-type-graph-hg',
-            'Convert type graph to hypergraph',
-            [z.any()],
-            (typeGraph: any) => {
-                const hg = typeGraphToHG(typeGraph);
-                return this.serializeHyperGraph(hg);
-            }
-        );
-
-        this.registerFunction(
-            'build-plexus-graph',
-            'Build PlexusModel subclass graph',
-            [z.any()],
-            (metadata: any) => {
-                const hg = plexusModelGraph(metadata);
-                return this.serializeHyperGraph(hg);
-            }
+            'hg-edges',
+            'Create graph from edge list',
+            [z.array(z.array(z.string()))],
+            (edgesList: string[][]) => this.serializeHyperGraph(edgeList(edgesList))
         );
 
         // ========================================

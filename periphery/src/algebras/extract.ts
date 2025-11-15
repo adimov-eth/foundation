@@ -104,7 +104,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
     emptyMetadata,
     combineMetadata,
     {
-        ClassDecl: (name, heritage, members, typeParams, isExported) => {
+        ClassDecl: (name, heritage, members, typeParams, isExported, isDefault) => {
             // Combine children's metadata
             const childMeta = [...heritage, ...members, ...typeParams].reduce(
                 combineMetadata,
@@ -139,10 +139,12 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 typeParams: typeParamNames,
             };
 
-            const exports: ExportMeta[] = isExported ? [{
+            // Check if this is a default export
+            const exportName = isExported ? (isDefault ? ['default'] : [name]) : [];
+            const exports: ExportMeta[] = exportName.length > 0 ? [{
                 type: 'export',
                 to: null,
-                named: [name],
+                named: exportName,
             }] : [];
 
             return {
@@ -207,7 +209,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
         },
 
-        FunctionDecl: (name, params, returnType, body, isExported) => {
+        FunctionDecl: (name, params, returnType, body, isExported, isDefault) => {
             const childMeta = [
                 ...params,
                 ...(returnType ? [returnType] : []),
@@ -221,10 +223,11 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 hasBody: body !== null,
             };
 
-            const exports: ExportMeta[] = (isExported && name) ? [{
+            const exportName = (isExported && name) ? (isDefault ? ['default'] : [name]) : [];
+            const exports: ExportMeta[] = exportName.length > 0 ? [{
                 type: 'export',
                 to: null,
-                named: [name],
+                named: exportName,
             }] : [];
 
             return {
@@ -281,6 +284,20 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 named,
             }],
         }),
+
+        ExportAssignment: (expression, isExportEquals) => {
+            // expression contains metadata from the exported value
+            // For `export default value`, we want to capture "default" export
+            // For `export = value` (CommonJS), isExportEquals is true
+            return {
+                ...expression,
+                exports: [{
+                    type: 'export',
+                    to: null,
+                    named: isExportEquals ? ['='] : ['default'],
+                }, ...expression.exports],
+            };
+        },
 
         TypeReference: (name, typeArgs) => {
             const childMeta = typeArgs.reduce(combineMetadata, emptyMetadata);

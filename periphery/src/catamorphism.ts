@@ -47,7 +47,8 @@ export type CodeAlg<A> = {
         heritage: A[],
         members: A[],
         typeParams: A[],
-        isExported: boolean
+        isExported: boolean,
+        isDefault: boolean
     ) => A;
 
     InterfaceDecl: (
@@ -76,7 +77,8 @@ export type CodeAlg<A> = {
         params: A[],
         returnType: A | null,
         body: A | null,
-        isExported: boolean
+        isExported: boolean,
+        isDefault: boolean
     ) => A;
 
     VariableStmt: (declarations: A[], isExported: boolean) => A;
@@ -113,6 +115,11 @@ export type CodeAlg<A> = {
         namedExports: string[]
     ) => A;
 
+    ExportAssignment: (
+        expression: A,
+        isExportEquals: boolean
+    ) => A;
+
     // Types
     TypeReference: (
         name: string,
@@ -142,7 +149,8 @@ export type CodePara<A> = {
         heritage: [A, Node][],
         members: [A, Node][],
         typeParams: [A, Node][],
-        isExported: boolean
+        isExported: boolean,
+        isDefault: boolean
     ) => A;
 
     InterfaceDecl: (
@@ -171,7 +179,8 @@ export type CodePara<A> = {
         params: [A, Node][],
         returnType: [A, Node] | null,
         body: [A, Node] | null,
-        isExported: boolean
+        isExported: boolean,
+        isDefault: boolean
     ) => A;
 
     VariableStmt: (declarations: [A, Node][], isExported: boolean) => A;
@@ -206,6 +215,11 @@ export type CodePara<A> = {
     ExportDecl: (
         moduleSpecifier: string | null,
         namedExports: string[]
+    ) => A;
+
+    ExportAssignment: (
+        expression: [A, Node],
+        isExportEquals: boolean
     ) => A;
 
     // Types
@@ -252,7 +266,8 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const members = node.getMembers().map(go);
             const typeParams = node.getTypeParameters().map(go);
             const isExported = node.isExported();
-            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported);
+            const isDefault = node.hasDefaultKeyword?.() ?? false;
+            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported, isDefault);
         }
 
         // Interface declaration
@@ -298,12 +313,14 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const returnType = node.getReturnTypeNode();
             const body = node.getBody();
             const isExported = node.isExported();
+            const isDefault = node.hasDefaultKeyword?.() ?? false;
             return alg.FunctionDecl(
                 name,
                 params,
                 returnType ? go(returnType) : null,
                 body ? go(body) : null,
-                isExported
+                isExported,
+                isDefault
             );
         }
 
@@ -379,7 +396,18 @@ export const cata = <A>(alg: CodeAlg<A>) => {
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namedExports = node.getNamedExports().map(e => e.getName());
-            return alg.ExportDecl(moduleSpec, namedExports);
+            const namespaceExport = node.getNamespaceExport();
+            const exportNames = namespaceExport
+                ? [`* as ${namespaceExport.getName()}`]
+                : namedExports;
+            return alg.ExportDecl(moduleSpec, exportNames);
+        }
+
+        // Export assignment (default export)
+        if (Node.isExportAssignment(node)) {
+            const expr = node.getExpression();
+            const isExportEquals = node.isExportEquals();
+            return alg.ExportAssignment(go(expr), isExportEquals);
         }
 
         // Type reference
@@ -432,7 +460,8 @@ export const para = <A>(alg: CodePara<A>) => {
             const members = foldChildren(node.getMembers());
             const typeParams = foldChildren(node.getTypeParameters());
             const isExported = node.isExported();
-            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported);
+            const isDefault = node.hasDefaultKeyword?.() ?? false;
+            return alg.ClassDecl(name, [...heritage, ...implementsTypes], members, typeParams, isExported, isDefault);
         }
 
         // Interface declaration
@@ -478,12 +507,14 @@ export const para = <A>(alg: CodePara<A>) => {
             const returnType = node.getReturnTypeNode();
             const body = node.getBody();
             const isExported = node.isExported();
+            const isDefault = node.hasDefaultKeyword?.() ?? false;
             return alg.FunctionDecl(
                 name,
                 params,
                 returnType ? [go(returnType), returnType] : null,
                 body ? [go(body), body] : null,
-                isExported
+                isExported,
+                isDefault
             );
         }
 
@@ -561,7 +592,18 @@ export const para = <A>(alg: CodePara<A>) => {
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namedExports = node.getNamedExports().map(e => e.getName());
-            return alg.ExportDecl(moduleSpec, namedExports);
+            const namespaceExport = node.getNamespaceExport();
+            const exportNames = namespaceExport
+                ? [`* as ${namespaceExport.getName()}`]
+                : namedExports;
+            return alg.ExportDecl(moduleSpec, exportNames);
+        }
+
+        // Export assignment (default export)
+        if (Node.isExportAssignment(node)) {
+            const expr = node.getExpression();
+            const isExportEquals = node.isExportEquals();
+            return alg.ExportAssignment([go(expr), expr], isExportEquals);
         }
 
         // Type reference
@@ -600,7 +642,7 @@ export const monoidAlg = <A>(
     const combineAll = (xs: A[]): A => xs.reduce(concat, empty);
 
     return {
-        ClassDecl: cases.ClassDecl ?? ((_name, heritage, members, typeParams, _isExported) =>
+        ClassDecl: cases.ClassDecl ?? ((_name, heritage, members, typeParams, _isExported, _isDefault) =>
             combineAll([...heritage, ...members, ...typeParams])
         ),
 
@@ -616,7 +658,7 @@ export const monoidAlg = <A>(
             combineAll([...(type ? [type] : []), ...(initializer ? [initializer] : [])])
         ),
 
-        FunctionDecl: cases.FunctionDecl ?? ((_name, params, returnType, body, _isExported) =>
+        FunctionDecl: cases.FunctionDecl ?? ((_name, params, returnType, body, _isExported, _isDefault) =>
             combineAll([...params, ...(returnType ? [returnType] : []), ...(body ? [body] : [])])
         ),
 
@@ -646,6 +688,10 @@ export const monoidAlg = <A>(
 
         ExportDecl: cases.ExportDecl ?? ((_moduleSpecifier, _namedExports) =>
             empty
+        ),
+
+        ExportAssignment: cases.ExportAssignment ?? ((expression, _isExportEquals) =>
+            expression
         ),
 
         TypeReference: cases.TypeReference ?? ((_name, typeArgs) =>

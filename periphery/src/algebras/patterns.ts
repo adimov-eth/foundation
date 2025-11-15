@@ -162,7 +162,7 @@ const filterHelpers = (patterns: Patterns): Patterns =>
  * - Context flows from ClassDecl → MethodDecl → child patterns
  */
 const patternPara: CodePara<Patterns> = {
-    ClassDecl: (name, heritagePairs, memberPairs, typeParamPairs) => {
+    ClassDecl: (name, heritagePairs, memberPairs, typeParamPairs, _isExported, _isDefault) => {
         // Extract patterns from children
         const heritagePatterns = heritagePairs.map(([p]) => p).reduce(combinePatterns, emptyPatterns);
         const memberPatterns = memberPairs.map(([p]) => p).reduce(combinePatterns, emptyPatterns);
@@ -234,7 +234,7 @@ const patternPara: CodePara<Patterns> = {
         return childPatterns;
     },
 
-    FunctionDecl: (name, paramsPairs, returnTypePair, bodyPair) => {
+    FunctionDecl: (name, paramsPairs, returnTypePair, bodyPair, _isExported, _isDefault) => {
         // Combine child patterns
         const childPatterns = [
             ...paramsPairs.map(([p]) => p),
@@ -328,6 +328,11 @@ const patternPara: CodePara<Patterns> = {
 
     ExportDecl: (moduleSpecifier, namedExports) => {
         return emptyPatterns;
+    },
+
+    ExportAssignment: (expressionPair, isExportEquals) => {
+        // Combine patterns from exported expression
+        return expressionPair[0];
     },
 
     TypeReference: (name, typeArgsPairs) => {

@@ -88,7 +88,8 @@ export type CodeAlg<A> = {
     TypeAlias: (
         name: string,
         typeParams: A[],
-        type: A
+        type: A,
+        isExported: boolean
     ) => A;
 
     // Expressions
@@ -190,7 +191,8 @@ export type CodePara<A> = {
     TypeAlias: (
         name: string,
         typeParams: [A, Node][],
-        type: [A, Node]
+        type: [A, Node],
+        isExported: boolean
     ) => A;
 
     // Expressions
@@ -366,7 +368,8 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             if (!typeNode) {
                 throw new Error(`Type alias ${name} has no type node`);
             }
-            return alg.TypeAlias(name, typeParams, go(typeNode));
+            const isExported = node.isExported();
+            return alg.TypeAlias(name, typeParams, go(typeNode), isExported);
         }
 
         // Call expression
@@ -395,11 +398,13 @@ export const cata = <A>(alg: CodeAlg<A>) => {
         // Export declaration
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
-            const namedExports = node.getNamedExports().map(e => e.getName());
             const namespaceExport = node.getNamespaceExport();
             const exportNames = namespaceExport
                 ? [`* as ${namespaceExport.getName()}`]
-                : namedExports;
+                : node.getNamedExports().map(e => {
+                    const struct = e.getStructure();
+                    return struct.alias || struct.name;
+                });
             return alg.ExportDecl(moduleSpec, exportNames);
         }
 
@@ -560,7 +565,8 @@ export const para = <A>(alg: CodePara<A>) => {
             if (!typeNode) {
                 throw new Error(`Type alias ${name} has no type node`);
             }
-            return alg.TypeAlias(name, typeParams, [go(typeNode), typeNode]);
+            const isExported = node.isExported();
+            return alg.TypeAlias(name, typeParams, [go(typeNode), typeNode], isExported);
         }
 
         // Call expression
@@ -591,11 +597,13 @@ export const para = <A>(alg: CodePara<A>) => {
         // Export declaration
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
-            const namedExports = node.getNamedExports().map(e => e.getName());
             const namespaceExport = node.getNamespaceExport();
             const exportNames = namespaceExport
                 ? [`* as ${namespaceExport.getName()}`]
-                : namedExports;
+                : node.getNamedExports().map(e => {
+                    const struct = e.getStructure();
+                    return struct.alias || struct.name;
+                });
             return alg.ExportDecl(moduleSpec, exportNames);
         }
 
@@ -670,7 +678,7 @@ export const monoidAlg = <A>(
             combineAll([...(type ? [type] : []), ...(initializer ? [initializer] : [])])
         ),
 
-        TypeAlias: cases.TypeAlias ?? ((_name, typeParams, type) =>
+        TypeAlias: cases.TypeAlias ?? ((_name, typeParams, type, _isExported) =>
             combineAll([...typeParams, type])
         ),
 

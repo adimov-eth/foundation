@@ -266,6 +266,25 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
         },
 
+        TypeAlias: (name, typeParams, type, isExported) => {
+            const childMeta = [
+                ...typeParams,
+                type,
+            ].reduce(combineMetadata, emptyMetadata);
+
+            const exports: ExportMeta[] = isExported ? [{
+                type: 'export',
+                to: null,
+                named: [name],
+            }] : [];
+
+            return {
+                ...childMeta,
+                typeNames: [name, ...childMeta.typeNames],
+                exports: [...exports, ...childMeta.exports],
+            };
+        },
+
         ImportDecl: (from, named, defaultImport) => ({
             ...emptyMetadata,
             imports: [{

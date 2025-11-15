@@ -695,12 +695,29 @@ const metadata = cata(extractAlg)(sourceFile);
 const patterns = cata(patternAlg)(sourceFile);
 ```
 
-**Scheme queries:**
+**Discovery examples:**
 ```scheme
-(count-by-type "src/PlexusModel.ts")
-(find-classes "src/Task.ts")
-(find-patterns "src/Task.ts")
-(find-pattern-type "src/Task.ts" "plexus-model")
+; Extract metadata from file
+(define meta (cata 'extract (parse-file "plexus/plexus/src/PlexusModel.ts")))
+(@ meta :classes)  ; => list of class metadata
+(@ meta :exports)  ; => list of exports with discriminated union structure
+
+; Find emancipation patterns
+(cata 'patterns (parse-file "plexus/plexus/src/PlexusModel.ts"))
+; => [{:type "emancipate-call" :location {:methodName "..." :className "..."} ...}]
+
+; Build dependency hypergraph
+(define deps (cata-with-path 'dependencies "src/index.ts" (parse-file "src/index.ts")))
+(define graph (hg-edges (map (lambda (e) (list (@ e :from) (@ e :to))) (@ deps :edges))))
+(hypergraph-to-dot graph)
+```
+
+**Action examples:**
+```scheme
+; Atomic batch refactoring (all-or-nothing)
+(act '((rename-symbol "src/old.ts" "OldName" "NewName")
+       (add-import "src/consumer.ts" "./new.js" ("NewName") "")
+       (remove-unused-imports "src/consumer.ts")))
 ```
 
 ### Why This Proves the Pattern

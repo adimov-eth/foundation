@@ -179,26 +179,28 @@ export class EGraph {
       const id = worklist.pop()!;
       const nodes = this.getNodes(id);
 
-      // Check if any nodes are now congruent
-      const nodesByHash = new Map<string, ENode[]>();
+      // Check each node for congruence with existing nodes
       for (const node of nodes) {
         const canonical = this.canonicalize(node);
         const hash = hashNode(canonical);
-        const existing = nodesByHash.get(hash) ?? [];
-        existing.push(node);
-        nodesByHash.set(hash, existing);
-      }
 
-      // Merge congruent nodes
-      for (const [hash, congruentNodes] of nodesByHash) {
-        if (congruentNodes.length > 1) {
-          const existing = this.hashCons.get(hash);
-          if (existing !== undefined && this.find(existing) !== id) {
-            const merged = this.merge(id, existing);
+        // Check if this hash exists in another e-class
+        const existing = this.hashCons.get(hash);
+        if (existing !== undefined) {
+          const existingCanonical = this.find(existing);
+          const currentCanonical = this.find(id);
+
+          if (existingCanonical !== currentCanonical) {
+            // Congruent nodes in different classes - merge them
+            const merged = this.merge(currentCanonical, existingCanonical);
             if (merged) {
-              worklist.push(this.find(id));
+              // Re-add merged class to worklist
+              worklist.push(this.find(currentCanonical));
             }
           }
+        } else {
+          // Update hashCons with canonicalized node
+          this.hashCons.set(hash, id);
         }
       }
     }
@@ -355,36 +357,127 @@ function setChildren(op: ENode['op'], data: Record<string, any>, children: EClas
 }
 
 /**
- * Saturate: Apply rules until fixpoint
+ * Saturate: Apply rules until fixpoint with cost-guided search
+ *
+ * Based on egg (Willsey et al., 2021) equality saturation algorithm:
+ * 1. Track best cost for each e-class
+ * 2. Apply rules, but prune rewrites that don't improve cost
+ * 3. Limit nodes per e-class to prevent explosion
+ * 4. Stop when no cost improvements found
+ *
+ * This prevents unbounded growth while still finding useful patterns.
  */
-export function saturate(egraph: EGraph, rules: Rule[], maxIter = 100): number {
-  let iter = 0;
-  let changed = true;
+export function saturate(
+  egraph: EGraph,
+  rules: Rule[],
+  maxIter = 100,
+  costFn: (node: ENode) => number = astSize,
+  opts: { nodeLimitPerClass?: number; costThreshold?: number } = {}
+): number {
+  const { nodeLimitPerClass = 20, costThreshold = 1000 } = opts;
 
-  while (changed && iter < maxIter) {
-    changed = false;
+  // Track best cost per e-class
+  const classCosts = new Map<EClassId, number>();
+
+  // Track nodes being computed (cycle detection)
+  const computing = new Set<EClassId>();
+
+  // Compute costs with cycle detection
+  const computeCost = (id: EClassId): number => {
+    const canonical = egraph.find(id);
+
+    // Check cache
+    const cached = classCosts.get(canonical);
+    if (cached !== undefined) return cached;
+
+    // Detect cycles - if we're already computing this class, return high cost
+    if (computing.has(canonical)) {
+      return 1000; // Cycle cost penalty
+    }
+
+    computing.add(canonical);
+
+    const nodes = egraph.getNodes(canonical);
+    let minCost = Infinity;
+
+    for (const node of nodes) {
+      const children = getChildren(node);
+      const childCosts = children.reduce((sum, c) => sum + computeCost(c), 0);
+      const totalCost = costFn(node) + childCosts;
+      minCost = Math.min(minCost, totalCost);
+    }
+
+    if (minCost === Infinity) minCost = 0;
+
+    computing.delete(canonical);
+    classCosts.set(canonical, minCost);
+    return minCost;
+  };
+
+  let iter = 0;
+  let improvedCost = true;
+
+  while (iter < maxIter && improvedCost) {
     iter++;
+    let changed = false;
+    improvedCost = false;
+
+    // Snapshot e-classes at START of iteration
+    const eclasses = Array.from(egraph['classes'].keys());
+
+    // Compute costs before iteration
+    for (const eclass of eclasses) {
+      computeCost(eclass);
+    }
 
     for (const rule of rules) {
-      // Find all matches of lhs
-      const eclasses = Array.from(egraph['classes'].keys());
-
       for (const eclass of eclasses) {
         const matches = match(egraph, rule.lhs, eclass);
 
         for (const subst of matches) {
           // Apply rhs with substitution
           const rhsClass = applySubst(egraph, rule.rhs, subst);
+          const rhsCanonical = egraph.find(rhsClass);
+
+          // Check node limit
+          const rhsNodes = egraph.getNodes(rhsCanonical);
+          if (rhsNodes.size > nodeLimitPerClass) {
+            continue; // Prune: too many alternatives
+          }
+
+          // Check cost threshold
+          const rhsCost = computeCost(rhsCanonical);
+          if (rhsCost > costThreshold) {
+            continue; // Prune: too expensive
+          }
 
           // Merge lhs and rhs classes
-          const merged = egraph.merge(eclass, rhsClass);
-          if (merged) changed = true;
+          const lhsCanonical = egraph.find(eclass);
+          const merged = egraph.merge(lhsCanonical, rhsCanonical);
+
+          if (merged) {
+            changed = true;
+
+            // Check if cost improved
+            const newCanonical = egraph.find(lhsCanonical);
+            const oldCost = classCosts.get(lhsCanonical) ?? Infinity;
+            classCosts.delete(newCanonical); // Invalidate cache
+            const newCost = computeCost(newCanonical);
+
+            if (newCost < oldCost) {
+              improvedCost = true;
+            }
+          }
         }
       }
     }
 
+    // Rebuild to maintain congruence after all merges
     if (changed) {
       egraph.rebuild();
+
+      // Invalidate all cost caches after rebuild (congruence may have changed costs)
+      classCosts.clear();
     }
   }
 

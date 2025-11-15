@@ -326,7 +326,7 @@ const patternPara: CodePara<Patterns> = {
         return emptyPatterns;
     },
 
-    ExportDecl: (moduleSpecifier, namedExports) => {
+    ExportDecl: (moduleSpecifier, exportInfo) => {
         return emptyPatterns;
     },
 

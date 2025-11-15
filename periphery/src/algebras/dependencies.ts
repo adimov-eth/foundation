@@ -79,16 +79,25 @@ export const dependencyAlg = (
             };
         },
 
-        ExportDecl: (moduleSpecifier, namedExports) => {
+        ExportDecl: (moduleSpecifier, exportInfo) => {
             if (!moduleSpecifier) {
                 // Re-export from current module, no edge
                 return emptyGraph;
             }
 
+            let symbols: string[];
+            if (exportInfo.kind === 'wildcard') {
+                symbols = ['*'];
+            } else if (exportInfo.kind === 'namespace') {
+                symbols = [exportInfo.name];
+            } else {
+                symbols = exportInfo.names.map(e => e.exported);
+            }
+
             const edge: Dependency = {
                 from: moduleSpecifier,
                 to: currentModule,
-                symbols: namedExports.map(e => e.exported),
+                symbols,
                 isDefault: false,
             };
 

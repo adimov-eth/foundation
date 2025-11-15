@@ -55,11 +55,10 @@ export type ImportMeta = {
     default: string | null;
 };
 
-export type ExportMeta = {
-    type: 'export';
-    to: string | null;
-    names: Array<{ source: string; exported: string }>;
-};
+export type ExportMeta =
+    | { type: 'named'; to: string | null; names: Array<{ source: string; exported: string }> }
+    | { type: 'wildcard'; to: string }
+    | { type: 'namespace'; to: string; name: string };
 
 /**
  * Combined metadata
@@ -141,7 +140,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
 
             // Check if this is a default export
             const exports: ExportMeta[] = isExported ? [{
-                type: 'export',
+                type: 'named',
                 to: null,
                 names: [{ source: name, exported: isDefault ? 'default' : name }],
             }] : [];
@@ -176,7 +175,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
 
             const exports: ExportMeta[] = isExported ? [{
-                type: 'export',
+                type: 'named',
                 to: null,
                 names: [{ source: name, exported: name }],
             }] : [];
@@ -223,7 +222,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
 
             const exports: ExportMeta[] = (isExported && name) ? [{
-                type: 'export',
+                type: 'named',
                 to: null,
                 names: [{ source: name, exported: isDefault ? 'default' : name }],
             }] : [];
@@ -240,7 +239,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             const varNames = declarations.flatMap(d => d.typeNames || []);
 
             const exports: ExportMeta[] = (isExported && varNames.length > 0) ? [{
-                type: 'export',
+                type: 'named',
                 to: null,
                 names: varNames.map(name => ({ source: name, exported: name })),
             }] : [];
@@ -271,7 +270,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             ].reduce(combineMetadata, emptyMetadata);
 
             const exports: ExportMeta[] = isExported ? [{
-                type: 'export',
+                type: 'named',
                 to: null,
                 names: [{ source: name, exported: name }],
             }] : [];
@@ -293,14 +292,22 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             }],
         }),
 
-        ExportDecl: (to, exportNames) => ({
-            ...emptyMetadata,
-            exports: [{
-                type: 'export',
-                to,
-                names: exportNames,
-            }],
-        }),
+        ExportDecl: (to, exportInfo) => {
+            let exportMeta: ExportMeta;
+
+            if (exportInfo.kind === 'wildcard') {
+                exportMeta = { type: 'wildcard', to: to! };
+            } else if (exportInfo.kind === 'namespace') {
+                exportMeta = { type: 'namespace', to: to!, name: exportInfo.name };
+            } else {
+                exportMeta = { type: 'named', to, names: exportInfo.names };
+            }
+
+            return {
+                ...emptyMetadata,
+                exports: [exportMeta],
+            };
+        },
 
         ExportAssignment: (expression, isExportEquals) => {
             // expression contains metadata from the exported value
@@ -311,7 +318,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             return {
                 ...expression,
                 exports: [{
-                    type: 'export',
+                    type: 'named',
                     to: null,
                     names: [{ source: sourceName, exported: exportedName }],
                 }, ...expression.exports],

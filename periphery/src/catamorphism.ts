@@ -113,7 +113,10 @@ export type CodeAlg<A> = {
 
     ExportDecl: (
         moduleSpecifier: string | null,
-        namedExports: Array<{ source: string; exported: string }>
+        exportInfo:
+            | { kind: 'named'; names: Array<{ source: string; exported: string }> }
+            | { kind: 'wildcard' }
+            | { kind: 'namespace'; name: string }
     ) => A;
 
     ExportAssignment: (
@@ -218,7 +221,10 @@ export type CodePara<A> = {
 
     ExportDecl: (
         moduleSpecifier: string | null,
-        namedExports: Array<{ source: string; exported: string }>
+        exportInfo:
+            | { kind: 'named'; names: Array<{ source: string; exported: string }> }
+            | { kind: 'wildcard' }
+            | { kind: 'namespace'; name: string }
     ) => A;
 
     ExportAssignment: (
@@ -403,13 +409,28 @@ export const cata = <A>(alg: CodeAlg<A>) => {
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namespaceExport = node.getNamespaceExport();
-            const exportNames = namespaceExport
-                ? [{ source: `* as ${namespaceExport.getName()}`, exported: `* as ${namespaceExport.getName()}` }]
-                : node.getNamedExports().map(e => {
-                    const struct = e.getStructure();
-                    return { source: struct.name, exported: struct.alias || struct.name };
-                });
-            return alg.ExportDecl(moduleSpec, exportNames);
+            const namedExports = node.getNamedExports();
+
+            let exportInfo:
+                | { kind: 'named'; names: Array<{ source: string; exported: string }> }
+                | { kind: 'wildcard' }
+                | { kind: 'namespace'; name: string };
+
+            if (namespaceExport) {
+                exportInfo = { kind: 'namespace', name: namespaceExport.getName() };
+            } else if (namedExports.length === 0 && moduleSpec) {
+                exportInfo = { kind: 'wildcard' };
+            } else {
+                exportInfo = {
+                    kind: 'named',
+                    names: namedExports.map(e => {
+                        const struct = e.getStructure();
+                        return { source: struct.name, exported: struct.alias || struct.name };
+                    }),
+                };
+            }
+
+            return alg.ExportDecl(moduleSpec, exportInfo);
         }
 
         // Export assignment (default export)
@@ -607,13 +628,28 @@ export const para = <A>(alg: CodePara<A>) => {
         if (Node.isExportDeclaration(node)) {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namespaceExport = node.getNamespaceExport();
-            const exportNames = namespaceExport
-                ? [{ source: `* as ${namespaceExport.getName()}`, exported: `* as ${namespaceExport.getName()}` }]
-                : node.getNamedExports().map(e => {
-                    const struct = e.getStructure();
-                    return { source: struct.name, exported: struct.alias || struct.name };
-                });
-            return alg.ExportDecl(moduleSpec, exportNames);
+            const namedExports = node.getNamedExports();
+
+            let exportInfo:
+                | { kind: 'named'; names: Array<{ source: string; exported: string }> }
+                | { kind: 'wildcard' }
+                | { kind: 'namespace'; name: string };
+
+            if (namespaceExport) {
+                exportInfo = { kind: 'namespace', name: namespaceExport.getName() };
+            } else if (namedExports.length === 0 && moduleSpec) {
+                exportInfo = { kind: 'wildcard' };
+            } else {
+                exportInfo = {
+                    kind: 'named',
+                    names: namedExports.map(e => {
+                        const struct = e.getStructure();
+                        return { source: struct.name, exported: struct.alias || struct.name };
+                    }),
+                };
+            }
+
+            return alg.ExportDecl(moduleSpec, exportInfo);
         }
 
         // Export assignment (default export)

@@ -79,7 +79,9 @@ export type CodeAlg<A> = {
         isExported: boolean
     ) => A;
 
-    VariableStmt: (declarations: A[]) => A;
+    VariableStmt: (declarations: A[], isExported: boolean) => A;
+
+    VariableDecl: (names: string[], type: A | null, initializer: A | null) => A;
 
     TypeAlias: (
         name: string,
@@ -172,7 +174,9 @@ export type CodePara<A> = {
         isExported: boolean
     ) => A;
 
-    VariableStmt: (declarations: [A, Node][]) => A;
+    VariableStmt: (declarations: [A, Node][], isExported: boolean) => A;
+
+    VariableDecl: (names: string[], type: [A, Node] | null, initializer: [A, Node] | null) => A;
 
     TypeAlias: (
         name: string,
@@ -306,7 +310,35 @@ export const cata = <A>(alg: CodeAlg<A>) => {
         // Variable statement
         if (Node.isVariableStatement(node)) {
             const declarations = node.getDeclarations().map(go);
-            return alg.VariableStmt(declarations);
+            const isExported = node.isExported();
+            return alg.VariableStmt(declarations, isExported);
+        }
+
+        // Variable declaration
+        if (Node.isVariableDeclaration(node)) {
+            const nameNode = node.getNameNode();
+            let names: string[];
+
+            if (Node.isArrayBindingPattern(nameNode)) {
+                names = nameNode.getElements()
+                    .filter((e): e is import('ts-morph').BindingElement => Node.isBindingElement(e))
+                    .map(e => e.getName());
+            } else if (Node.isObjectBindingPattern(nameNode)) {
+                names = nameNode.getElements()
+                    .filter((e): e is import('ts-morph').BindingElement => Node.isBindingElement(e))
+                    .map(e => e.getName());
+            } else {
+                // Identifier
+                names = [nameNode.getText()];
+            }
+
+            const type = node.getTypeNode();
+            const initializer = node.getInitializer();
+            return alg.VariableDecl(
+                names,
+                type ? go(type) : null,
+                initializer ? go(initializer) : null
+            );
         }
 
         // Type alias
@@ -458,7 +490,35 @@ export const para = <A>(alg: CodePara<A>) => {
         // Variable statement
         if (Node.isVariableStatement(node)) {
             const declarations = foldChildren(node.getDeclarations());
-            return alg.VariableStmt(declarations);
+            const isExported = node.isExported();
+            return alg.VariableStmt(declarations, isExported);
+        }
+
+        // Variable declaration
+        if (Node.isVariableDeclaration(node)) {
+            const nameNode = node.getNameNode();
+            let names: string[];
+
+            if (Node.isArrayBindingPattern(nameNode)) {
+                names = nameNode.getElements()
+                    .filter((e): e is import('ts-morph').BindingElement => Node.isBindingElement(e))
+                    .map(e => e.getName());
+            } else if (Node.isObjectBindingPattern(nameNode)) {
+                names = nameNode.getElements()
+                    .filter((e): e is import('ts-morph').BindingElement => Node.isBindingElement(e))
+                    .map(e => e.getName());
+            } else {
+                // Identifier
+                names = [nameNode.getText()];
+            }
+
+            const type = node.getTypeNode();
+            const initializer = node.getInitializer();
+            return alg.VariableDecl(
+                names,
+                type ? foldChildren([type])[0] : null,
+                initializer ? foldChildren([initializer])[0] : null
+            );
         }
 
         // Type alias
@@ -560,8 +620,12 @@ export const monoidAlg = <A>(
             combineAll([...params, ...(returnType ? [returnType] : []), ...(body ? [body] : [])])
         ),
 
-        VariableStmt: cases.VariableStmt ?? ((declarations) =>
+        VariableStmt: cases.VariableStmt ?? ((declarations, _isExported) =>
             combineAll(declarations)
+        ),
+
+        VariableDecl: cases.VariableDecl ?? ((_names, type, initializer) =>
+            combineAll([...(type ? [type] : []), ...(initializer ? [initializer] : [])])
         ),
 
         TypeAlias: cases.TypeAlias ?? ((_name, typeParams, type) =>

@@ -245,10 +245,19 @@ const patternPara: CodePara<Patterns> = {
         return childPatterns;
     },
 
-    VariableStmt: (declarationsPairs) => {
+    VariableStmt: (declarationsPairs, _isExported) => {
         return declarationsPairs
             .map(([p]) => p)
             .reduce(combinePatterns, emptyPatterns);
+    },
+
+    VariableDecl: (_names, typePair, initializerPair) => {
+        const childPatterns = [
+            ...(typePair ? [typePair[0]] : []),
+            ...(initializerPair ? [initializerPair[0]] : [])
+        ].reduce(combinePatterns, emptyPatterns);
+
+        return childPatterns;
     },
 
     TypeAlias: (name, typeParamsPairs, [typePattern, typeNode]) => {

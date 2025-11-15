@@ -61,7 +61,9 @@
       "Bash(pnpm run test)",
       "Bash(git reset:*)",
       "Bash(bun add:*)",
-      "Bash(bun test:*)"
+      "Bash(bun test:*)",
+      "Bash(bun run test:*)",
+      "mcp__chrome-devtools__wait_for"
     ],
     "deny": [],
     "ask": []

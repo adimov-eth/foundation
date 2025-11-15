@@ -234,6 +234,35 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
         },
 
+        VariableStmt: (declarations, isExported) => {
+            const childMeta = declarations.reduce(combineMetadata, emptyMetadata);
+            const varNames = declarations.flatMap(d => d.typeNames || []);
+
+            const exports: ExportMeta[] = (isExported && varNames.length > 0) ? [{
+                type: 'export',
+                to: null,
+                named: varNames,
+            }] : [];
+
+            return {
+                ...childMeta,
+                exports: [...exports, ...childMeta.exports],
+            };
+        },
+
+        VariableDecl: (names, type, initializer) => {
+            const childMeta = [
+                ...(type ? [type] : []),
+                ...(initializer ? [initializer] : []),
+            ].reduce(combineMetadata, emptyMetadata);
+
+            // Just return variable names in typeNames, don't include child typeNames
+            return {
+                ...childMeta,
+                typeNames: names,
+            };
+        },
+
         ImportDecl: (from, named, defaultImport) => ({
             ...emptyMetadata,
             imports: [{

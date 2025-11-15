@@ -113,7 +113,7 @@ export type CodeAlg<A> = {
 
     ExportDecl: (
         moduleSpecifier: string | null,
-        namedExports: string[]
+        namedExports: Array<{ source: string; exported: string }>
     ) => A;
 
     ExportAssignment: (
@@ -126,6 +126,8 @@ export type CodeAlg<A> = {
         name: string,
         typeArgs: A[]
     ) => A;
+
+    Identifier: (name: string) => A;
 
     // Catch-all for other nodes
     Other: (kind: SyntaxKind, children: A[]) => A;
@@ -216,7 +218,7 @@ export type CodePara<A> = {
 
     ExportDecl: (
         moduleSpecifier: string | null,
-        namedExports: string[]
+        namedExports: Array<{ source: string; exported: string }>
     ) => A;
 
     ExportAssignment: (
@@ -229,6 +231,8 @@ export type CodePara<A> = {
         name: string,
         typeArgs: [A, Node][]
     ) => A;
+
+    Identifier: (name: string) => A;
 
     // Catch-all for other nodes
     Other: (kind: SyntaxKind, children: [A, Node][]) => A;
@@ -400,10 +404,10 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namespaceExport = node.getNamespaceExport();
             const exportNames = namespaceExport
-                ? [`* as ${namespaceExport.getName()}`]
+                ? [{ source: `* as ${namespaceExport.getName()}`, exported: `* as ${namespaceExport.getName()}` }]
                 : node.getNamedExports().map(e => {
                     const struct = e.getStructure();
-                    return struct.alias || struct.name;
+                    return { source: struct.name, exported: struct.alias || struct.name };
                 });
             return alg.ExportDecl(moduleSpec, exportNames);
         }
@@ -427,6 +431,11 @@ export const cata = <A>(alg: CodeAlg<A>) => {
             const name = node.getExpression().getText();
             const typeArgs = node.getTypeArguments().map(go);
             return alg.TypeReference(name, typeArgs);
+        }
+
+        // Identifier
+        if (Node.isIdentifier(node)) {
+            return alg.Identifier(node.getText());
         }
 
         // Catch-all: fold all children
@@ -599,10 +608,10 @@ export const para = <A>(alg: CodePara<A>) => {
             const moduleSpec = node.getModuleSpecifierValue() ?? null;
             const namespaceExport = node.getNamespaceExport();
             const exportNames = namespaceExport
-                ? [`* as ${namespaceExport.getName()}`]
+                ? [{ source: `* as ${namespaceExport.getName()}`, exported: `* as ${namespaceExport.getName()}` }]
                 : node.getNamedExports().map(e => {
                     const struct = e.getStructure();
-                    return struct.alias || struct.name;
+                    return { source: struct.name, exported: struct.alias || struct.name };
                 });
             return alg.ExportDecl(moduleSpec, exportNames);
         }
@@ -626,6 +635,11 @@ export const para = <A>(alg: CodePara<A>) => {
             const name = node.getExpression().getText();
             const typeArgs = foldChildren(node.getTypeArguments());
             return alg.TypeReference(name, typeArgs);
+        }
+
+        // Identifier
+        if (Node.isIdentifier(node)) {
+            return alg.Identifier(node.getText());
         }
 
         // Catch-all: fold all children
@@ -704,6 +718,10 @@ export const monoidAlg = <A>(
 
         TypeReference: cases.TypeReference ?? ((_name, typeArgs) =>
             combineAll(typeArgs)
+        ),
+
+        Identifier: cases.Identifier ?? ((_name) =>
+            empty
         ),
 
         Other: cases.Other ?? ((_kind, children) =>

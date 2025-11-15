@@ -351,6 +351,10 @@ const patternPara: CodePara<Patterns> = {
         return [typeRefPattern, ...childPatterns];
     },
 
+    Identifier: (_name) => {
+        return emptyPatterns;
+    },
+
     Other: (kind, childrenPairs) => {
         return childrenPairs
             .map(([p]) => p)

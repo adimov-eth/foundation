@@ -88,7 +88,7 @@ export const dependencyAlg = (
             const edge: Dependency = {
                 from: moduleSpecifier,
                 to: currentModule,
-                symbols: namedExports,
+                symbols: namedExports.map(e => e.exported),
                 isDefault: false,
             };
 

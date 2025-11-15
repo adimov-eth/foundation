@@ -58,7 +58,7 @@ export type ImportMeta = {
 export type ExportMeta = {
     type: 'export';
     to: string | null;
-    named: string[];
+    names: Array<{ source: string; exported: string }>;
 };
 
 /**
@@ -140,11 +140,10 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             };
 
             // Check if this is a default export
-            const exportName = isExported ? (isDefault ? ['default'] : [name]) : [];
-            const exports: ExportMeta[] = exportName.length > 0 ? [{
+            const exports: ExportMeta[] = isExported ? [{
                 type: 'export',
                 to: null,
-                named: exportName,
+                names: [{ source: name, exported: isDefault ? 'default' : name }],
             }] : [];
 
             return {
@@ -179,7 +178,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             const exports: ExportMeta[] = isExported ? [{
                 type: 'export',
                 to: null,
-                named: [name],
+                names: [{ source: name, exported: name }],
             }] : [];
 
             return {
@@ -223,11 +222,10 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 hasBody: body !== null,
             };
 
-            const exportName = (isExported && name) ? (isDefault ? ['default'] : [name]) : [];
-            const exports: ExportMeta[] = exportName.length > 0 ? [{
+            const exports: ExportMeta[] = (isExported && name) ? [{
                 type: 'export',
                 to: null,
-                named: exportName,
+                names: [{ source: name, exported: isDefault ? 'default' : name }],
             }] : [];
 
             return {
@@ -244,7 +242,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             const exports: ExportMeta[] = (isExported && varNames.length > 0) ? [{
                 type: 'export',
                 to: null,
-                named: varNames,
+                names: varNames.map(name => ({ source: name, exported: name })),
             }] : [];
 
             return {
@@ -275,7 +273,7 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             const exports: ExportMeta[] = isExported ? [{
                 type: 'export',
                 to: null,
-                named: [name],
+                names: [{ source: name, exported: name }],
             }] : [];
 
             return {
@@ -295,25 +293,27 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
             }],
         }),
 
-        ExportDecl: (to, named) => ({
+        ExportDecl: (to, exportNames) => ({
             ...emptyMetadata,
             exports: [{
                 type: 'export',
                 to,
-                named,
+                names: exportNames,
             }],
         }),
 
         ExportAssignment: (expression, isExportEquals) => {
             // expression contains metadata from the exported value
-            // For `export default value`, we want to capture "default" export
-            // For `export = value` (CommonJS), isExportEquals is true
+            // Extract source identifier from typeNames if available
+            const sourceName = expression.typeNames[0] || 'unknown';
+            const exportedName = isExportEquals ? '=' : 'default';
+
             return {
                 ...expression,
                 exports: [{
                     type: 'export',
                     to: null,
-                    named: isExportEquals ? ['='] : ['default'],
+                    names: [{ source: sourceName, exported: exportedName }],
                 }, ...expression.exports],
             };
         },
@@ -325,5 +325,10 @@ export const extractAlg: CodeAlg<Metadata> = monoidAlg(
                 typeNames: [name, ...childMeta.typeNames],
             };
         },
+
+        Identifier: (name) => ({
+            ...emptyMetadata,
+            typeNames: [name],
+        }),
     }
 );

@@ -37,3 +37,7 @@ export * from './algebras/index.js';
 // Tools
 export { Discover } from './discover.js';
 export { Act } from './act.js';
+
+// Entity-level Act (context-as-specification pattern)
+export { EntityAct, InMemoryEntityStore, TaskAct } from './entity-act.js';
+export { PlexusAct, PlexusResolver, InMemoryPlexusDoc, type PlexusLike, type PlexusDocLike } from './plexus-act.js';

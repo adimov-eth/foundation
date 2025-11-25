@@ -605,42 +605,108 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 
 ---
 
-## Implementation Complete: periphery
+## Implementation: periphery
 
 **Location:** `periphery/`
-**Status:** Phase 1 & Phase 3 complete, all tests passing, MCP verified
-**Build:** ✓ Zero TypeScript errors
-**Date:** Phase 1 (2025-11-09), Phase 3 (2025-11-11)
+**Status:** Phase 1, 2, 3, & EntityAct implemented
+**Date:** Phase 1 (2025-11-09), Phase 3 (2025-11-11), Phase 2 (2025-11-26), EntityAct (2025-11-26)
 
-### What Was Built
+### MCP Discovery Tool (17 functions exposed)
 
-**Discovery tool** (38 functions):
-- 4 filesystem primitives: list-files, read-file, file-stats, grep-content
-- 5 composition helpers: member, string-contains?, string-starts-with?, string-ends-with?, string-match
-- 17 catamorphism-based AST functions: count-nodes, find-classes, find-patterns, dependency-graph, type-graph, etc.
-- 12 hypergraph functions: build-inheritance-hypergraph, overlay-graphs, connect-graphs, hypergraph-to-dot, etc.
+**Core primitives (3):**
+- `parse-file` - Parse TypeScript to AST (cached)
+- `cata` - Run catamorphism with algebra: 'extract, 'count, 'patterns, 'types
+- `cata-with-path` - Run catamorphism needing path context ('dependencies)
 
-**Action tool** (6 functions):
-- Atomic refactoring operations with batch validation
-- rename-symbol, extract-function, inline-function
-- add-import, remove-unused-imports, format-file
+**Filesystem (2):**
+- `list-files` - Glob pattern matching
+- `read-file` - Read file content
 
-**Catamorphism framework** for TypeScript AST:
-- Generic fold + paramorphism: write traversal ONCE in 300 lines
-- 5 algebras: count (20 lines), extract (100 lines), patterns (150 lines), dependencies (100 lines), types (150 lines)
-- All type-safe: no `any`, no `@ts-ignore`, exhaustive coverage
+**Sandbox builtins (via Ramda + LIPS):**
+- **List:** `map`, `filter`, `reduce`, `fold`, `find`, `any`, `all`, `some`, `none`, `take`, `drop`, `head`, `tail`, `car`, `cdr`, `length`, `append`, `concat`, `flatten`, `partition`, `group-by`, `sort`, `sort-by`
+- **String:** `split`, `match`, `test`, `replace`, `to-lower`, `to-upper`, `trim`, `join`, `substring`, `concat`
+- **Object:** `prop`, `path`, `get`, `get-in`, `has`, `pick`, `omit`, `keys`, `values`
+- **Logic:** `equals`, `is`, `is-nil`, `is-empty`, `cond`, `when`, `unless`, `if-else`
+- **Functional:** `compose`, `pipe`, `curry`, `partial`, `flip`, `identity`, `always`
+- **Math:** `add`, `subtract`, `multiply`, `divide`, `modulo`, `min`, `max`, `clamp`
 
-**Hypergraph framework** (Phase 3):
+**Hypergraph construction (5):**
+- `hg-empty`, `hg-vertex`, `hg-edge`, `hg-vertices`, `hg-edges`
+
+**Hypergraph interpretation (7):**
+- `hypergraph-to-dot` - DOT format output
+- `hypergraph-to-adjacency` - Adjacency list
+- `hypergraph-metrics` - Vertex/edge counts, density
+- `hypergraph-cycles` - Cycle detection
+- `hypergraph-path-exists` - Path query
+- `overlay-graphs` - Union two hypergraphs
+- `connect-graphs` - Cross-product connection
+
+### MCP Action Tool (4 actions)
+
+- `rename-symbol` - Rename across all references
+- `add-import` - Add import statement
+- `remove-unused-imports` - Clean up imports
+- `format-file` - Format with ts-morph
+
+**Not implemented:** extract-function, inline-function
+
+### Entity-Level Act (Context as Specification)
+
+V's insight: "Операции над новым, существующим и клонированным элементом должны быть одинаковыми."
+
+**Core concept:** Context is a specification, not a pointer. The selector describes what to operate on, which may include generative steps (clone, new).
+
+```typescript
+// Old model: "here's a thing, do operations on it"
+// New model: "here's a description of what to operate on, and here are the operations"
+
+// Target can be:
+// - ID string: "task-123"
+// - Clone spec: ["clone", "task-123"]
+// - Clone with overrides: ["clone", "task-123", { status: "completed" }]
+// - New entity: ["new", "Task", { name: "New Task" }]
+// - Query: ["query", "(type \"Task\")"]
+
+// All actions operate on the resolved target atomically
+{
+  target: ["clone", "task-123", { status: "in_progress" }],
+  actions: [
+    ["rename", "New Version"],
+    ["set-status", "completed"]
+  ]
+}
+```
+
+**Files:**
+- `src/entity-act.ts` - Base EntityAct class with selector resolution
+- `src/plexus-act.ts` - Plexus-aware implementation with common actions
+
+**Exports:**
+- `EntityAct` - Base class for entity-level actions
+- `PlexusAct` - Plexus-aware variant with `set`, `get`, `emancipate`, `snapshot`
+- `EntityResolver` - Interface for entity stores
+- `InMemoryEntityStore` - Testing helper
+
+### Internal Infrastructure
+
+**Catamorphism framework** (`src/catamorphism.ts`):
+- Generic fold + paramorphism
+- 5 algebras: count, extract, patterns, dependencies, types
+- TypeScript AST → structured data
+
+**Hypergraph framework** (`src/hypergraph.ts`):
 - Free algebra: Empty/Vertex/Edge/Overlay/Connect
-- 5 interpreters: toAdjacency, toMetrics, toDOT, toCycles, toPathChecker
-- 5 AST converters: inheritance, calls, dependencies, types, plexusModel
-- Compositional graph construction via overlay/connect
-- All algebraic laws verified (associative, commutative, identity)
+- 5 interpreters in `algebras/hypergraph-interpreters.ts`
+- AST converters in `algebras/ast-to-hypergraph.ts`
 
-**Measurements verified** (vs traditional tools):
-- 60% token reduction
-- 6x fewer roundtrips
-- Single compositional query vs multiple orchestrated calls
+**E-graph framework** (`src/egraph.ts`):
+- EGraph class with union-find
+- Pattern matching and substitution
+- Cost-guided saturation with `saturate()`
+- Extraction with `extract()`
+- Rules in `algebras/egraph-rules.ts` (mapFusion, spliceRemove, etc.)
+- AST conversion in `algebras/ast-to-egraph.ts`
 
 ### Files
 
@@ -648,63 +714,43 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 periphery/
 ├── src/
 │   ├── catamorphism.ts          # Generic fold + paramorphism
-│   ├── hypergraph.ts            # Free algebra (Phase 3)
+│   ├── hypergraph.ts            # Free algebra
+│   ├── egraph.ts                # Equality saturation engine
+│   ├── entity-act.ts            # Context-as-specification pattern
+│   ├── plexus-act.ts            # Plexus-aware entity actions
+│   ├── discover.ts              # MCP discovery (25 functions)
+│   ├── act.ts                   # MCP actions (4 actions)
+│   ├── server.ts                # MCP server
 │   ├── algebras/
 │   │   ├── count.ts             # Node counting
 │   │   ├── extract.ts           # Metadata extraction
-│   │   ├── patterns.ts          # Pattern detection (Plexus emancipation)
+│   │   ├── patterns.ts          # Pattern detection
 │   │   ├── dependencies.ts      # Module dependency graph
 │   │   ├── types.ts             # Type inheritance graph
-│   │   ├── hypergraph-interpreters.ts  # 5 interpreters (Phase 3)
-│   │   └── ast-to-hypergraph.ts        # AST converters (Phase 3)
-│   ├── discovery-tool.ts        # 38 discovery functions
-│   ├── action-tool.ts           # 6 atomic refactoring actions
-│   ├── server.ts                # MCP server with OAuth stubs
+│   │   ├── hypergraph-interpreters.ts
+│   │   ├── ast-to-hypergraph.ts
+│   │   ├── egraph-rules.ts      # Rewrite rules
+│   │   └── ast-to-egraph.ts     # AST → E-graph
 │   └── __tests__/
-│       ├── demo.test.ts         # 7 catamorphism tests
-│       ├── hypergraph.test.ts   # 30 hypergraph core tests (Phase 3)
-│       └── hypergraph-integration.test.ts  # 11 integration tests (Phase 3)
-├── demo-hypergraph.ts           # Real codebase demo
-├── demo-plexus.ts               # PlexusModel composition demo
-├── docs/vision/
-│   └── compositional-exploration.md  # Full 7-layer architecture
-└── README.md                    # Usage guide
+│       └── entity-act.test.ts   # Context-as-specification tests
+└── docs/vision/
+    └── compositional-exploration.md
 ```
 
-### Key Code
+### Usage Examples
 
-**Catamorphism:**
-```typescript
-type CodeAlg<A> = {
-  ClassDecl: (name: string, heritage: A[], members: A[], typeParams: A[]) => A;
-  // ... 12 more cases
-  Other: (kind: SyntaxKind, children: A[]) => A;
-};
-
-const cata = <A>(alg: CodeAlg<A>) => (node: Node): A => {
-  // Pattern match on node kind
-  // Recursively fold children
-  // Call algebra case with results
-};
-```
-
-**Usage:**
-```typescript
-const counts = cata(countAlg)(sourceFile);
-const metadata = cata(extractAlg)(sourceFile);
-const patterns = cata(patternAlg)(sourceFile);
-```
-
-**Discovery examples:**
+**Discovery via MCP:**
 ```scheme
-; Extract metadata from file
-(define meta (cata 'extract (parse-file "plexus/plexus/src/PlexusModel.ts")))
-(@ meta :classes)  ; => list of class metadata
-(@ meta :exports)  ; => list of exports with discriminated union structure
+; Filter files using string helpers
+(define core-files
+  (filter (lambda (f)
+            (and (string-contains? f "/src/")
+                 (not (string-contains? f "__tests__"))))
+          (list-files "**/*.ts")))
 
-; Find emancipation patterns
-(cata 'patterns (parse-file "plexus/plexus/src/PlexusModel.ts"))
-; => [{:type "emancipate-call" :location {:methodName "..." :className "..."} ...}]
+; Count nodes in file
+(cata 'count (parse-file "src/egraph.ts"))
+; => {:classes 2 :interfaces 0 :methods 9 :functions 7 :total 142 ...}
 
 ; Build dependency hypergraph
 (define deps (cata-with-path 'dependencies "src/index.ts" (parse-file "src/index.ts")))
@@ -712,44 +758,39 @@ const patterns = cata(patternAlg)(sourceFile);
 (hypergraph-to-dot graph)
 ```
 
-**Action examples:**
-```scheme
-; Atomic batch refactoring (all-or-nothing)
-(act '((rename-symbol "src/old.ts" "OldName" "NewName")
-       (add-import "src/consumer.ts" "./new.js" ("NewName") "")
-       (remove-unused-imports "src/consumer.ts")))
+**Entity-level actions (TypeScript):**
+```typescript
+import { TaskAct } from '@here.build/periphery';
+
+const taskAct = new TaskAct({}, {});
+taskAct.addTask({ id: 'task-1', name: 'Original', status: 'pending' });
+
+// Clone and modify atomically
+const result = await taskAct.executeTool({
+  target: ['clone', 'task-1'],
+  actions: [
+    ['rename', 'Cloned Task'],
+    ['set-status', 'in_progress']
+  ]
+});
+// Result: new entity with all transformations applied
+// Original unchanged
 ```
 
-### Why This Proves the Pattern
-
-1. **Write traversal once** - 300 lines handles all recursion
-2. **Algebras compose** - Each 20-150 lines, infinitely composable
-3. **Exhaustive coverage** - Missing case = compile error
-4. **Type safety** - No any, no casts, types flow through
-5. **S-expression natural** - Query composition feels right
-6. **Wrong impossible** - Can't skip nodes, can't miss cases
-
-### Next Phases
+### Implementation Status
 
 **Implemented:**
-- Phase 0: Filesystem primitives + composition helpers ✓
-- Phase 1: Catamorphisms + Paramorphisms (AST traversal framework) ✓
-- Phase 3: Hypergraphs (compositional graph construction) ✓ **NEW**
-- Phase 6: Action tool (atomic refactoring with batch validation) ✓
+- Phase 1: Catamorphisms (AST traversal framework)
+- Phase 2: E-graphs (equality saturation) - internal, not MCP-exposed
+- Phase 3: Hypergraphs (compositional graph construction)
+- Phase 6: File-level action tool (atomic refactoring)
+- Entity-level Act: Context-as-specification pattern for Plexus models
 
-**Documented, not yet implemented:**
-See `docs/vision/compositional-exploration.md`:
-- Phase 2: E-graphs (equality saturation)
+**Not yet implemented:**
 - Phase 4: Tagless-final (multiple interpreters)
 - Phase 5: Algebraic effects (extensibility)
-
-**Phase 3 includes:**
-- Free algebra (Empty/Vertex/Edge/Overlay/Connect)
-- 5 interpreters (toAdjacency, toMetrics, toDOT, toCycles, toPathChecker)
-- 5 AST converters (inheritance, calls, dependencies, types, plexusModel)
-- 12 MCP discovery functions (verified end-to-end via S-expressions)
-- 48 tests passing (30 core + 11 integration + 7 catamorphism)
-- 2 working demos on real code
+- extract-function, inline-function actions
+- Full Plexus integration with Y.js persistence
 
 ---
 

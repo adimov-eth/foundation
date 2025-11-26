@@ -624,11 +624,13 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 
 **Sandbox builtins (via Ramda + LIPS):**
 - **List:** `map`, `filter`, `reduce`, `fold`, `find`, `any`, `all`, `some`, `none`, `take`, `drop`, `head`, `tail`, `car`, `cdr`, `length`, `append`, `concat`, `flatten`, `partition`, `group-by`, `sort`, `sort-by`
-- **String:** `split`, `match`, `test`, `replace`, `to-lower`, `to-upper`, `trim`, `join`, `substring`, `concat`
-- **Object:** `prop`, `path`, `get`, `get-in`, `has`, `pick`, `omit`, `keys`, `values`
+- **String:** `split`, `match`, `test`, `replace`, `to-lower`, `to-upper`, `trim`, `join`, `substring`
+- **Object:** `prop`, `path`, `get`, `get-in`, `has`, `pick`, `omit`, `keys`, `values`, `@` (prop shorthand)
 - **Logic:** `equals`, `is`, `is-nil`, `is-empty`, `cond`, `when`, `unless`, `if-else`
 - **Functional:** `compose`, `pipe`, `curry`, `partial`, `flip`, `identity`, `always`
 - **Math:** `add`, `subtract`, `multiply`, `divide`, `modulo`, `min`, `max`, `clamp`
+
+**Note:** `flatten`, `concat`, `append` are polymorphic - they handle both LIPS Pairs and JS arrays seamlessly. Raw Ramda versions available as `r-flatten`, `r-concat`, `r-append` if needed.
 
 **Hypergraph construction (5):**
 - `hg-empty`, `hg-vertex`, `hg-edge`, `hg-vertices`, `hg-edges`
@@ -747,21 +749,21 @@ periphery/
 
 **Discovery via MCP:**
 ```scheme
-; Filter files using Ramda builtins
-(define core-files
-  (filter (lambda (f)
-            (and (test (regex "/src/") f)
-                 (not (test (regex "__tests__") f))))
-          (list-files "**/*.ts")))
+; Find all classes with inheritance across the codebase
+(define files (filter (lambda (f) (is-empty (match "__tests__" f)))
+                      (list-files "src/**/*.ts")))
+(define class-lists (map (lambda (file) (@ (cata 'extract (parse-file file)) :classes)) files))
+(define non-empty (filter (lambda (x) (and (not (is-nil x)) (> (length x) 0))) class-lists))
+(define all-classes (flatten non-empty))
+(map (lambda (c) (list (@ c :name) (@ c :extends)))
+     (filter (lambda (c) (> (length (@ c :extends)) 0)) all-classes))
+; => ((EntityAct (ActionToolInteraction)) (TaskAct (EntityAct)) (Discover (DiscoveryToolInteraction)) ...)
 
-; Count nodes in file
-(cata 'count (parse-file "src/egraph.ts"))
-; => {:classes 2 :interfaces 0 :methods 9 :functions 7 :total 142 ...}
-
-; Build dependency hypergraph
-(define deps (cata-with-path 'dependencies "src/index.ts" (parse-file "src/index.ts")))
-(define graph (hg-edges (map (lambda (e) (list (@ e :from) (@ e :to))) (@ deps :edges))))
-(hypergraph-to-dot graph)
+; Build dependency hypergraph and check for cycles
+(define deps (cata-with-path 'dependencies "src/server.ts" (parse-file "src/server.ts")))
+(define internal (filter (lambda (e) (not (is-empty (match "^\\./" (@ e :to))))) (@ deps :edges)))
+(define graph (hg-edges (map (lambda (e) (list (@ e :from) (@ e :to))) internal)))
+(hypergraph-cycles graph)  ; => nil (no cycles - clean DAG)
 ```
 
 **Entity-level actions (TypeScript):**
@@ -800,6 +802,23 @@ const cloned = await codeAct.executeTool({
 });
 ```
 
+### Running Periphery
+
+```bash
+# Build and start on port 7777
+cd periphery && pnpm build
+PORT=7777 pm2 start dist/server.js --name periphery
+
+# Add to Claude Code
+claude mcp add --transport http periphery http://localhost:7777
+```
+
+**Tools exposed:**
+- `discover` - S-expression queries (catamorphisms, hypergraphs)
+- `act` - Atomic refactoring (rename-symbol, add-import, etc.)
+- `task-act` - In-memory entity operations
+- `code-entity-act` - AST entity operations via `"file.ts::Class::method"` paths
+
 ### Implementation Status
 
 **Implemented:**
@@ -808,16 +827,13 @@ const cloned = await codeAct.executeTool({
 - Phase 3: Hypergraphs (compositional graph construction)
 - Phase 6: File-level action tool (atomic refactoring)
 - Entity-level Act: Context-as-specification pattern
-  - `TaskAct` - In-memory entities for testing
-  - `CodeEntityAct` - AST-based code entities with ts-morph
-  - `PlexusAct` - Plexus model entities (ready for Y.js)
+- Polymorphic list operations (flatten, concat, append handle LIPS + JS)
 
 **Not yet implemented:**
 - Phase 4: Tagless-final (multiple interpreters)
 - Phase 5: Algebraic effects (extensibility)
 - extract-function, inline-function actions
 - Discovery query → EntityAct integration (query resolver calls discovery sandbox)
-- Full Plexus integration with Y.js persistence
 
 ---
 

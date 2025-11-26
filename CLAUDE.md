@@ -611,7 +611,7 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 **Status:** Phase 1, 2, 3, & EntityAct implemented
 **Date:** Phase 1 (2025-11-09), Phase 3 (2025-11-11), Phase 2 (2025-11-26), EntityAct (2025-11-26)
 
-### MCP Discovery Tool (17 functions exposed)
+### MCP Discovery Tool (25 functions exposed)
 
 **Core primitives (3):**
 - `parse-file` - Parse TypeScript to AST (cached)
@@ -621,6 +621,16 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 **Filesystem (2):**
 - `list-files` - Glob pattern matching
 - `read-file` - Read file content
+
+**Graph queries (8) - awareness merged:**
+- `graph-init` - Initialize graph for project path (persists across requests)
+- `graph-search` - Search nodes by name pattern, optional kind filter
+- `graph-used-by` - What uses this node? (incoming edges), optional edge kind filter
+- `graph-depends-on` - What does this node depend on? (outgoing edges)
+- `graph-inheritance` - Get extends/implements chain for class/interface
+- `graph-impact` - Files affected by changing a node (transitive)
+- `graph-cycles` - Detect cycles in the dependency graph
+- `graph-summary` - Get current graph statistics
 
 **Sandbox builtins (via Ramda + LIPS):**
 - **List:** `map`, `filter`, `reduce`, `fold`, `find`, `any`, `all`, `some`, `none`, `take`, `drop`, `head`, `tail`, `car`, `cdr`, `length`, `append`, `concat`, `flatten`, `partition`, `group-by`, `sort`, `sort-by`
@@ -800,6 +810,35 @@ periphery/
 (hypergraph-cycles graph)  ; => nil (no cycles - clean DAG)
 ```
 
+**Graph queries (awareness merged):**
+```scheme
+; Initialize graph for project (persists across MCP requests)
+(graph-init ".")
+; => &(:files 49 :classes 36 :interfaces 9 :functions 18 :methods 104 :edges 264)
+
+; Search nodes by pattern
+(graph-search "EntityAct")
+; => (list &(:id "src/entity-act.ts::EntityAct" :kind class :name "EntityAct" ...))
+
+; What extends EntityAct?
+(graph-used-by "src/entity-act.ts::EntityAct" 'extends)
+; => (list &(:node &(:id "src/code-entity-act.ts::CodeEntityAct" ...) :edge &(:kind extends)))
+
+; Composable queries - find hot classes (many dependents)
+(define (hot-classes threshold)
+  (filter
+    (lambda (cls) (> (length (graph-used-by (@ cls :id))) threshold))
+    (graph-search ".*" 'class)))
+
+(map (lambda (c) (list (@ c :name) (length (graph-used-by (@ c :id)))))
+     (hot-classes 3))
+; => (("Discover" 5) ("EntityAct" 4) ...)
+
+; Impact analysis - what files affected by changing this?
+(graph-impact "src/entity-act.ts::EntityAct")
+; => ("src/entity-act.ts" "src/code-entity-act.ts" "src/plexus-act.ts" ...)
+```
+
 **Entity-level actions (TypeScript):**
 ```typescript
 import { TaskAct, CodeEntityAct } from '@here.build/periphery';
@@ -863,11 +902,14 @@ claude mcp add --transport http periphery http://localhost:7777
 - Entity-level Act: Context-as-specification pattern
 - S-expression Act: Full discover → act-on pipeline with `clone`, `object`, multiple actions
 - Polymorphic list operations (flatten, concat, append handle LIPS + JS)
+- **Awareness merge**: Graph queries as S-expression functions (graph-init, graph-search, graph-used-by, etc.)
 
 **Not yet implemented:**
 - Phase 4: Tagless-final (multiple interpreters)
 - Phase 5: Algebraic effects (extensibility)
 - extract-function, inline-function actions
+- Graph persistence (currently in-memory, rebuilds each session)
+- File watching for live graph updates
 
 ---
 

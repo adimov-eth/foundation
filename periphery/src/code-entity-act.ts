@@ -109,21 +109,193 @@ export class CodeEntityResolver implements EntityResolver<CodeEntity> {
      * Results are converted to CodeEntity objects.
      *
      * Examples:
-     *   "(find-class \"MyClass\")"
-     *   "(filter (lambda (c) (extends? c \"PlexusModel\")) (all-classes))"
+     *   "(@ (cata 'extract (parse-file \"src/foo.ts\")) :classes)"
+     *   "(filter (lambda (c) (> (length (@ c :extends)) 0)) (@ (cata 'extract (parse-file \"src/foo.ts\")) :classes))"
      */
-    query(predicate: string): CodeEntity[] {
-        // For now, return empty - real implementation would:
-        // 1. Create discovery instance with same projectRoot
-        // 2. Execute predicate in sandbox
-        // 3. Convert results to CodeEntity objects
+    async query(predicate: string): Promise<CodeEntity[]> {
+        if (!this.discover) {
+            console.warn('Query requires Discover instance');
+            return [];
+        }
 
-        // This is where Discover integration would happen:
-        // const result = await this.discover?.executeSExpression(predicate);
-        // return this.convertQueryResult(result);
+        try {
+            const results = await this.discover.query(predicate, this.projectRoot);
+            return this.parseQueryResults(results);
+        } catch (error) {
+            console.warn(`Query failed: ${predicate}`, error);
+            return [];
+        }
+    }
 
-        console.warn(`Query not yet implemented: ${predicate}`);
-        return [];
+    /**
+     * Parse S-expression query results into CodeEntity objects.
+     *
+     * Expects results to be class/function/interface metadata from cata 'extract.
+     */
+    private parseQueryResults(results: string[]): CodeEntity[] {
+        const entities: CodeEntity[] = [];
+
+        for (const result of results) {
+            try {
+                // Parse S-expression result - it's a list of entity metadata
+                // Format: (list &(:type class :name Foo :extends (...) ...))
+                const parsed = this.parseSExprResult(result);
+                if (Array.isArray(parsed)) {
+                    for (const item of parsed) {
+                        const entity = this.metadataToEntity(item);
+                        if (entity) {
+                            entities.push(entity);
+                            this.entities.set(entity.id, entity);
+                        }
+                    }
+                } else if (parsed && typeof parsed === 'object') {
+                    const entity = this.metadataToEntity(parsed);
+                    if (entity) {
+                        entities.push(entity);
+                        this.entities.set(entity.id, entity);
+                    }
+                }
+            } catch {
+                // Skip unparseable results
+            }
+        }
+
+        return entities;
+    }
+
+    /**
+     * Very basic S-expression parser for query results.
+     * Handles the keyword object format: &(:key value ...)
+     */
+    private parseSExprResult(sexpr: string): any {
+        // Handle nil
+        if (sexpr === 'nil' || sexpr === '()') return null;
+
+        // Handle list wrapper
+        const listMatch = sexpr.match(/^\(list\s+(.*)\)$/s);
+        if (listMatch) {
+            return this.parseListContents(listMatch[1]);
+        }
+
+        // Handle single keyword object
+        if (sexpr.startsWith('&(')) {
+            return this.parseKeywordObject(sexpr);
+        }
+
+        return sexpr;
+    }
+
+    private parseListContents(contents: string): any[] {
+        const items: any[] = [];
+        let depth = 0;
+        let current = '';
+
+        for (let i = 0; i < contents.length; i++) {
+            const char = contents[i];
+
+            // Track parenthesis depth only (not &)
+            if (char === '(') depth++;
+            if (char === ')') depth--;
+
+            // Check for & starting a keyword object at depth 0
+            if (depth === 0 && char === '&') {
+                // Push any accumulated content
+                if (current.trim()) {
+                    items.push(this.parseSExprResult(current.trim()));
+                }
+                current = char;
+                continue;
+            }
+
+            // At depth 0, whitespace separates items
+            if (depth === 0 && /\s/.test(char)) {
+                if (current.trim()) {
+                    items.push(this.parseSExprResult(current.trim()));
+                }
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+
+        if (current.trim()) {
+            items.push(this.parseSExprResult(current.trim()));
+        }
+
+        return items.filter(x => x !== null);
+    }
+
+    private parseKeywordObject(sexpr: string): Record<string, any> {
+        // &(:type class :name Foo :extends (list Bar))
+        const inner = sexpr.slice(2, -1); // Remove &( and )
+        const obj: Record<string, any> = {};
+
+        const keywordRegex = /:(\w+)\s+/g;
+        let match;
+        const keys: { key: string; start: number }[] = [];
+
+        while ((match = keywordRegex.exec(inner)) !== null) {
+            keys.push({ key: match[1], start: match.index + match[0].length });
+        }
+
+        for (let i = 0; i < keys.length; i++) {
+            const { key, start } = keys[i];
+            const end = i + 1 < keys.length ? inner.lastIndexOf(`:${keys[i + 1].key}`) : inner.length;
+            const value = inner.slice(start, end).trim();
+            obj[key] = this.parseValue(value);
+        }
+
+        return obj;
+    }
+
+    private parseValue(value: string): any {
+        if (value === 'nil') return null;
+        if (value.startsWith("'")) return value.slice(1);
+        if (value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1);
+        if (value.startsWith('(list')) return this.parseListContents(value.slice(5, -1));
+        if (/^\d+$/.test(value)) return parseInt(value, 10);
+        return value;
+    }
+
+    /**
+     * Convert cata 'extract metadata to CodeEntity
+     */
+    private metadataToEntity(meta: Record<string, any>): CodeEntity | undefined {
+        if (!meta || typeof meta !== 'object') return undefined;
+
+        const type = meta.type as string;
+        const name = meta.name as string;
+
+        if (!type || !name) return undefined;
+
+        // We need to find which file this came from - it's in the query context
+        // For now, construct a partial entity that can be resolved later
+        const kind = this.typeToKind(type);
+        if (!kind) return undefined;
+
+        // ID format: we don't know the file yet, so use name as temp ID
+        // Real resolution happens when getById is called with full path
+        const id = `query::${name}`;
+
+        return {
+            id,
+            kind,
+            name,
+            filePath: 'unknown', // Would need query context to know
+            astPath: [name],
+        };
+    }
+
+    private typeToKind(type: string): CodeEntity['kind'] | undefined {
+        switch (type) {
+            case 'class': return 'class';
+            case 'function': return 'function';
+            case 'interface': return 'interface';
+            case 'method': return 'method';
+            case 'property': return 'property';
+            case 'variable': return 'variable';
+            default: return undefined;
+        }
     }
 
     // ========================================================================
@@ -265,7 +437,8 @@ export class CodeEntityAct extends EntityAct<CodeEntity, CodeActContext> {
     constructor(context: any, state: Record<string, any> = {}, executionContext?: any) {
         super(context, state, executionContext);
         const projectPath = state.projectRoot ?? process.cwd();
-        this.resolver = new CodeEntityResolver(projectPath);
+        const discover = state.discover as Discover | undefined;
+        this.resolver = new CodeEntityResolver(projectPath, discover);
         this.registerActions();
     }
 

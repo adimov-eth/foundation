@@ -93,7 +93,7 @@ export interface EntityResolver<T> {
     getById(id: string): T | undefined;
     clone(entity: T, overrides?: Record<string, unknown>): T;
     create(modelType: string, init: Record<string, unknown>): T;
-    query(predicate: string): T[];
+    query(predicate: string): T[] | Promise<T[]>;
 }
 
 async function resolveEntity<T>(
@@ -116,7 +116,7 @@ async function resolveEntity<T>(
             return resolver.create(selector.modelType, selector.init);
         }
         case 'query': {
-            const results = resolver.query(selector.predicate);
+            const results = await resolver.query(selector.predicate);
             if (results.length === 0) {
                 throw new Error(`Query returned no results: ${selector.predicate}`);
             }

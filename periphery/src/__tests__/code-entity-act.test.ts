@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CodeEntityAct, CodeEntityResolver } from '../code-entity-act.js';
+import { Discover } from '../discover.js';
 import { writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -166,6 +167,106 @@ export interface MyInterface {
             const originalResolver = new CodeEntityResolver(testDir);
             const original = originalResolver.getById('test.ts::MyClass');
             expect(original?.name).toBe('MyClass');
+        });
+    });
+
+    describe('CodeEntityResolver - query bridge', () => {
+        it('should return empty array when no Discover instance', async () => {
+            const resolver = new CodeEntityResolver(testDir);
+            const results = await resolver.query('(some predicate)');
+            expect(results).toEqual([]);
+        });
+
+        it('should call Discover.query and parse results', async () => {
+            // Create a mock Discover
+            const mockDiscover = {
+                query: vi.fn().mockResolvedValue([
+                    '(list &(:type class :name MyClass))',
+                ]),
+            } as unknown as Discover;
+
+            const resolver = new CodeEntityResolver(testDir, mockDiscover);
+            const results = await resolver.query('(@ (cata \'extract (parse-file "test.ts")) :classes)');
+
+            expect(mockDiscover.query).toHaveBeenCalledWith(
+                '(@ (cata \'extract (parse-file "test.ts")) :classes)',
+                testDir,
+            );
+            expect(results.length).toBe(1);
+            expect(results[0].name).toBe('MyClass');
+            expect(results[0].kind).toBe('class');
+        });
+
+        it('should handle query failures gracefully', async () => {
+            const mockDiscover = {
+                query: vi.fn().mockRejectedValue(new Error('Sandbox error')),
+            } as unknown as Discover;
+
+            const resolver = new CodeEntityResolver(testDir, mockDiscover);
+            const results = await resolver.query('(broken query)');
+            expect(results).toEqual([]);
+        });
+    });
+
+    describe('CodeEntityAct - query selector', () => {
+        it('should resolve entity via query selector', async () => {
+            const mockDiscover = {
+                query: vi.fn().mockResolvedValue([
+                    '&(:type class :name MyClass)',
+                ]),
+            } as unknown as Discover;
+
+            const act = new CodeEntityAct({}, { projectRoot: testDir, discover: mockDiscover });
+
+            (act as any).executionContext = {
+                target: ['query', '(@ (cata \'extract (parse-file "test.ts")) :classes)'],
+                actions: [['info']],
+            };
+
+            const result = await act.executeTool();
+
+            expect(mockDiscover.query).toHaveBeenCalled();
+            expect(result[0].action).toBe('info');
+            expect(result[0].name).toBe('MyClass');
+        });
+
+        it('should fail when query returns no results', async () => {
+            const mockDiscover = {
+                query: vi.fn().mockResolvedValue([]),
+            } as unknown as Discover;
+
+            const act = new CodeEntityAct({}, { projectRoot: testDir, discover: mockDiscover });
+
+            (act as any).executionContext = {
+                target: ['query', '(find-nothing)'],
+                actions: [['info']],
+            };
+
+            const result = await act.executeTool() as any;
+
+            expect(result.success).toBe(false);
+            expect(result.failedAction.error).toContain('Query returned no results');
+        });
+
+        it('should fail when query returns multiple results', async () => {
+            const mockDiscover = {
+                query: vi.fn().mockResolvedValue([
+                    '(list &(:type class :name Class1) &(:type class :name Class2))',
+                ]),
+            } as unknown as Discover;
+
+            const act = new CodeEntityAct({}, { projectRoot: testDir, discover: mockDiscover });
+
+            (act as any).executionContext = {
+                target: ['query', '(all-classes)'],
+                actions: [['info']],
+            };
+
+            const result = await act.executeTool();
+
+            // Result should be an error object, not action results
+            expect((result as any).success).toBe(false);
+            expect((result as any).failedAction.error).toContain('Query returned multiple results');
         });
     });
 });

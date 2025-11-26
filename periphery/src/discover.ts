@@ -51,6 +51,28 @@ export class Discover extends DiscoveryToolInteraction<DiscoveryContext> {
         return this.executionContext?.projectPath ?? process.cwd();
     }
 
+    /**
+     * Execute a query expression and return raw results.
+     * Used by CodeEntityResolver to bridge discovery → entity resolution.
+     *
+     * @param expr S-expression to evaluate
+     * @param projectPath Project root for file resolution
+     * @returns Array of serialized result strings
+     */
+    async query(expr: string, projectPath?: string): Promise<string[]> {
+        // Temporarily set execution context
+        const prevContext = this.executionContext;
+        (this as any).executionContext = { expr, projectPath: projectPath ?? process.cwd() };
+
+        try {
+            const result = await this.executeTool();
+            // executeTool returns string | string[], normalize to array
+            return Array.isArray(result) ? result : [result];
+        } finally {
+            (this as any).executionContext = prevContext;
+        }
+    }
+
     private resolvePath(path: string): string {
         return isAbsolute(path) ? path : resolve(this.projectRoot, path);
     }

@@ -28,6 +28,34 @@ import { empty, vertex, edge, overlay, connect, vertices, edges as edgeList, typ
 import { CodeEntityAct } from './code-entity-act.js';
 
 // ============================================================================
+// Graph Types - Awareness layer
+// ============================================================================
+
+export type GraphNodeKind = 'file' | 'class' | 'interface' | 'function' | 'method' | 'variable';
+export type GraphEdgeKind = 'imports' | 'extends' | 'implements' | 'calls' | 'references' | 'contains';
+
+export interface GraphNode {
+    id: string;           // "file.ts::ClassName" or "file.ts"
+    kind: GraphNodeKind;
+    name: string;
+    filePath: string;
+    line?: number;
+}
+
+export interface GraphEdge {
+    from: string;
+    to: string;
+    kind: GraphEdgeKind;
+}
+
+interface GraphState {
+    nodes: Map<string, GraphNode>;
+    edges: GraphEdge[];
+    projectRoot: string;
+    lastBuild: number;
+}
+
+// ============================================================================
 // Action Specification - S-expression Act returns this
 // ============================================================================
 
@@ -74,6 +102,9 @@ export class Discover extends DiscoveryToolInteraction<DiscoveryContext> {
     private projects: Map<string, Project> = new Map();
     private sourceFiles: Map<string, SourceFile> = new Map(); // Cache parsed files
     private pendingActionSpec: ActionSpec | null = null; // Captured during sandbox execution
+
+    // Graph state - singleton across requests for awareness queries
+    private static graphState: GraphState | null = null;
 
     private get projectRoot(): string {
         return this.executionContext?.projectPath ?? process.cwd();
@@ -601,6 +632,330 @@ Example:
                 return result;
             }
         );
+
+        // ========================================
+        // Graph Awareness - S-expression queries
+        // ========================================
+
+        this.registerFunction(
+            'graph-init',
+            `Initialize awareness graph for a project directory.
+
+Builds semantic graph of: files, classes, interfaces, functions, methods.
+Edges: imports, extends, implements, contains.
+
+Example: (graph-init ".")
+         (graph-init "/path/to/project")
+Returns: {:files N :classes N :interfaces N :functions N :methods N :edges N}`,
+            [z.string().optional()],
+            async (projectPath?: string) => {
+                const root = projectPath ? this.resolvePath(projectPath) : this.projectRoot;
+                await this.buildGraph(root);
+                return this.graphSummary();
+            }
+        );
+
+        this.registerFunction(
+            'graph-search',
+            `Search graph nodes by name pattern (regex).
+
+Optional :kind filter: 'class, 'interface, 'function, 'method, 'file
+
+Example: (graph-search "Entity")
+         (graph-search "Controller" :kind 'class)`,
+            [z.string(), z.any().optional()],
+            (pattern: string, kindRaw?: any) => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                const kind = kindRaw ? String(kindRaw?.valueOf?.() ?? kindRaw) : undefined;
+                const regex = new RegExp(pattern, 'i');
+                let results = Array.from(Discover.graphState.nodes.values())
+                    .filter(n => regex.test(n.name));
+                if (kind) {
+                    results = results.filter(n => n.kind === kind);
+                }
+                return results.slice(0, 50);
+            }
+        );
+
+        this.registerFunction(
+            'graph-used-by',
+            `What uses this node? (incoming edges)
+
+Returns nodes that have edges pointing TO the given node.
+
+Example: (graph-used-by "src/entity-act.ts::EntityAct")
+         (graph-used-by "src/foo.ts" :kind 'imports)`,
+            [z.string(), z.any().optional()],
+            (nodeId: string, kindRaw?: any) => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                const kind = kindRaw ? String(kindRaw?.valueOf?.() ?? kindRaw) : undefined;
+                let edges = Discover.graphState.edges.filter(e => e.to === nodeId);
+                if (kind) {
+                    edges = edges.filter(e => e.kind === kind);
+                }
+                return edges.map(e => ({
+                    node: Discover.graphState!.nodes.get(e.from),
+                    edge: e
+                })).filter(r => r.node);
+            }
+        );
+
+        this.registerFunction(
+            'graph-depends-on',
+            `What does this node depend on? (outgoing edges)
+
+Returns nodes that the given node has edges pointing TO.
+
+Example: (graph-depends-on "src/discover.ts")
+         (graph-depends-on "src/foo.ts::MyClass" :kind 'extends)`,
+            [z.string(), z.any().optional()],
+            (nodeId: string, kindRaw?: any) => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                const kind = kindRaw ? String(kindRaw?.valueOf?.() ?? kindRaw) : undefined;
+                let edges = Discover.graphState.edges.filter(e => e.from === nodeId);
+                if (kind) {
+                    edges = edges.filter(e => e.kind === kind);
+                }
+                return edges.map(e => ({
+                    node: Discover.graphState!.nodes.get(e.to),
+                    edge: e
+                })).filter(r => r.node);
+            }
+        );
+
+        this.registerFunction(
+            'graph-inheritance',
+            `Get inheritance chain for a class or interface.
+
+Follows extends/implements edges recursively.
+
+Example: (graph-inheritance "src/code-entity-act.ts::CodeEntityAct")`,
+            [z.string()],
+            (nodeId: string) => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                const chain: GraphNode[] = [];
+                const visited = new Set<string>();
+                const walk = (id: string) => {
+                    if (visited.has(id)) return;
+                    visited.add(id);
+                    const node = Discover.graphState!.nodes.get(id);
+                    if (node) chain.push(node);
+                    for (const e of Discover.graphState!.edges) {
+                        if (e.from === id && (e.kind === 'extends' || e.kind === 'implements')) {
+                            walk(e.to);
+                        }
+                    }
+                };
+                walk(nodeId);
+                return chain;
+            }
+        );
+
+        this.registerFunction(
+            'graph-impact',
+            `What files would be affected by changing this node?
+
+Walks reverse edges to find all dependent files.
+
+Example: (graph-impact "src/entity-act.ts::EntityAct")`,
+            [z.string()],
+            (nodeId: string) => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                const affected = new Set<string>();
+                const visited = new Set<string>();
+                const walk = (id: string) => {
+                    if (visited.has(id)) return;
+                    visited.add(id);
+                    const node = Discover.graphState!.nodes.get(id);
+                    if (node) affected.add(node.filePath);
+                    for (const e of Discover.graphState!.edges) {
+                        if (e.to === id) walk(e.from);
+                    }
+                };
+                walk(nodeId);
+                return Array.from(affected);
+            }
+        );
+
+        this.registerFunction(
+            'graph-cycles',
+            `Find circular dependencies in the graph.
+
+Example: (graph-cycles)`,
+            [],
+            () => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                // Build adjacency for cycle detection
+                const adj = new Map<string, Set<string>>();
+                for (const e of Discover.graphState.edges) {
+                    if (!adj.has(e.from)) adj.set(e.from, new Set());
+                    adj.get(e.from)!.add(e.to);
+                }
+                const cycles: string[][] = [];
+                const visited = new Set<string>();
+                const recStack = new Set<string>();
+                const path: string[] = [];
+                const dfs = (v: string) => {
+                    visited.add(v);
+                    recStack.add(v);
+                    path.push(v);
+                    for (const neighbor of adj.get(v) || []) {
+                        if (!visited.has(neighbor)) {
+                            dfs(neighbor);
+                        } else if (recStack.has(neighbor)) {
+                            const cycleStart = path.indexOf(neighbor);
+                            cycles.push([...path.slice(cycleStart), neighbor]);
+                        }
+                    }
+                    path.pop();
+                    recStack.delete(v);
+                };
+                for (const v of adj.keys()) {
+                    if (!visited.has(v)) dfs(v);
+                }
+                return cycles;
+            }
+        );
+
+        this.registerFunction(
+            'graph-summary',
+            `Get summary statistics of the current graph.
+
+Example: (graph-summary)`,
+            [],
+            () => {
+                if (!Discover.graphState) {
+                    throw new Error('Graph not initialized. Call (graph-init) first.');
+                }
+                return this.graphSummary();
+            }
+        );
+    }
+
+    // ========================================================================
+    // Graph Building
+    // ========================================================================
+
+    private async buildGraph(projectRoot: string): Promise<void> {
+        const nodes = new Map<string, GraphNode>();
+        const edges: GraphEdge[] = [];
+
+        // Get all TS files
+        const files = await glob('**/*.ts', {
+            cwd: projectRoot,
+            ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
+            absolute: true,
+        });
+
+        for (const filePath of files) {
+            const sourceFile = await this.loadSourceFile(filePath);
+            const relPath = relative(projectRoot, filePath);
+
+            // File node
+            nodes.set(relPath, { id: relPath, kind: 'file', name: relPath, filePath: relPath });
+
+            // Classes
+            for (const cls of sourceFile.getClasses()) {
+                const name = cls.getName();
+                if (!name) continue;
+                const classId = `${relPath}::${name}`;
+                nodes.set(classId, { id: classId, kind: 'class', name, filePath: relPath, line: cls.getStartLineNumber() });
+                edges.push({ from: relPath, to: classId, kind: 'contains' });
+
+                // Extends
+                const baseClass = cls.getBaseClass();
+                if (baseClass) {
+                    const baseFile = relative(projectRoot, baseClass.getSourceFile().getFilePath());
+                    const baseName = baseClass.getName();
+                    if (baseName) {
+                        const baseId = `${baseFile}::${baseName}`;
+                        edges.push({ from: classId, to: baseId, kind: 'extends' });
+                    }
+                }
+
+                // Implements
+                for (const impl of cls.getImplements()) {
+                    const symbol = impl.getType().getSymbol();
+                    if (symbol) {
+                        const decls = symbol.getDeclarations();
+                        if (decls.length > 0) {
+                            const implFile = relative(projectRoot, decls[0].getSourceFile().getFilePath());
+                            const implId = `${implFile}::${impl.getText()}`;
+                            edges.push({ from: classId, to: implId, kind: 'implements' });
+                        }
+                    }
+                }
+
+                // Methods
+                for (const method of cls.getMethods()) {
+                    const methodName = method.getName();
+                    const methodId = `${classId}::${methodName}`;
+                    nodes.set(methodId, { id: methodId, kind: 'method', name: methodName, filePath: relPath, line: method.getStartLineNumber() });
+                    edges.push({ from: classId, to: methodId, kind: 'contains' });
+                }
+            }
+
+            // Interfaces
+            for (const iface of sourceFile.getInterfaces()) {
+                const name = iface.getName();
+                const ifaceId = `${relPath}::${name}`;
+                nodes.set(ifaceId, { id: ifaceId, kind: 'interface', name, filePath: relPath, line: iface.getStartLineNumber() });
+                edges.push({ from: relPath, to: ifaceId, kind: 'contains' });
+            }
+
+            // Functions
+            for (const fn of sourceFile.getFunctions()) {
+                const name = fn.getName();
+                if (!name) continue;
+                const fnId = `${relPath}::${name}`;
+                nodes.set(fnId, { id: fnId, kind: 'function', name, filePath: relPath, line: fn.getStartLineNumber() });
+                edges.push({ from: relPath, to: fnId, kind: 'contains' });
+            }
+
+            // Imports
+            for (const imp of sourceFile.getImportDeclarations()) {
+                const specifier = imp.getModuleSpecifierValue();
+                if (specifier.startsWith('.')) {
+                    const resolved = imp.getModuleSpecifierSourceFile();
+                    if (resolved) {
+                        const targetPath = relative(projectRoot, resolved.getFilePath());
+                        edges.push({ from: relPath, to: targetPath, kind: 'imports' });
+                    }
+                }
+            }
+        }
+
+        Discover.graphState = { nodes, edges, projectRoot, lastBuild: Date.now() };
+    }
+
+    private graphSummary(): Record<string, number> {
+        if (!Discover.graphState) return {};
+        const nodes = Array.from(Discover.graphState.nodes.values());
+        const edgeCounts: Record<string, number> = {};
+        for (const e of Discover.graphState.edges) {
+            edgeCounts[e.kind] = (edgeCounts[e.kind] || 0) + 1;
+        }
+        return {
+            files: nodes.filter(n => n.kind === 'file').length,
+            classes: nodes.filter(n => n.kind === 'class').length,
+            interfaces: nodes.filter(n => n.kind === 'interface').length,
+            functions: nodes.filter(n => n.kind === 'function').length,
+            methods: nodes.filter(n => n.kind === 'method').length,
+            edges: Discover.graphState.edges.length,
+            ...edgeCounts,
+        };
     }
 
     // ========================================================================

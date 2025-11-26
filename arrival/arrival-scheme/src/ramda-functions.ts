@@ -9,6 +9,79 @@ type Fn = (...args: any[]) => any;
 // Helper: Check if value is LIPS Pair
 const isLipsPair = (x: any): boolean => x && typeof x === "object" && "car" in x && "cdr" in x;
 
+// Helper: Check if value is LIPS nil
+const isNil = (x: any): boolean => x === nil || (x && x.constructor?.name === "Nil");
+
+// Helper: Convert LIPS Pair to JS array (shallow - one level)
+function pairToArray(pair: any): any[] {
+  if (isNil(pair)) return [];
+  if (!isLipsPair(pair)) return Array.isArray(pair) ? pair : [pair];
+
+  const result: any[] = [];
+  let current = pair;
+  while (isLipsPair(current)) {
+    result.push(current.car);
+    current = current.cdr;
+  }
+  return result;
+}
+
+// Helper: Convert JS array to LIPS Pair
+function arrayToPair(array: any[]): any {
+  if (!Array.isArray(array) || array.length === 0) return nil;
+
+  let result = nil;
+  for (let i = array.length - 1; i >= 0; i--) {
+    result = Pair(array[i], result);
+  }
+  return result;
+}
+
+// Polymorphic flatten - works with LIPS Pairs, JS arrays, and mixed nesting
+function polymorphicFlatten(collection: any): any {
+  // Convert to array if LIPS Pair
+  const asArray = isLipsPair(collection) ? pairToArray(collection) :
+                  isNil(collection) ? [] :
+                  Array.isArray(collection) ? collection : [collection];
+
+  // Recursively flatten, handling both LIPS Pairs and JS arrays
+  const result: any[] = [];
+  for (const item of asArray) {
+    if (isLipsPair(item)) {
+      result.push(...polymorphicFlatten(item));
+    } else if (isNil(item)) {
+      // Skip nil values (empty lists)
+    } else if (Array.isArray(item)) {
+      result.push(...polymorphicFlatten(item));
+    } else {
+      result.push(item);
+    }
+  }
+
+  // Return as LIPS Pair if input was Pair, otherwise JS array
+  return isLipsPair(collection) ? arrayToPair(result) : result;
+}
+
+// Polymorphic concat - concatenate two collections
+function polymorphicConcat(a: any, b: any): any {
+  const arrA = isLipsPair(a) ? pairToArray(a) : isNil(a) ? [] : Array.isArray(a) ? a : [a];
+  const arrB = isLipsPair(b) ? pairToArray(b) : isNil(b) ? [] : Array.isArray(b) ? b : [b];
+  const result = [...arrA, ...arrB];
+
+  // Return as LIPS Pair if either input was Pair
+  return (isLipsPair(a) || isLipsPair(b)) ? arrayToPair(result) : result;
+}
+
+// Polymorphic append - add item to end of collection
+function polymorphicAppend(item: any, collection: any): any {
+  const arr = isLipsPair(collection) ? pairToArray(collection) :
+              isNil(collection) ? [] :
+              Array.isArray(collection) ? collection : [collection];
+  const result = [...arr, item];
+
+  return isLipsPair(collection) ? arrayToPair(result) : result;
+}
+
 // Polymorphic map - works with LIPS Pairs, FL entities, and JS arrays
 function polymorphicMap(fn: Fn, collection: any): any {
   // Fantasy Land compatible entity
@@ -51,7 +124,8 @@ export const RAMDA_FUNCTIONS = {
   // Fantasy Land Monad (chain/flatMap)
   chain: R.chain,
   "flat-map": R.chain,
-  flatten: R.flatten,
+  flatten: polymorphicFlatten,
+  "r-flatten": R.flatten, // Raw Ramda flatten for JS arrays only
   // Core functional combinators (multiple traditions)
   compose: R.compose,
   comp: R.compose, // Short form
@@ -122,10 +196,12 @@ export const RAMDA_FUNCTIONS = {
   take: R.take,
   drop: R.drop,
   slice: R.slice,
-  append: R.append,
+  append: polymorphicAppend,
   prepend: R.prepend,
-  concat: R.concat,
+  concat: polymorphicConcat,
   join: R.join,
+  "r-append": R.append, // Raw Ramda append for JS arrays only
+  "r-concat": R.concat, // Raw Ramda concat for JS arrays only
 
   // Type coercion resilience
   "ensure-array": (x: any) => (Array.isArray(x) ? x : [x]),

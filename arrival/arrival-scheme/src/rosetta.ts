@@ -23,7 +23,10 @@ const isLipsPair = (x: any): boolean => x && typeof x === "object" && "car" in x
 
 export function lipsToJs(value: any, options: RosettaOptions = {}): any {
   // Handle null/undefined
-  if (value == null || value === nil) return value;
+  if (value == null) return value;
+  // LIPS nil represents both empty list and null - convert to empty array
+  // This is the safer default since nil most often comes from (map ... '()) or similar
+  if (value === nil) return [];
 
   // Handle JS arrays (convert elements recursively)
   if (Array.isArray(value)) {

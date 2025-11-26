@@ -12,6 +12,8 @@ import { cors } from 'hono/cors';
 import { HonoMCPServer } from '@here.build/arrival-mcp';
 import { Discover } from './discover.js';
 import { Act } from './act.js';
+import { TaskAct } from './entity-act.js';
+import { CodeEntityAct } from './code-entity-act.js';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
@@ -35,8 +37,8 @@ class PeripheryServer extends HonoMCPServer {
     }
 }
 
-// Create MCP server with both Discovery and Action tools
-const mcpServer = new PeripheryServer(Discover, Act);
+// Create MCP server with Discovery, Action, and Entity-Action tools
+const mcpServer = new PeripheryServer(Discover, Act, TaskAct, CodeEntityAct);
 
 // Create Hono app
 const app = new Hono();
@@ -107,8 +109,9 @@ app
 
 // Start server
 console.log(`🔍 Periphery MCP Server starting on ${baseUrl}`);
-console.log(`  Tools: discover (44 functions), act (6 actions)`);
-console.log(`  New: Compositional refactoring via S-expressions!`);
+console.log(`  Tools: discover (17 functions), act (4 actions)`);
+console.log(`  Entity tools: task-act (in-memory), code-entity-act (AST-based)`);
+console.log(`  V's vision: context as specification, not pointer!`);
 console.log(`\nTo add to Claude Code:`);
 console.log(`  claude mcp add --transport http periphery ${baseUrl}\n`);
 

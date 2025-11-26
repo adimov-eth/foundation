@@ -28,7 +28,7 @@ import * as z from 'zod';
  * EntitySelector is a specification, not a pointer.
  * It describes what to operate on, which may include generative steps.
  */
-type EntitySelector =
+export type EntitySelector =
     | { type: 'id'; id: string }
     | { type: 'clone'; source: EntitySelector; overrides?: Record<string, unknown> }
     | { type: 'new'; modelType: string; init: Record<string, unknown> }

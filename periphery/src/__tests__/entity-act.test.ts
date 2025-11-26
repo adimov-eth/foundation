@@ -210,5 +210,32 @@ describe('EntityAct - Context as Specification', () => {
             expect(original?.name).toBe('First Task');
             expect(original?.status).toBe('pending');
         });
+
+        /**
+         * V's exact pattern: (act-on (clone x) (rename "Y"))
+         *
+         * This test validates the exact syntax V envisioned.
+         */
+        it('should support (act-on (clone x) (rename Y)) pattern', async () => {
+            // Exact pattern from V's vision
+            (taskAct as any).executionContext = {
+                target: ['clone', 'task-1'],
+                actions: [['rename', 'TaskV2']],
+            };
+
+            const result = await taskAct.executeTool();
+
+            expect(result[0].action).toBe('rename');
+            expect(result[0].oldName).toBe('First Task');
+            expect(result[0].newName).toBe('TaskV2');
+
+            // Clone exists with new name
+            const clone = taskAct.getTasks().find((t) => t.id === result[0].id);
+            expect(clone?.name).toBe('TaskV2');
+
+            // Original unchanged
+            const original = taskAct.getTasks().find((t) => t.id === 'task-1');
+            expect(original?.name).toBe('First Task');
+        });
     });
 });

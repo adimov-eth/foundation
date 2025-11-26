@@ -359,13 +359,13 @@ function setChildren(op: ENode['op'], data: Record<string, any>, children: EClas
 /**
  * Saturate: Apply rules until fixpoint with cost-guided search
  *
- * Based on egg (Willsey et al., 2021) equality saturation algorithm:
- * 1. Track best cost for each e-class
- * 2. Apply rules, but prune rewrites that don't improve cost
- * 3. Limit nodes per e-class to prevent explosion
- * 4. Stop when no cost improvements found
+ * Prevents unbounded growth while finding useful patterns:
+ * 1. Limit nodes per e-class (prevents explosion)
+ * 2. Prune rewrites exceeding cost threshold (avoids expensive forms)
+ * 3. Track cost improvements per iteration
+ * 4. Stop when no improvements found
  *
- * This prevents unbounded growth while still finding useful patterns.
+ * Based on egg (Willsey et al., 2021) equality saturation.
  */
 export function saturate(
   egraph: EGraph,
@@ -424,11 +424,6 @@ export function saturate(
 
     // Snapshot e-classes at START of iteration
     const eclasses = Array.from(egraph['classes'].keys());
-
-    // Compute costs before iteration
-    for (const eclass of eclasses) {
-      computeCost(eclass);
-    }
 
     for (const rule of rules) {
       for (const eclass of eclasses) {

@@ -681,10 +681,14 @@ V's insight: "Операции над новым, существующим и к
 **Files:**
 - `src/entity-act.ts` - Base EntityAct class with selector resolution
 - `src/plexus-act.ts` - Plexus-aware implementation with common actions
+- `src/code-entity-act.ts` - AST-based code entity actions
 
 **Exports:**
 - `EntityAct` - Base class for entity-level actions
+- `EntitySelector` - Discriminated union: `id | clone | new | query`
 - `PlexusAct` - Plexus-aware variant with `set`, `get`, `emancipate`, `snapshot`
+- `CodeEntityAct` - Code entity actions with ts-morph integration
+- `CodeEntityResolver` - Resolves code entities by AST path (`"file.ts::Class::method"`)
 - `EntityResolver` - Interface for entity stores
 - `InMemoryEntityStore` - Testing helper
 
@@ -718,7 +722,8 @@ periphery/
 │   ├── egraph.ts                # Equality saturation engine
 │   ├── entity-act.ts            # Context-as-specification pattern
 │   ├── plexus-act.ts            # Plexus-aware entity actions
-│   ├── discover.ts              # MCP discovery (25 functions)
+│   ├── code-entity-act.ts       # AST-based code entity actions
+│   ├── discover.ts              # MCP discovery (17 functions)
 │   ├── act.ts                   # MCP actions (4 actions)
 │   ├── server.ts                # MCP server
 │   ├── algebras/
@@ -732,7 +737,8 @@ periphery/
 │   │   ├── egraph-rules.ts      # Rewrite rules
 │   │   └── ast-to-egraph.ts     # AST → E-graph
 │   └── __tests__/
-│       └── entity-act.test.ts   # Context-as-specification tests
+│       ├── entity-act.test.ts   # Context-as-specification tests
+│       └── code-entity-act.test.ts  # AST entity tests
 └── docs/vision/
     └── compositional-exploration.md
 ```
@@ -741,11 +747,11 @@ periphery/
 
 **Discovery via MCP:**
 ```scheme
-; Filter files using string helpers
+; Filter files using Ramda builtins
 (define core-files
   (filter (lambda (f)
-            (and (string-contains? f "/src/")
-                 (not (string-contains? f "__tests__"))))
+            (and (test (regex "/src/") f)
+                 (not (test (regex "__tests__") f))))
           (list-files "**/*.ts")))
 
 ; Count nodes in file
@@ -760,8 +766,9 @@ periphery/
 
 **Entity-level actions (TypeScript):**
 ```typescript
-import { TaskAct } from '@here.build/periphery';
+import { TaskAct, CodeEntityAct } from '@here.build/periphery';
 
+// In-memory entities (for testing/demos)
 const taskAct = new TaskAct({}, {});
 taskAct.addTask({ id: 'task-1', name: 'Original', status: 'pending' });
 
@@ -775,6 +782,22 @@ const result = await taskAct.executeTool({
 });
 // Result: new entity with all transformations applied
 // Original unchanged
+
+// Code entities (AST-based)
+const codeAct = new CodeEntityAct({}, { projectRoot: '/path/to/project' });
+
+// Get info about a class
+const info = await codeAct.executeTool({
+  target: 'src/foo.ts::MyClass',
+  actions: [['info']]
+});
+// => { kind: 'class', name: 'MyClass', filePath: 'src/foo.ts', ... }
+
+// Clone a class (entity selector, not AST clone yet)
+const cloned = await codeAct.executeTool({
+  target: ['clone', 'src/foo.ts::MyClass', { name: 'MyClassV2' }],
+  actions: [['info']]
+});
 ```
 
 ### Implementation Status
@@ -784,12 +807,16 @@ const result = await taskAct.executeTool({
 - Phase 2: E-graphs (equality saturation) - internal, not MCP-exposed
 - Phase 3: Hypergraphs (compositional graph construction)
 - Phase 6: File-level action tool (atomic refactoring)
-- Entity-level Act: Context-as-specification pattern for Plexus models
+- Entity-level Act: Context-as-specification pattern
+  - `TaskAct` - In-memory entities for testing
+  - `CodeEntityAct` - AST-based code entities with ts-morph
+  - `PlexusAct` - Plexus model entities (ready for Y.js)
 
 **Not yet implemented:**
 - Phase 4: Tagless-final (multiple interpreters)
 - Phase 5: Algebraic effects (extensibility)
 - extract-function, inline-function actions
+- Discovery query → EntityAct integration (query resolver calls discovery sandbox)
 - Full Plexus integration with Y.js persistence
 
 ---

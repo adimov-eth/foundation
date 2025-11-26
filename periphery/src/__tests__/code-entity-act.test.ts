@@ -269,4 +269,120 @@ export interface MyInterface {
             expect((result as any).failedAction.error).toContain('Query returned multiple results');
         });
     });
+
+    describe('S-expression Act integration via Discover', () => {
+        /**
+         * Tests for the act-on function registered in the discovery sandbox.
+         * This validates the full pipeline: S-expression → ActionSpec → CodeEntityAct
+         */
+
+        it('should execute act-on with string target', async () => {
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            // Set up executionContext with S-expression
+            (discover as any).executionContext = {
+                expr: `(act-on "test.ts::MyClass" (list (info)))`,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            // Result should be JSON string with action result
+            const parsed = JSON.parse(result as string);
+            expect(parsed.action).toBe('info');
+            expect(parsed.name).toBe('MyClass');
+            expect(parsed.kind).toBe('class');
+        });
+
+        it('should execute act-on with clone target', async () => {
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            (discover as any).executionContext = {
+                expr: `(act-on (clone "test.ts::MyClass") (list (info)))`,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            const parsed = JSON.parse(result as string);
+            expect(parsed.action).toBe('info');
+            expect(parsed.name).toBe('MyClassClone');
+            expect(parsed.id).toContain('__clone_');
+        });
+
+        it('should execute act-on with entity from cata extract', async () => {
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            (discover as any).executionContext = {
+                expr: `
+                    (define file "test.ts")
+                    (define classes (@ (cata 'extract (parse-file file)) :classes))
+                    (define entity (with-file file (car classes)))
+                    (act-on entity (list (info)))
+                `,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            const parsed = JSON.parse(result as string);
+            expect(parsed.action).toBe('info');
+            expect(parsed.name).toBe('MyClass');
+            expect(parsed.filePath).toBe('test.ts');
+        });
+
+        it('should handle clone on entity from discovery', async () => {
+            // Clone without overrides - the default behavior appends "Clone" to name
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            (discover as any).executionContext = {
+                expr: `
+                    (define file "test.ts")
+                    (define classes (@ (cata 'extract (parse-file file)) :classes))
+                    (define entity (with-file file (car classes)))
+                    (act-on (clone entity) (list (info)))
+                `,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            const parsed = JSON.parse(result as string);
+            expect(parsed.action).toBe('info');
+            expect(parsed.name).toBe('MyClassClone'); // Default clone naming
+            expect(parsed.id).toContain('__clone_');
+        });
+
+        it('should return info for method entity', async () => {
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            (discover as any).executionContext = {
+                expr: `(act-on "test.ts::MyClass::myMethod" (list (info)))`,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            const parsed = JSON.parse(result as string);
+            expect(parsed.action).toBe('info');
+            expect(parsed.name).toBe('myMethod');
+            expect(parsed.kind).toBe('method');
+        });
+
+        it('should return discovery result when no act-on', async () => {
+            const discover = new Discover({} as any, { projectRoot: testDir });
+
+            (discover as any).executionContext = {
+                expr: `(@ (cata 'extract (parse-file "test.ts")) :classes)`,
+                projectPath: testDir,
+            };
+
+            const result = await discover.executeTool();
+
+            // Result is an array of S-expression strings
+            const resultStr = Array.isArray(result) ? result[0] : result;
+            expect(resultStr).toContain(':type class');
+            expect(resultStr).toContain(':name MyClass');
+        });
+    });
 });

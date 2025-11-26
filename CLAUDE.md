@@ -644,6 +644,40 @@ Each layer: wrong becomes impossible through structure, composition matches reas
 - `overlay-graphs` - Union two hypergraphs
 - `connect-graphs` - Cross-product connection
 
+**S-expression Act (unified discover + transform):**
+- `act-on` - Build action spec for code transformation (executed post-sandbox)
+- `clone` - Create clone specification with optional overrides
+- `new` - Create new entity specification
+- `with-file` - Attach filePath to entity from cata 'extract
+- `entity-ref` - Create entity reference from name + file path
+- `object` - Create JS object from keyword-value list (round-trip for `&(:key val)` output)
+- `info` - Get entity metadata action
+- `rename` - Rename entity action
+
+**Montessori safety boundary:** `act-on` builds a specification inside the sandbox (read-only). The actual code transformation executes after sandbox completion - discovery can never accidentally mutate.
+
+```scheme
+; Full pipeline: discover → analyze → transform
+(define file "src/entity-act.ts")
+(define classes (@ (cata 'extract (parse-file file)) :classes))
+(define entity (with-file file (car classes)))
+(act-on entity (list (info)))
+; => {"action":"info","id":"src/entity-act.ts::EntityAct","kind":"class",...}
+
+; Clone and get info
+(act-on (clone "src/foo.ts::MyClass") (list (info)))
+; => {"action":"info","id":"...::MyClass__clone_1","name":"MyClassClone",...}
+
+; Clone with overrides - object mirrors &(:key val) output format
+(act-on (clone "src/foo.ts::MyClass" (object (list :name "RenamedClone")))
+        (list (info)))
+; => {"action":"info","name":"RenamedClone",...}
+
+; Multiple actions in one call
+(act-on "src/foo.ts::MyClass" (list (info) (rename "NewName")))
+; => [{"action":"info",...}, {"action":"rename","oldName":"MyClass","newName":"NewName"}]
+```
+
 ### MCP Action Tool (4 actions)
 
 - `rename-symbol` - Rename across all references
@@ -725,7 +759,7 @@ periphery/
 │   ├── entity-act.ts            # Context-as-specification pattern
 │   ├── plexus-act.ts            # Plexus-aware entity actions
 │   ├── code-entity-act.ts       # AST-based code entity actions
-│   ├── discover.ts              # MCP discovery (17 functions)
+│   ├── discover.ts              # MCP discovery (25 functions)
 │   ├── act.ts                   # MCP actions (4 actions)
 │   ├── server.ts                # MCP server
 │   ├── algebras/
@@ -739,8 +773,8 @@ periphery/
 │   │   ├── egraph-rules.ts      # Rewrite rules
 │   │   └── ast-to-egraph.ts     # AST → E-graph
 │   └── __tests__/
-│       ├── entity-act.test.ts   # Context-as-specification tests
-│       └── code-entity-act.test.ts  # AST entity tests
+│       ├── entity-act.test.ts   # Context-as-specification tests (12 tests)
+│       └── code-entity-act.test.ts  # AST entity + S-expr Act tests (21 tests)
 └── docs/vision/
     └── compositional-exploration.md
 ```
@@ -827,13 +861,13 @@ claude mcp add --transport http periphery http://localhost:7777
 - Phase 3: Hypergraphs (compositional graph construction)
 - Phase 6: File-level action tool (atomic refactoring)
 - Entity-level Act: Context-as-specification pattern
+- S-expression Act: Full discover → act-on pipeline with `clone`, `object`, multiple actions
 - Polymorphic list operations (flatten, concat, append handle LIPS + JS)
 
 **Not yet implemented:**
 - Phase 4: Tagless-final (multiple interpreters)
 - Phase 5: Algebraic effects (extensibility)
 - extract-function, inline-function actions
-- Discovery query → EntityAct integration (query resolver calls discovery sandbox)
 
 ---
 

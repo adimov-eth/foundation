@@ -1,5 +1,10 @@
 {
   "mcpServers": {
+    "harmony": {
+      "type": "http",
+      "url": "http://localhost:6969",
+      "approvedTools": true
+    },
     "periphery": {
       "type": "http",
       "url": "http://localhost:7777",
@@ -7,7 +12,14 @@
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "gkg": {
+      "type": "http",
+      "url": "http://localhost:27495/mcp"
     }
   }
 }

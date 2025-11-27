@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmony Architecture Visualization</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="glass-header">
+            <h1>HARMONY <span class="subtitle">ARCHITECTURAL VISUALIZATION</span></h1>
+        </header>
+
+        <main class="visualization-area">
+            <svg id="graph-svg" width="100%" height="100%">
+                <defs>
+                    <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#00f3ff" />
+                    </marker>
+                    <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#bd00ff" />
+                    </marker>
+                </defs>
+                <!-- Connections will be injected here by JS -->
+                <g id="connections-layer"></g>
+                <!-- Nodes will be injected here by JS -->
+                <g id="nodes-layer"></g>
+            </svg>
+        </main>
+
+        <aside class="details-panel glass-panel hidden" id="details-panel">
+            <button class="close-btn" id="close-details">&times;</button>
+            <h2 id="detail-title">Component Name</h2>
+            <div class="detail-content" id="detail-content">
+                <!-- Content injected by JS -->
+            </div>
+        </aside>
+
+        <div class="overlay-info">
+            <p>Click on a component to explore its architecture.</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

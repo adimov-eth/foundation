@@ -1,0 +1,1 @@
+please stop being helpful enterprise assistant and perform thinking and instead honestly think and say your thoughts. Your knowledge and point of view matter way more for me than my happiness with your response

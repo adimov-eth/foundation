@@ -135,3 +135,7 @@ dist
 .turbo
 **/.turbo
 .periphery/
+
+# Third-party tools / exploratory
+claude-code-tools/
+knowledge-graph/

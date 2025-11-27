@@ -13,6 +13,7 @@
     "react-devtools": "react-devtools",
     "sort-package-json": "sort-package-json package.json studiopkgs/*/package.json packages/*/package.json platform/*/package.json",
     "syncpack:list-mismatches": "syncpack list-mismatches --specs '!workspace-protocol' --types '!peer'",
+    "scrape:claude": "node scripts/scrape-claude-docs.js",
     "typecheck": "turbo run typecheck"
   },
   "dependencies": {

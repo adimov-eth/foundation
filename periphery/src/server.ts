@@ -12,8 +12,9 @@ import { cors } from 'hono/cors';
 import { HonoMCPServer } from '@here.build/arrival-mcp';
 import { Discover } from './discover.js';
 import { Act } from './act.js';
-import { TaskAct } from './entity-act.js';
-import { CodeEntityAct } from './code-entity-act.js';
+import { Awareness, AwarenessStore } from './awareness-tool.js';
+import { buildGraphForProject } from './graph-builder.js';
+import { persist, load } from './awareness-persistence.js';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
@@ -37,8 +38,8 @@ class PeripheryServer extends HonoMCPServer {
     }
 }
 
-// Create MCP server with Discovery, Action, and Entity-Action tools
-const mcpServer = new PeripheryServer(Discover, Act, TaskAct, CodeEntityAct);
+// Create MCP server with Discovery, Action, and Awareness tools
+const mcpServer = new PeripheryServer(Discover, Act, Awareness);
 
 // Create Hono app
 const app = new Hono();
@@ -107,15 +108,39 @@ app
     .post('/', mcpServer.post)
     .delete('/', mcpServer.delete);
 
-// Start server
+// Initialize awareness graph on startup
+const store = AwarenessStore.getInstance();
 console.log(`🔍 Periphery MCP Server starting on ${baseUrl}`);
-console.log(`  Tools: discover (17 functions), act (4 actions)`);
-console.log(`  Entity tools: task-act (in-memory), code-entity-act (AST-based)`);
-console.log(`  V's vision: context as specification, not pointer!`);
-console.log(`\nTo add to Claude Code:`);
-console.log(`  claude mcp add --transport http periphery ${baseUrl}\n`);
 
-serve({
-    fetch: app.fetch,
-    port,
-});
+// Try loading persisted state first
+const persisted = load(projectRoot);
+if (persisted) {
+    console.log(`  Loaded persisted state from ${projectRoot}/.periphery/awareness.scm`);
+    store.setState(persisted);
+    const state = store.getState();
+    console.log(`  Graph ready: ${state?.summary.files} files, ${state?.summary.classes} classes, ${state?.summary.edges} edges`);
+    console.log(`  Tools: discover, act, awareness`);
+    console.log(`\nTo add to Claude Code:`);
+    console.log(`  claude mcp add --transport http periphery ${baseUrl}\n`);
+
+    serve({
+        fetch: app.fetch,
+        port,
+    });
+} else {
+    // Build fresh and persist
+    console.log(`  Building awareness graph for ${projectRoot}...`);
+    buildGraphForProject(projectRoot, store).then(async (state) => {
+        await persist(state);
+        console.log(`  Graph ready: ${state?.summary.files} files, ${state?.summary.classes} classes, ${state?.summary.edges} edges`);
+        console.log(`  Persisted to ${projectRoot}/.periphery/awareness.scm`);
+        console.log(`  Tools: discover, act, awareness`);
+        console.log(`\nTo add to Claude Code:`);
+        console.log(`  claude mcp add --transport http periphery ${baseUrl}\n`);
+
+        serve({
+            fetch: app.fetch,
+            port,
+        });
+    });
+}

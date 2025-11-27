@@ -37,6 +37,7 @@ export * from './algebras/index.js';
 // Tools
 export { Discover } from './discover.js';
 export { Act } from './act.js';
+export { Awareness, AwarenessStore } from './awareness-tool.js';
 
 // Entity-level Act (context-as-specification pattern)
 export { EntityAct, InMemoryEntityStore, TaskAct } from './entity-act.js';

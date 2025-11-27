@@ -81,8 +81,8 @@ export const value = 100;
         const file1 = join(pkg1Dir, 'src', 'test.ts');
         const file2 = join(pkg2Dir, 'src', 'other.ts');
 
-        const [project1, path1] = await (tool as any).loadProject({}, file1);
-        const [project2, path2] = await (tool as any).loadProject({}, file2);
+        const [project1, path1] = await (tool as any).loadProject(file1);
+        const [project2, path2] = await (tool as any).loadProject(file2);
 
         expect(path1).toBe(pkg1Dir);
         expect(path2).toBe(pkg2Dir);

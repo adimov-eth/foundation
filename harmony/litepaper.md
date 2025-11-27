@@ -1,16 +1,18 @@
 # Harmony: Multi-Agent Orchestration on Foundation
 
-**Version:** 0.2 (Post-Review)
-**Date:** November 27, 2025
-**Status:** Vision document, refined after external review
+**Version:** 0.3 (Crystallization)
+**Date:** November 28, 2025
+**Status:** Vision document, synthesizing V's patterns with Anthropic's effective-harnesses research
 
 ---
 
 ## Abstract
 
-Harmony is an orchestration layer for AI agents built on Foundation's existing infrastructure: Arrival (S-expression discovery/action), Plexus (CRDT state synchronization), periphery (codebase awareness), and vessel (persistent memory with spreading activation).
+Harmony is an orchestration layer for AI agents built on Foundation's existing infrastructure: Arrival (S-expression discovery/action), Plexus (CRDT state synchronization), periphery (codebase awareness), and persistent memory with spreading activation.
 
 The core insight: **fragmentation is architectural, not behavioral**. Agents drift not because they lack instructions, but because their architecture allows drift. Harmony makes wrong states structurally impossible.
+
+The synthesis insight: **crystallization points matter more than retrieval algorithms**. When you write a memory shapes whether it's useful more than how you find it later. This aligns V's "fresh instantiation with dense prior context" with Anthropic's effective-harnesses pattern of structured handoffs between context windows.
 
 This isn't a framework for coordinating agents. It's a **context engineering platform** where tools carry long-term patterns implicitly, memory surfaces thematic awareness before queries, and structural constraints create coherence that survives model resets.
 
@@ -100,19 +102,19 @@ The framework embeds long-term patterns in a way invisible to observers. By crea
 
 ## 3. Components
 
-### 3.1 Vessel: The Active Context Engine
+### 3.1 Harmony: The Active Context Engine
 
 **Not just storage. An Active MCP Server.**
 
 Standard SDK memory tools are **passive**: they wait for the model to query them. This fails because the model often doesn't know *what* to query until it's too late.
 
-**Vessel is Active**:
+**Harmony is Active**:
 - It observes the conversation.
 - It proactively injects "intuitions" (relevant memories) into the tool definitions themselves.
 - It uses **Spreading Activation** to surface thematically related concepts, not just keyword matches.
 
 ```
-vessel/
+harmony/
 ├── Spreading Activation Engine (associative recall)
 ├── Louvain Community Detection (theme extraction)
 ├── Homoiconic Policies (S-expression algorithms that rewrite themselves)
@@ -121,7 +123,50 @@ vessel/
 ```
 
 **The "Memory about Memory" Pattern:**
-In the tool description itself, Vessel outputs a brief summary of memory contents. "Memory about memory" fits in 1000-2000 tokens. Claude sees the thematic landscape **BEFORE the first query**.
+In the tool description itself, Harmony outputs a brief summary of memory contents. Claude sees the thematic landscape **BEFORE the first query**.
+
+### 3.1.1 Deferred Loading (Tool Search Pattern)
+
+Anthropic's Tool Search Tool pattern applies directly to memory: **defer what you don't need, retrieve on demand**.
+
+The original design put 1000-2000 tokens of manifest into tool descriptions. This is the pre-Tool-Search pattern - paying context cost whether or not you need it.
+
+**Refined approach:**
+- **Minimal manifest** (~200-300 tokens): Just themes and recent activity
+- **Deferred recall**: Full memory retrieval happens when agent queries
+- **Manifest as search index**: Themes guide what to query, not what to preload
+
+```typescript
+// Tool description (minimal)
+"Memory with themes: constraint-architecture, s-expression-patterns, agent-lifecycle.
+Recent: 3 insights, 2 warnings. Use (recall \"query\") for associative search."
+
+// Full retrieval only on (recall ...)
+```
+
+This matches how Claude Code handles 50+ MCP tools without context explosion.
+
+### 3.1.2 Emergent Importance
+
+Original design: importance assigned at memory creation time.
+
+**Problem:** You don't know something's important until it connects to other things.
+
+**Refined approach:** Importance emerges from graph structure.
+
+- High-degree nodes (connected to many others) resist decay
+- PageRank-style importance flows through the graph
+- A memory that becomes a hub gains importance retroactively
+
+```typescript
+interface MemoryItem {
+  importance: number;        // Initial estimate
+  degree: number;            // Edges connected (computed)
+  effectiveImportance: number; // importance * (1 + log(degree))
+}
+```
+
+This is the "intentional backlinks confer importance" pattern from Roam/Obsidian applied to agent memory.
 
 Memory interface via S-expressions:
 ```scheme
@@ -180,15 +225,38 @@ The Agent SDK outputs JSON. Foundation speaks S-expressions. The bridge isn't "u
 
 ---
 
-## 4. Harmony vs. Standard SDK Patterns
+## 4. Synthesis: Harmony + Effective Harnesses
+
+Anthropic's [effective-harnesses research](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) identified the core problem: agents working across multiple context windows need structured handoffs.
+
+Their solution for coding agents:
+- **Initializer agent**: Sets up environment with feature list, progress file, init.sh
+- **Coding agent**: Makes incremental progress, commits + updates progress file at end
+- **Clean handoffs**: Next session reads git log + progress file to get up to speed
+
+**Harmony applies the same pattern to memory:**
+
+| Effective Harnesses | Harmony Equivalent |
+|--------------------|--------------------|
+| `feature_list.json` (immutable except status) | Memory graph (immutable content, mutable connections) |
+| `claude-progress.txt` (session notes) | Crystallized insights at SessionEnd |
+| `git log` (what happened) | Memory edges (how insights connect) |
+| `init.sh` (recovery script) | SessionStart manifest (what to load) |
+| End-of-session commit | SessionEnd hook → crystallize_to_harmony.py |
+
+The insight: **crystallization points are the architecture**. When you write matters more than how you retrieve.
+
+### 4.1 Harmony vs. Standard SDK Patterns
 
 | Feature | Standard Claude SDK | Harmony Architecture |
 | :--- | :--- | :--- |
 | **Orchestration** | Python-based PTC (Programmatic Tool Calling) | **Arrival**: TypeScript-native PTC via S-expressions (LIPS) |
-| **Memory** | Passive `memory_20250818` tool (File-based) | **Vessel**: Active MCP Server with Spreading Activation & Dynamic Injection |
+| **Memory** | Passive `memory_20250818` tool (File-based) | **Harmony**: Active MCP Server with Spreading Activation & Deferred Loading |
+| **Handoffs** | Manual (effective-harnesses pattern) | **SessionEnd hook**: Automatic crystallization |
 | **State** | Ephemeral (Conversation-bound) | **Plexus**: Persistent CRDT "Shared Reality" (Project Management State) |
 | **Discovery** | `tool_search` (Vector Similarity) | **Periphery**: Structural Graph Traversal + Vector Hybrid |
 | **Control Flow** | Python Code | **S-Expressions** (Homoiconic, Token-Efficient) |
+| **Importance** | Assigned at creation | **Emergent**: High-degree nodes resist decay |
 
 ---
 
@@ -264,13 +332,40 @@ The third pattern is what V built toward. The agent doesn't accumulate noise bec
 
 1. **Spawn** with scoped context + relevant memories (dense)
 2. **Work** in focused scope (short, bounded turns)
-3. **Crystallize** findings to vessel
+3. **Crystallize** findings at SessionEnd hook
 4. **Die** clean
 5. **Next agent** spawns with updated memory (continuous)
 
 The agent lifecycle is deliberately short. Not because one-shot is elegant, but because **drift is a function of accumulated context noise**. Fresh instantiation prevents accumulation. Memory provides continuity.
 
-### 5.4 What Gets Persisted
+### 5.4 Crystallization Points
+
+**SessionEnd** is the structural moment for crystallization.
+
+Unlike PreCompact (which fires when context is about to overflow - an emergency), SessionEnd fires when the agent completes its work. This is the better moment to ask "what did this session produce?"
+
+```json
+{
+  "hooks": {
+    "SessionEnd": [{
+      "matcher": "",
+      "hooks": [{
+        "type": "command",
+        "command": "python3 crystallize_to_harmony.py"
+      }]
+    }]
+  }
+}
+```
+
+The crystallization script receives the session transcript and extracts what's worth persisting. This is the equivalent of the coding agent's end-of-session commit in Anthropic's effective-harnesses pattern.
+
+**What the hook produces:**
+- Not what happened → what was learned
+- Not the full transcript → the insight that emerged
+- Not every observation → the pattern that will help the next agent
+
+### 5.5 What Gets Persisted
 
 Not what happened. **What was learned.**
 
@@ -288,7 +383,7 @@ interface MemoryItem {
 }
 ```
 
-The agent decides what's worth crystallizing. Vessel holds what matters. Next agent inherits wisdom without noise.
+The agent decides what's worth crystallizing. Harmony holds what matters. Next agent inherits wisdom without noise.
 
 ---
 
@@ -430,9 +525,11 @@ The architecture doesn't assume Claude. It assumes **agents with tools**.
 
 | Harmony Concept | Foundation Component | Status |
 |-----------------|---------------------|--------|
-| Memory substrate | vessel | Exists |
-| Memory about memory | ManifestGenerator | **Exists** |
+| Memory substrate | harmony | Exists |
+| Memory about memory | ManifestGenerator (deferred) | **Refined** |
 | Scoped memory | MemoryItem.scope field | Exists |
+| Emergent importance | degree-based decay resistance | **New** |
+| Crystallization | SessionEnd hook | **New** |
 | Homoiconic policies | S-expr decayFn, recallScoreFn | Exists |
 | Graph storage | FalkorDB | Blueprint ready |
 | Codebase awareness | periphery | Exists |
@@ -457,10 +554,16 @@ The architecture doesn't assume Claude. It assumes **agents with tools**.
 **Gemini** (deepest theoretical framing):
 - "Librarian" agent for memory hygiene
 - Hybrid retrieval: vector for entry, spreading activation for expansion
+- **New insight**: "Spreading activation might be fighting the wrong battle" - keyword seeds are the weak link
 
 **ChatGPT** (most comprehensive risk analysis):
 - Coherence metric: memory utilization rate
 - Make components optional/swappable
+
+**Claude** (synthesis session):
+- Crystallization points matter more than retrieval algorithms
+- Defer aggressively (Tool Search pattern applies to memory)
+- Importance should emerge from graph structure, not be assigned at creation
 
 ### What They Got Wrong
 
@@ -471,9 +574,10 @@ The architecture doesn't assume Claude. It assumes **agents with tools**.
 ### What They Missed
 
 - The MCP framework as Trojan horse for emergent patterns
-- "Memory about memory" already implemented in vessel manifest
+- "Memory about memory" already implemented in harmony manifest
 - 30 tool calls without drift on Haiku (empirical evidence they didn't have)
 - Plexus as shared reality, not coordination layer
+- **SessionEnd as crystallization point** (effective-harnesses pattern translated to memory)
 
 ---
 
@@ -491,6 +595,12 @@ The architecture doesn't assume Claude. It assumes **agents with tools**.
 **On the endgame**:
 > "но эндгейм в том, что ты можешь создать платформу для коллаборации разных ИИ"
 
+**On crystallization** (synthesis insight):
+> "The crystallization point matters more than the retrieval algorithm. When you write a memory shapes whether it's useful more than how you find it later."
+
+**On effective-harnesses**:
+> "The key insight was finding a way for agents to quickly understand the state of work when starting with a fresh context window." — Anthropic
+
 ---
 
-*"Fragmentation is architectural, not behavioral. Make wrong states structurally impossible."*
+*"Fragmentation is architectural, not behavioral. Crystallization points are the architecture."*

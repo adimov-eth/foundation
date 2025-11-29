@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.js.map
+
+# Runtime state
+.state/
+
+# Environment
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Logs
+*.log

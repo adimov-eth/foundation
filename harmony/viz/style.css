@@ -1,16 +1,10 @@
 :root {
-    --bg-dark: #0a0a0f;
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --text-main: #ffffff;
-    --text-muted: #8888aa;
-
-    --color-arrival: #00f3ff;
-    /* Cyan/Blue */
-    --color-vessel: #bd00ff;
-    /* Purple */
-    --color-plexus: #ffd700;
-    /* Gold */
+    --bg-dark: #050508;
+    --grid-line: rgba(255, 255, 255, 0.03);
+    --core-glow: rgba(189, 0, 255, 0.6);
+    --agent-color: #00f3ff;
+    --task-color: #ffd700;
+    --beam-color: rgba(0, 243, 255, 0.4);
 }
 
 * {
@@ -21,241 +15,188 @@
 
 body {
     background-color: var(--bg-dark);
-    color: var(--text-main);
+    color: white;
     font-family: 'Inter', sans-serif;
     height: 100vh;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 50%, #1a1a24 0%, #0a0a0f 100%);
+    /* Plexus Grid Background */
+    background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 50px 50px;
+    background-position: center center;
 }
 
 .app-container {
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
 }
 
-.glass-header {
+/* UI Overlay */
+.ui-layer {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 15px 30px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
     z-index: 10;
 }
 
-.glass-header h1 {
+.glass-panel {
+    pointer-events: auto;
+    background: rgba(10, 10, 15, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.header h1 {
     font-size: 1.5rem;
     letter-spacing: 2px;
-    font-weight: 600;
+    background: linear-gradient(90deg, #fff, #aaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-.subtitle {
-    font-weight: 300;
-    opacity: 0.7;
-    font-size: 0.9rem;
-    margin-left: 10px;
+.header .subtitle {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
 }
 
-.visualization-area {
-    flex: 1;
-    position: relative;
-    z-index: 1;
+.controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
 }
 
-/* SVG Styles */
-#graph-svg {
-    cursor: grab;
-}
-
-#graph-svg:active {
-    cursor: grabbing;
-}
-
-.node-group {
+.btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.node-group:hover {
-    filter: brightness(1.2);
+.btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.node-circle {
-    fill: rgba(10, 10, 15, 0.8);
-    stroke-width: 2px;
-    transition: all 0.3s ease;
+.btn.primary {
+    background: rgba(0, 243, 255, 0.1);
+    border-color: rgba(0, 243, 255, 0.4);
+    color: #00f3ff;
 }
 
-.node-sub-circle {
-    fill: rgba(20, 20, 30, 0.9);
-    stroke-width: 1.5px;
+.btn.primary:hover {
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
 }
 
-.node-icon {
-    fill: white;
-    pointer-events: none;
-}
-
-.node-label {
-    fill: var(--text-main);
-    font-size: 14px;
-    font-weight: 600;
-    text-anchor: middle;
-    pointer-events: none;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.node-sub-label {
-    fill: var(--text-muted);
-    font-size: 11px;
-    text-anchor: middle;
-    pointer-events: none;
-}
-
-.connection-path {
-    fill: none;
-    stroke-width: 2px;
-    stroke-opacity: 0.4;
-    transition: stroke-opacity 0.3s, d 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.connection-sub-path {
-    fill: none;
-    stroke-width: 1px;
-    stroke-opacity: 0.3;
-    stroke-dasharray: 4 2;
-}
-
-.connection-path:hover {
-    stroke-opacity: 0.8;
-}
-
-.flow-particle {
-    fill: white;
-    filter: drop-shadow(0 0 2px white);
-}
-
-/* Sidebar */
-.details-panel {
+.stats {
     position: absolute;
     top: 20px;
     right: 20px;
-    width: 350px;
-    bottom: 20px;
-    background: rgba(15, 15, 25, 0.85);
-    backdrop-filter: blur(20px);
-    border-left: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 30px;
-    transform: translateX(0);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 20;
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-    overflow-y: auto;
+    width: 200px;
 }
 
-.details-panel.hidden {
-    transform: translateX(120%);
-}
-
-.close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 24px;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.close-btn:hover {
-    color: var(--text-main);
-}
-
-#detail-title {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 10px;
-}
-
-.detail-section {
-    margin-bottom: 25px;
-}
-
-.detail-section h3 {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-
-.detail-section p {
-    font-size: 0.95rem;
-    line-height: 1.6;
-    color: #ddd;
-}
-
-.code-block {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 10px;
-    border-radius: 6px;
-    font-family: monospace;
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
     font-size: 0.85rem;
-    color: #aaddff;
-    margin-top: 5px;
-    border: 1px solid var(--glass-border);
+    color: #aaa;
 }
 
-.tag {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-right: 5px;
-    margin-bottom: 5px;
-    background: rgba(255, 255, 255, 0.1);
+.stat-val {
+    color: white;
+    font-family: monospace;
 }
 
-.overlay-info {
-    position: absolute;
-    bottom: 30px;
-    left: 30px;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    pointer-events: none;
+/* SVG Elements */
+#sim-svg {
+    width: 100%;
+    height: 100%;
 }
 
-/* Back Button */
-.back-btn {
-    position: absolute;
-    top: 100px;
-    left: 20px;
-    padding: 10px 20px;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    color: var(--text-main);
-    border-radius: 8px;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    display: none;
-    /* Hidden by default */
-    z-index: 10;
-    transition: all 0.2s;
+.core-sun {
+    fill: #1a0b2e;
+    stroke: #bd00ff;
+    stroke-width: 2px;
+    filter: drop-shadow(0 0 20px var(--core-glow));
 }
 
-.back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+.core-ring {
+    fill: none;
+    stroke: rgba(189, 0, 255, 0.3);
+    stroke-width: 1px;
+    stroke-dasharray: 10 10;
+    animation: spin 20s linear infinite;
 }
 
-.back-btn.visible {
-    display: block;
+.agent {
+    fill: var(--bg-dark);
+    stroke: var(--agent-color);
+    stroke-width: 1.5px;
+    transition: fill 0.3s;
+}
+
+.agent.active {
+    fill: rgba(0, 243, 255, 0.2);
+}
+
+.task-node {
+    fill: var(--bg-dark);
+    stroke: var(--task-color);
+    stroke-width: 2px;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+}
+
+.beam {
+    stroke: var(--beam-color);
+    stroke-width: 1px;
+    stroke-dasharray: 5 5;
+    animation: dash 0.5s linear infinite;
+}
+
+.ripple {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 1px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -10;
+    }
 }

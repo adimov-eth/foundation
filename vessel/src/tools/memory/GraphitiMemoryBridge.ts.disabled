@@ -1,0 +1,267 @@
+/**
+ * GraphitiMemoryBridge
+ * 
+ * Bridges the vessel's homoiconic memory system with Graphiti's temporal knowledge graph.
+ * 
+ * Architecture:
+ * - Vessel Memory: Spreading activation, homoiconic S-expressions, self-modifying algorithms
+ * - Graphiti: Temporal knowledge graphs, LLM entity extraction, Neo4j/FalkorDB backend
+ * - Bridge: Bidirectional sync with transformation between representations
+ * 
+ * Key Insights:
+ * 1. Both systems solve temporal memory with different approaches
+ * 2. Vessel uses energy dynamics and spreading activation
+ * 3. Graphiti uses bi-temporal timestamps and graph traversal
+ * 4. Both converge on hybrid retrieval (semantic + graph)
+ */
+
+// TODO: Fix imports - these types need to be exported
+// import { MemoryItem, MemoryStore } from './MemoryToolInteraction';
+// import { GraphitiClient } from './GraphitiClient';
+import type { MemoryItem } from './MemoryTypes';
+
+export interface GraphitiNode {
+  uuid: string;
+  name: string;
+  type: 'Entity' | 'Episodic' | 'Community';
+  embeddings?: number[];
+  created_at: Date;
+  group_id: string;
+  attributes?: Record<string, any>;
+}
+
+export interface GraphitiEdge {
+  uuid: string;
+  source: string;
+  target: string;
+  relation: string;
+  weight?: number;
+  created_at: Date;
+}
+
+export class GraphitiMemoryBridge {
+  // TODO: Implement when GraphitiClient is available
+  // private memoryStore: MemoryStore;
+  // private graphitiClient: GraphitiClient;
+  
+  constructor(memoryStore: any, graphitiUri: string) {
+    // this.memoryStore = memoryStore;
+    // this.graphitiClient = new GraphitiClient(graphitiUri);
+  }
+  
+  /**
+   * Transform vessel memory item to Graphiti entity node
+   */
+  private memoryToEntity(memory: MemoryItem): GraphitiNode {
+    return {
+      uuid: memory.id,
+      name: memory.text.slice(0, 50), // First 50 chars as name
+      type: 'Entity',
+      embeddings: undefined, // memory.embedding not available yet,
+      created_at: new Date(memory.createdAt),
+      group_id: 'vessel-memory',
+      attributes: {
+        full_text: memory.text,
+        importance: memory.importance,
+        energy: memory.energy,
+        type: memory.type,
+        tags: memory.tags,
+        access_count: memory.accessCount || 0,
+        success_rate: (memory.success || 0) / ((memory.success || 0) + (memory.fail || 0) + 0.01)
+      }
+    };
+  }
+  
+  /**
+   * Transform vessel association to Graphiti edge
+   */
+  private associationToEdge(from: string, to: string, relation: string, weight: number): GraphitiEdge {
+    return {
+      uuid: `${from}-${to}-${relation}`,
+      source: from,
+      target: to,
+      relation: relation,
+      weight: weight,
+      created_at: new Date()
+    };
+  }
+  
+  /**
+   * Sync vessel memories to Graphiti as episodic nodes
+   * This preserves the temporal aspect of memory creation
+   */
+  async syncMemoriesToGraphiti(): Promise<void> {
+    const memories = await this.memoryStore.getAllMemories();
+    
+    for (const memory of memories.values()) {
+      // Create episodic node for the memory event
+      const episode = {
+        content: memory.text,
+        timestamp: new Date(memory.createdAt),
+        type: 'vessel_memory' as const,
+        metadata: {
+          importance: memory.importance,
+          energy: memory.energy,
+          tags: memory.tags
+        }
+      };
+      
+      // Let Graphiti extract entities and relationships
+      await this.graphitiClient.addEpisode(episode);
+    }
+    
+    // Sync associations as explicit edges
+    const associations = await this.memoryStore.getAllAssociations();
+    for (const [key, assoc] of associations) {
+      const edge = this.associationToEdge(
+        assoc.from,
+        assoc.to,
+        assoc.relation,
+        assoc.weight
+      );
+      await this.graphitiClient.addEdge(edge);
+    }
+  }
+  
+  /**
+   * Import Graphiti knowledge graph into vessel memory
+   * Preserves graph structure through associations
+   */
+  async importFromGraphiti(query: string): Promise<void> {
+    // Search Graphiti for relevant nodes
+    const results = await this.graphitiClient.search(query);
+    
+    for (const node of results.nodes) {
+      // Convert Graphiti node to memory item
+      const memory: MemoryItem = {
+        id: node.uuid,
+        text: node.attributes?.full_text || node.name,
+        type: 'entity', // 'imported-entity' not in MemoryItemType
+        importance: 0.7,
+        energy: 0,
+        tags: [node.type.toLowerCase(), 'graphiti-import'],
+        createdAt: node.created_at.getTime(),
+        updatedAt: Date.now(),
+        ttl: '90d',
+        embedding: node.embeddings
+      };
+      
+      await this.memoryStore.remember(memory);
+    }
+    
+    // Import edges as associations
+    for (const edge of results.edges) {
+      await this.memoryStore.associate(
+        edge.source,
+        edge.target,
+        edge.relation,
+        edge.weight || 0.5
+      );
+    }
+  }
+  
+  /**
+   * Hybrid search across both systems
+   * Combines vessel's spreading activation with Graphiti's graph traversal
+   */
+  async hybridSearch(query: string, limit: number = 10): Promise<any[]> {
+    // Parallel search in both systems
+    const [vesselResults, graphitiResults] = await Promise.all([
+      this.memoryStore.recall(query, limit),
+      this.graphitiClient.search(query, { limit })
+    ]);
+    
+    // Merge and deduplicate results
+    const merged = new Map<string, any>();
+    
+    // Add vessel results with spreading activation scores
+    for (const item of vesselResults) {
+      merged.set(item.id, {
+        ...item,
+        source: 'vessel',
+        score: item.energy * item.importance
+      });
+    }
+    
+    // Add Graphiti results with graph distance scores
+    for (const node of graphitiResults.nodes) {
+      if (!merged.has(node.uuid)) {
+        merged.set(node.uuid, {
+          id: node.uuid,
+          text: node.name,
+          source: 'graphiti',
+          score: node.relevance_score || 0.5,
+          ...node.attributes
+        });
+      }
+    }
+    
+    // Sort by combined score
+    return Array.from(merged.values())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+  
+  /**
+   * Enable bidirectional learning:
+   * - Vessel's energy dynamics influence Graphiti's edge weights
+   * - Graphiti's community detection creates vessel memory clusters
+   */
+  async enableBidirectionalLearning(): Promise<void> {
+    // Export vessel's activation patterns to Graphiti
+    setInterval(async () => {
+      const activations = await this.memoryStore.getActivationPatterns();
+      for (const [memoryId, energy] of activations) {
+        await this.graphitiClient.updateNodeAttribute(memoryId, 'energy', energy);
+      }
+    }, 60000); // Every minute
+    
+    // Import Graphiti's communities as memory tags
+    setInterval(async () => {
+      const communities = await this.graphitiClient.getCommunities();
+      for (const community of communities) {
+        for (const nodeId of community.members) {
+          const memory = await this.memoryStore.getMemory(nodeId);
+          if (memory) {
+            memory.tags.push(`community:${community.id}`);
+            await this.memoryStore.updateMemory(memory);
+          }
+        }
+      }
+    }, 300000); // Every 5 minutes
+  }
+}
+
+/**
+ * GraphitiClient stub - would connect to actual Graphiti server
+ */
+class GraphitiClient {
+  constructor(private uri: string) {}
+  
+  async addEpisode(episode: any): Promise<void> {
+    // POST to Graphiti API
+    console.log('Adding episode to Graphiti:', episode);
+  }
+  
+  async addEdge(edge: GraphitiEdge): Promise<void> {
+    // POST edge to Graphiti
+    console.log('Adding edge to Graphiti:', edge);
+  }
+  
+  async search(query: string, options?: any): Promise<any> {
+    // Search Graphiti
+    console.log('Searching Graphiti:', query, options);
+    return { nodes: [], edges: [] };
+  }
+  
+  async updateNodeAttribute(nodeId: string, attr: string, value: any): Promise<void> {
+    // Update node in Graphiti
+    console.log('Updating node attribute:', nodeId, attr, value);
+  }
+  
+  async getCommunities(): Promise<any[]> {
+    // Get community detection results
+    console.log('Getting communities from Graphiti');
+    return [];
+  }
+}

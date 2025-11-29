@@ -18,8 +18,8 @@
       ]
     },
     "gkg": {
-      "type": "http",
-      "url": "http://localhost:27495/mcp"
+      "type": "sse",
+      "url": "http://localhost:27495/mcp/sse"
     }
   }
 }

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: mcp-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      # Authentication
+      NEO4J_AUTH: neo4j/password123
+      
+      # Memory settings
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache__size: 512m
+      
+      # Enable APOC procedures (for advanced graph operations)
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_dbms_security_procedures_allowlist: apoc.*
+      
+      # Performance tuning
+      NEO4J_db_tx__log_rotation_retention__policy: "1 files"
+      NEO4J_dbms_memory_transaction__global__max__size: 256m
+      
+    volumes:
+      # Persist data
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+      
+    networks:
+      - mcp-network
+      
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password123", "RETURN 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
+  # Optional: Neo4j browser for debugging
+  # Access at http://localhost:7474
+  # Connect using bolt://localhost:7687 with neo4j/password123
+
+volumes:
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  neo4j_import:
+    driver: local
+  neo4j_plugins:
+    driver: local
+
+networks:
+  mcp-network:
+    driver: bridge

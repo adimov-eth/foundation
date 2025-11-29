@@ -1,0 +1,25 @@
+{
+  "general": {
+    "previewFeatures": false,
+    "disableAutoUpdate": false,
+    "sessionRetention": {
+      "enabled": true
+    },
+    "enablePromptCompletion": true
+  },
+  "ui": {
+    "showStatusInTitle": true,
+    "showMemoryUsage": true,
+    "showCitations": true,
+    "showModelInfoInChat": true
+  },
+  "tools": {
+    "enableMessageBusIntegration": true
+  },
+  "security": {
+    "blockGitExtensions": true,
+    "folderTrust": {
+      "enabled": true
+    }
+  }
+}

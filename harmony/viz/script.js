@@ -1,270 +1,287 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const svg = document.getElementById('graph-svg');
-    const nodesLayer = document.getElementById('nodes-layer');
-    const connectionsLayer = document.getElementById('connections-layer');
-    const detailsPanel = document.getElementById('details-panel');
-    const closeDetailsBtn = document.getElementById('close-details');
-    const detailTitle = document.getElementById('detail-title');
-    const detailContent = document.getElementById('detail-content');
-
-    // Add Back Button
-    const backBtn = document.createElement('button');
-    backBtn.className = 'back-btn';
-    backBtn.textContent = '← Back to System View';
-    document.querySelector('.app-container').appendChild(backBtn);
+    const svg = document.getElementById('sim-svg');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const centerX = width / 2;
+    const centerY = height / 2;
 
     // State
-    let currentView = 'system'; // 'system' or 'detail'
-    let activeNodeId = null;
+    const agents = [];
+    const tasks = [];
+    const beams = [];
+    const ripples = [];
+    let lastTime = 0;
+    let nextAgentId = 1;
 
-    // Data Definition
-    const systemNodes = [
-        {
-            id: 'arrival',
-            label: 'ARRIVAL',
-            x: 400,
-            y: 150,
-            color: '#00f3ff',
-            description: 'The TypeScript-Native Orchestration Layer.',
-            subNodes: [
-                { id: 'lips', label: 'LIPS Interpreter', x: 400, y: 100, r: 25 },
-                { id: 'sandbox', label: 'Sandbox', x: 300, y: 200, r: 25 },
-                { id: 'control', label: 'Control Loop', x: 500, y: 200, r: 25 },
-                { id: 'tools', label: 'Tool Registry', x: 400, y: 300, r: 25 }
-            ],
-            subConnections: [
-                { from: 'lips', to: 'sandbox' },
-                { from: 'sandbox', to: 'control' },
-                { from: 'control', to: 'tools' },
-                { from: 'tools', to: 'lips' }
-            ],
-            details: `...` // (Same as before)
-        },
-        {
-            id: 'vessel',
-            label: 'VESSEL',
-            x: 200,
-            y: 450,
-            color: '#bd00ff',
-            description: 'The Active Context Engine.',
-            subNodes: [
-                { id: 'graph', label: 'Knowledge Graph', x: 200, y: 400, r: 30 },
-                { id: 'activation', label: 'Spreading Activation', x: 100, y: 500, r: 25 },
-                { id: 'injector', label: 'Intuition Injector', x: 300, y: 500, r: 25 },
-                { id: 'observer', label: 'Observer', x: 200, y: 600, r: 25 }
-            ],
-            subConnections: [
-                { from: 'observer', to: 'graph' },
-                { from: 'graph', to: 'activation' },
-                { from: 'activation', to: 'injector' }
-            ],
-            details: `...` // (Same as before)
-        },
-        {
-            id: 'plexus',
-            label: 'PLEXUS',
-            x: 600,
-            y: 450,
-            color: '#ffd700',
-            description: 'The Shared Reality Layer.',
-            subNodes: [
-                { id: 'yjs', label: 'Yjs Doc', x: 600, y: 450, r: 35 },
-                { id: 'user', label: 'User Client', x: 500, y: 350, r: 20 },
-                { id: 'agent', label: 'Agent Client', x: 700, y: 350, r: 20 },
-                { id: 'sync', label: 'Sync Protocol', x: 600, y: 550, r: 25 }
-            ],
-            subConnections: [
-                { from: 'user', to: 'yjs' },
-                { from: 'agent', to: 'yjs' },
-                { from: 'yjs', to: 'sync' }
-            ],
-            details: `...` // (Same as before)
-        }
-    ];
+    // DOM Elements
+    const btnInject = document.getElementById('btn-inject');
+    const btnReset = document.getElementById('btn-reset');
+    const statAgents = document.getElementById('stat-agents');
+    const statTasks = document.getElementById('stat-tasks');
 
-    const systemConnections = [
-        { from: 'arrival', to: 'vessel', color: '#00f3ff' },
-        { from: 'vessel', to: 'arrival', color: '#bd00ff' },
-        { from: 'arrival', to: 'plexus', color: '#ffd700' },
-        { from: 'plexus', to: 'arrival', color: '#ffd700' }
-    ];
+    // --- Initialization ---
+    function init() {
+        // Create Core (Vessel)
+        const coreGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        coreGroup.setAttribute('transform', `translate(${centerX}, ${centerY})`);
 
-    // Initialize
-    renderSystemView();
+        const core = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        core.setAttribute('r', '40');
+        core.setAttribute('class', 'core-sun');
 
-    function renderSystemView() {
-        currentView = 'system';
-        activeNodeId = null;
-        backBtn.classList.remove('visible');
-        detailsPanel.classList.add('hidden');
+        const ring1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        ring1.setAttribute('r', '60');
+        ring1.setAttribute('class', 'core-ring');
 
-        // Clear
-        nodesLayer.innerHTML = '';
-        connectionsLayer.innerHTML = '';
+        const ring2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        ring2.setAttribute('r', '80');
+        ring2.setAttribute('class', 'core-ring');
+        ring2.style.animationDirection = 'reverse';
+        ring2.style.animationDuration = '30s';
 
-        // Render Connections
-        systemConnections.forEach((conn, index) => {
-            const fromNode = systemNodes.find(n => n.id === conn.from);
-            const toNode = systemNodes.find(n => n.id === conn.to);
-            const offset = (index % 2 === 0) ? 10 : -10;
+        coreGroup.appendChild(core);
+        coreGroup.appendChild(ring1);
+        coreGroup.appendChild(ring2);
+        svg.appendChild(coreGroup);
 
-            const path = createPath(
-                fromNode.x + offset, fromNode.y,
-                toNode.x + offset, toNode.y,
-                conn.color,
-                true // isMain
-            );
-            connectionsLayer.appendChild(path);
-            animateParticle(path, conn.color);
-        });
+        // Initial Agents
+        for (let i = 0; i < 5; i++) spawnAgent();
 
-        // Render Nodes
-        systemNodes.forEach(node => {
-            const g = createNodeGroup(node.x, node.y, node.id);
-            g.onclick = () => drillDown(node);
+        // Loop
+        requestAnimationFrame(loop);
+    }
 
-            const circle = createCircle(40, node.color, true);
-            const label = createLabel(node.label, 60, 'node-label');
+    // --- Simulation Loop ---
+    function loop(timestamp) {
+        const dt = timestamp - lastTime;
+        lastTime = timestamp;
 
-            g.appendChild(circle);
-            g.appendChild(label);
-            nodesLayer.appendChild(g);
+        updateAgents(dt);
+        updateTasks(dt);
+        updateBeams();
+        updateRipples();
+
+        updateStats();
+        requestAnimationFrame(loop);
+    }
+
+    // --- Agents ---
+    function spawnAgent() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 150 + Math.random() * 200;
+        const x = centerX + Math.cos(angle) * dist;
+        const y = centerY + Math.sin(angle) * dist;
+
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        el.setAttribute('r', '5');
+        el.setAttribute('class', 'agent');
+        svg.appendChild(el);
+
+        agents.push({
+            id: nextAgentId++,
+            x, y,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            state: 'idle', // idle, swarming, syncing
+            target: null,
+            el
         });
     }
 
-    function drillDown(node) {
-        currentView = 'detail';
-        activeNodeId = node.id;
-        backBtn.classList.add('visible');
+    function updateAgents(dt) {
+        agents.forEach(a => {
+            // Physics
+            a.x += a.vx;
+            a.y += a.vy;
 
-        // Transition: Fade out others, expand current
-        // For simplicity in Vanilla JS, we'll re-render
-        nodesLayer.innerHTML = '';
-        connectionsLayer.innerHTML = '';
+            // Boundaries (Bounce)
+            if (a.x < 0 || a.x > width) a.vx *= -1;
+            if (a.y < 0 || a.y > height) a.vy *= -1;
 
-        // Render Sub-Connections
-        if (node.subConnections) {
-            node.subConnections.forEach(conn => {
-                const fromSub = node.subNodes.find(n => n.id === conn.from);
-                const toSub = node.subNodes.find(n => n.id === conn.to);
+            // Behavior
+            if (a.state === 'idle') {
+                // Orbit gently
+                const dx = centerX - a.x;
+                const dy = centerY - a.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 400) { // Keep close
+                    a.vx += dx * 0.0001;
+                    a.vy += dy * 0.0001;
+                }
+            } else if (a.state === 'swarming' && a.target) {
+                // Move to task
+                const dx = a.target.x - a.x;
+                const dy = a.target.y - a.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-                const path = createPath(
-                    fromSub.x, fromSub.y,
-                    toSub.x, toSub.y,
-                    node.color,
-                    false // isMain
-                );
-                connectionsLayer.appendChild(path);
-            });
-        }
+                if (dist > 30) {
+                    a.vx += dx * 0.0005;
+                    a.vy += dy * 0.0005;
+                } else {
+                    // Arrived
+                    a.vx *= 0.9;
+                    a.vy *= 0.9;
+                    // Shoot beam to core (Context Lookup)
+                    if (Math.random() < 0.05) shootBeam(a, { x: centerX, y: centerY });
+                }
+            }
 
-        // Render Sub-Nodes
-        if (node.subNodes) {
-            node.subNodes.forEach(sub => {
-                const g = createNodeGroup(sub.x, sub.y, sub.id);
-                // Sub-nodes don't click further
-
-                const circle = createCircle(sub.r, node.color, false);
-                const label = createLabel(sub.label, sub.r + 20, 'node-sub-label');
-
-                g.appendChild(circle);
-                g.appendChild(label);
-                nodesLayer.appendChild(g);
-            });
-        }
-
-        // Show Details Panel
-        showDetails(node);
+            // Update DOM
+            a.el.setAttribute('cx', a.x);
+            a.el.setAttribute('cy', a.y);
+        });
     }
 
-    backBtn.onclick = () => {
-        renderSystemView();
+    // --- Tasks ---
+    function injectTask() {
+        const x = Math.random() * (width - 100) + 50;
+        const y = Math.random() * (height - 100) + 50;
+
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        el.setAttribute('transform', `translate(${x}, ${y})`);
+
+        // Hexagon shape
+        const hex = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        hex.setAttribute('points', '0,-15 13,-7.5 13,7.5 0,15 -13,7.5 -13,-7.5');
+        hex.setAttribute('class', 'task-node');
+        el.appendChild(hex);
+        svg.appendChild(el);
+
+        const task = {
+            id: Date.now(),
+            x, y,
+            life: 100, // 100% health
+            el
+        };
+        tasks.push(task);
+
+        // Create Ripple (Plexus Event)
+        createRipple(x, y);
+
+        // Assign Agents
+        const squadSize = 3 + Math.floor(Math.random() * 3);
+        // Find nearest idle agents
+        const available = agents.filter(a => a.state === 'idle');
+        // If not enough, spawn more
+        while (available.length < squadSize) {
+            spawnAgent();
+            available.push(agents[agents.length - 1]);
+        }
+
+        // Dispatch Squad
+        available.slice(0, squadSize).forEach(a => {
+            a.state = 'swarming';
+            a.target = task;
+            a.el.classList.add('active');
+        });
+    }
+
+    function updateTasks(dt) {
+        for (let i = tasks.length - 1; i >= 0; i--) {
+            const t = tasks[i];
+
+            // Check if agents are near
+            const swarmers = agents.filter(a => a.target === t);
+            const arrived = swarmers.filter(a => {
+                const dx = a.x - t.x;
+                const dy = a.y - t.y;
+                return Math.sqrt(dx * dx + dy * dy) < 40;
+            });
+
+            if (arrived.length > 0) {
+                t.life -= 0.5; // Progress
+                // Visual feedback
+                t.el.style.opacity = t.life / 100;
+            }
+
+            if (t.life <= 0) {
+                // Task Done
+                t.el.remove();
+                tasks.splice(i, 1);
+
+                // Release Agents
+                swarmers.forEach(a => {
+                    a.state = 'idle';
+                    a.target = null;
+                    a.el.classList.remove('active');
+                    // Ephemeral: chance to die
+                    if (Math.random() < 0.3 && agents.length > 5) {
+                        a.el.remove();
+                        const idx = agents.indexOf(a);
+                        if (idx > -1) agents.splice(idx, 1);
+                    }
+                });
+            }
+        }
+    }
+
+    // --- FX ---
+    function shootBeam(from, to) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x);
+        line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x);
+        line.setAttribute('y2', to.y);
+        line.setAttribute('class', 'beam');
+        svg.insertBefore(line, svg.firstChild); // Behind nodes
+
+        beams.push({ el: line, life: 20 });
+    }
+
+    function updateBeams() {
+        for (let i = beams.length - 1; i >= 0; i--) {
+            const b = beams[i];
+            b.life--;
+            if (b.life <= 0) {
+                b.el.remove();
+                beams.splice(i, 1);
+            } else {
+                b.el.style.opacity = b.life / 20;
+            }
+        }
+    }
+
+    function createRipple(x, y) {
+        const r = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        r.setAttribute('cx', x);
+        r.setAttribute('cy', y);
+        r.setAttribute('r', '10');
+        r.setAttribute('class', 'ripple');
+        svg.insertBefore(r, svg.firstChild);
+        ripples.push({ el: r, size: 10, opacity: 1 });
+    }
+
+    function updateRipples() {
+        for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            r.size += 2;
+            r.opacity -= 0.02;
+
+            if (r.opacity <= 0) {
+                r.el.remove();
+                ripples.splice(i, 1);
+            } else {
+                r.el.setAttribute('r', r.size);
+                r.el.style.opacity = r.opacity;
+            }
+        }
+    }
+
+    function updateStats() {
+        statAgents.textContent = agents.length;
+        statTasks.textContent = tasks.length;
+    }
+
+    // --- Controls ---
+    btnInject.onclick = injectTask;
+    btnReset.onclick = () => {
+        tasks.forEach(t => t.el.remove());
+        tasks.length = 0;
+        agents.forEach(a => a.el.remove());
+        agents.length = 0;
+        for (let i = 0; i < 5; i++) spawnAgent();
     };
 
-    // Helpers
-    function createNodeGroup(x, y, id) {
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.setAttribute('class', 'node-group');
-        g.setAttribute('transform', `translate(${x}, ${y})`);
-        g.dataset.id = id;
-        return g;
-    }
-
-    function createCircle(r, color, isMain) {
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', r);
-        circle.setAttribute('class', isMain ? 'node-circle' : 'node-sub-circle');
-        circle.setAttribute('stroke', color);
-        if (isMain) {
-            circle.setAttribute('filter', `url(#glow-${color === '#00f3ff' ? 'blue' : (color === '#bd00ff' ? 'purple' : 'gold')})`);
-        }
-        return circle;
-    }
-
-    function createLabel(text, y, className) {
-        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        t.setAttribute('y', y);
-        t.setAttribute('class', className);
-        t.textContent = text;
-        return t;
-    }
-
-    function createPath(x1, y1, x2, y2, color, isMain) {
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        // Simple curve
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
-        // Add some curve
-        const d = isMain
-            ? `M ${x1} ${y1} Q 400 300 ${x2} ${y2}`
-            : `M ${x1} ${y1} L ${x2} ${y2}`;
-
-        path.setAttribute('d', d);
-        path.setAttribute('class', isMain ? 'connection-path' : 'connection-sub-path');
-        path.setAttribute('stroke', color);
-        return path;
-    }
-
-    function showDetails(node) {
-        detailTitle.textContent = node.label;
-        detailTitle.style.color = node.color;
-        detailTitle.style.borderColor = node.color;
-
-        // Re-use the existing details content from previous version or define new
-        // For now, using the description
-        detailContent.innerHTML = `
-            <p style="margin-bottom: 20px; font-size: 1.1rem;">${node.description}</p>
-            <p style="color: #888; font-size: 0.9rem;">(Detailed view active)</p>
-        `;
-
-        detailsPanel.classList.remove('hidden');
-    }
-
-    function animateParticle(path, color) {
-        const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        particle.setAttribute('r', '3');
-        particle.setAttribute('fill', color);
-        particle.setAttribute('class', 'flow-particle');
-        connectionsLayer.appendChild(particle);
-
-        const length = path.getTotalLength();
-        let start = performance.now();
-        const duration = 2000 + Math.random() * 1000;
-
-        function step(timestamp) {
-            if (!document.body.contains(path)) {
-                particle.remove();
-                return; // Stop if path removed
-            }
-            const progress = ((timestamp - start) % duration) / duration;
-            const point = path.getPointAtLength(progress * length);
-
-            particle.setAttribute('cx', point.x);
-            particle.setAttribute('cy', point.y);
-
-            requestAnimationFrame(step);
-        }
-
-        requestAnimationFrame(step);
-    }
+    // Start
+    init();
 });

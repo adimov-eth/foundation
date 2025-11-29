@@ -1,0 +1,31 @@
+{
+  "name": "@here.build/quickstarts",
+  "version": "0.1.0",
+  "description": "TypeScript port of Anthropic claude-quickstarts",
+  "type": "module",
+  "exports": {
+    "./agents": "./dist/agents/index.js",
+    "./autonomous-coding": "./dist/autonomous-coding/index.js",
+    "./computer-use": "./dist/computer-use/index.js",
+    "./mcp-servers/calculator": "./dist/mcp-servers/calculator.js"
+  },
+  "bin": {
+    "calculator-mcp": "./dist/mcp-servers/calculator.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.55",
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@modelcontextprotocol/sdk": "^1.23.0",
+    "glob": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.1"
+  }
+}

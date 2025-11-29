@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Graph Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            max-width: 350px;
+            z-index: 1000;
+        }
+        
+        #info h2 {
+            margin-top: 0;
+            color: #00ff88;
+            font-size: 18px;
+        }
+        
+        #stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            background: rgba(40, 40, 40, 0.5);
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            z-index: 1000;
+        }
+        
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #00cc70;
+        }
+        
+        .node {
+            cursor: pointer;
+        }
+        
+        .node circle {
+            stroke: #00ff88;
+            stroke-width: 2px;
+            transition: all 0.3s;
+        }
+        
+        .node:hover circle {
+            stroke-width: 4px;
+            stroke: #fff;
+        }
+        
+        .node text {
+            font-size: 10px;
+            pointer-events: none;
+            text-anchor: middle;
+            fill: #e0e0e0;
+        }
+        
+        .link {
+            stroke: #00ff88;
+            stroke-opacity: 0.3;
+            transition: all 0.3s;
+        }
+        
+        .link.active {
+            stroke-opacity: 0.8;
+            stroke-width: 3px;
+        }
+        
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            padding: 10px;
+            display: none;
+            max-width: 300px;
+            z-index: 2000;
+        }
+        
+        #search {
+            margin-top: 15px;
+        }
+        
+        #search input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid #333;
+            color: #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>Memory Graph</h2>
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-label">Nodes</div>
+                <div class="stat-value" id="node-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Edges</div>
+                <div class="stat-value" id="edge-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Energy</div>
+                <div class="stat-value" id="total-energy">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Clusters</div>
+                <div class="stat-value" id="cluster-count">0</div>
+            </div>
+        </div>
+        <div id="search">
+            <input type="text" placeholder="Search memories..." id="search-input">
+        </div>
+    </div>
+    
+    <div id="controls">
+        <button onclick="loadMemoryData()">Refresh</button>
+        <button onclick="runActivation()">Activate</button>
+        <button onclick="resetView()">Reset View</button>
+    </div>
+    
+    <div id="tooltip"></div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b6b;"></div>
+            <span>High Energy</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4ecdc4;"></div>
+            <span>Medium Energy</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #45b7d1;"></div>
+            <span>Low Energy</span>
+        </div>
+    </div>
+    
+    <svg id="graph"></svg>
+    
+    <script>
+        // Dimensions
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Create SVG
+        const svg = d3.select("#graph")
+            .attr("width", width)
+            .attr("height", height);
+        
+        // Create container for zoom/pan
+        const container = svg.append("g");
+        
+        // Add zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 10])
+            .on("zoom", (event) => {
+                container.attr("transform", event.transform);
+            });
+        
+        svg.call(zoom);
+        
+        // Color scale for energy
+        const colorScale = d3.scaleLinear()
+            .domain([0, 0.5, 1])
+            .range(["#45b7d1", "#4ecdc4", "#ff6b6b"]);
+        
+        // Size scale for importance
+        const sizeScale = d3.scaleLinear()
+            .domain([0, 1])
+            .range([5, 20]);
+        
+        let simulation;
+        let nodes = [];
+        let links = [];
+        
+        async function loadMemoryData() {
+            try {
+                // Fetch memory stats
+                const response = await fetch('https://localhost:1337/tools/memory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'tools/call',
+                        params: {
+                            name: 'memory',
+                            arguments: {
+                                expr: '(snapshot)'
+                            }
+                        },
+                        id: 1
+                    })
+                });
+                
+                const data = await response.json();
+                const snapshot = parseSnapshot(data.result.content[0].text);
+                
+                // Update stats
+                document.getElementById('node-count').textContent = snapshot.items.length;
+                document.getElementById('edge-count').textContent = snapshot.edges.length;
+                document.getElementById('total-energy').textContent = snapshot.energy.toFixed(2);
+                
+                // Prepare graph data
+                nodes = snapshot.items.map(item => ({
+                    id: item.id,
+                    text: item.text.slice(0, 50),
+                    type: item.type,
+                    importance: item.importance,
+                    energy: item.energy,
+                    tags: item.tags
+                }));
+                
+                links = snapshot.edges.map(edge => ({
+                    source: edge.from,
+                    target: edge.to,
+                    weight: edge.weight,
+                    relation: edge.relation
+                }));
+                
+                renderGraph();
+                
+            } catch (error) {
+                console.error('Failed to load memory data:', error);
+            }
+        }
+        
+        function parseSnapshot(sexpr) {
+            // Simple S-expression parser for the snapshot
+            // This is a placeholder - would need full implementation
+            return {
+                items: [],
+                edges: [],
+                energy: 1.0
+            };
+        }
+        
+        function renderGraph() {
+            // Clear existing
+            container.selectAll("*").remove();
+            
+            // Create force simulation
+            simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links)
+                    .id(d => d.id)
+                    .distance(d => 100 / (d.weight || 0.1)))
+                .force("charge", d3.forceManyBody().strength(-300))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(d => sizeScale(d.importance) + 5));
+            
+            // Create links
+            const link = container.append("g")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link")
+                .attr("stroke-width", d => Math.sqrt(d.weight * 10));
+            
+            // Create nodes
+            const node = container.append("g")
+                .selectAll(".node")
+                .data(nodes)
+                .enter().append("g")
+                .attr("class", "node")
+                .call(drag(simulation));
+            
+            node.append("circle")
+                .attr("r", d => sizeScale(d.importance))
+                .attr("fill", d => colorScale(d.energy))
+                .on("mouseover", showTooltip)
+                .on("mouseout", hideTooltip);
+            
+            node.append("text")
+                .text(d => d.text.slice(0, 20) + "...")
+                .attr("dy", -15);
+            
+            // Update positions on tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+                
+                node
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
+            });
+        }
+        
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+        
+        function showTooltip(event, d) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${d.id}</strong><br>
+                Type: ${d.type}<br>
+                Energy: ${d.energy.toFixed(3)}<br>
+                Importance: ${d.importance.toFixed(2)}<br>
+                Tags: ${d.tags.join(', ')}<br>
+                <br>
+                ${d.text}
+            `;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY + 10) + 'px';
+            tooltip.style.display = 'block';
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+        
+        function resetView() {
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity);
+        }
+        
+        async function runActivation() {
+            // Trigger spreading activation from random node
+            if (nodes.length === 0) return;
+            
+            const seed = nodes[Math.floor(Math.random() * nodes.length)];
+            
+            try {
+                const response = await fetch('https://localhost:1337/tools/memory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test'
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        method: 'tools/call',
+                        params: {
+                            name: 'memory',
+                            arguments: {
+                                expr: `(activate (list "${seed.id}") 3 0.85 0.1)`
+                            }
+                        },
+                        id: 1
+                    })
+                });
+                
+                // Reload to see updated energy
+                await loadMemoryData();
+                
+            } catch (error) {
+                console.error('Failed to run activation:', error);
+            }
+        }
+        
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            
+            container.selectAll('.node')
+                .style('opacity', d => {
+                    if (!query) return 1;
+                    return d.text.toLowerCase().includes(query) ||
+                           d.tags.some(tag => tag.toLowerCase().includes(query)) ? 1 : 0.2;
+                });
+            
+            container.selectAll('.link')
+                .style('opacity', d => {
+                    if (!query) return 0.3;
+                    return (d.source.text.toLowerCase().includes(query) ||
+                            d.target.text.toLowerCase().includes(query)) ? 0.6 : 0.1;
+                });
+        });
+        
+        // Load initial data
+        loadMemoryData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadMemoryData, 30000);
+    </script>
+</body>
+</html>

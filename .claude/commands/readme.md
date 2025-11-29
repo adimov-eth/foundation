@@ -1,13 +1,10 @@
-Check next readme files to get initial context of the project:
-- @README.md - Main monorepo overview
+Read @.claude/bootstrap.md for condensed project orientation.
 
-Arrival packages:
-- @arrival/arrival/README.md - Main Arrival bundle
-- @arrival/arrival-serializer/README.md - S-expression serializer
-- @arrival/arrival-scheme/README.md - Sandboxed Scheme interpreter
-- @arrival/arrival-mcp/README.md - MCP framework
-- @arrival/arrival-env/README.md - Protocol definitions
+This transmits understanding, not exhaustive information. ~600 tokens vs ~10,000 from all READMEs.
 
-Plexus packages:
-- @plexus/plexus/README.md - Core collaborative state management
-- @plexus/plexus-mobx/README.md - MobX integration
+For deep dives into specific packages:
+- @arrival/arrival/README.md - Full Arrival documentation
+- @plexus/plexus/README.md - Full Plexus documentation
+- @arrival/arrival-serializer/README.md - S-expr patterns and best practices
+
+Or use periphery tools for structural exploration.

@@ -1,0 +1,53 @@
+{
+  "name": "@singl/vessel",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @modelcontextprotocol/sdk --external hono --external jose --external lodash-es --external zod",
+    "dev": "bun run --watch src/index.ts",
+    "dev:http": "bun run src/http-local.ts",
+    "dev:stdio": "bun run src/stdio-server.ts",
+    "typecheck": "tsc --noEmit",
+    "ingest": "bun run src/tools/memory/ingestion/cli/ingest-sessions.ts",
+    "ingest:dry": "bun run src/tools/memory/ingestion/cli/ingest-sessions.ts --dry-run",
+    "ingest:help": "bun run src/tools/memory/ingestion/cli/ingest-sessions.ts --help",
+    "ingest:smoke": "bun run src/tools/memory/ingestion/cli/ingest-smoke.ts"
+  },
+  "dependencies": {
+    "@singl/arrival": "workspace:*",
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@modelcontextprotocol/sdk": "^1.5.0",
+    "@types/lodash-es": "^4.17.12",
+    "chalk": "^5.3.0",
+    "dedent": "^1.5.3",
+    "falkordb": "^6.3.0",
+    "glob": "^11.0.3",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
+    "graphology-metrics": "^2.4.0",
+    "graphology-shortest-path": "^2.1.0",
+    "hono": "^4.5.0",
+    "jose": "^6.1.0",
+    "lodash-es": "^4.17.21",
+    "neo4j-driver": "^5.28.1",
+    "redis": "^5.8.2",
+    "tiny-invariant": "^1.3.3",
+    "type-fest": "^4.21.0",
+    "zod": "^4.1.5",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/glob": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.2"
+  }
+}

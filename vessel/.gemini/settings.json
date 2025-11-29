@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "vessel": {
+      "command": "bun",
+      "args": [
+        "run",
+        "--cwd",
+        "/Users/adimov/AGI/packages/mcp-server",
+        "dev:stdio"
+      ]
+    }
+  }
+}

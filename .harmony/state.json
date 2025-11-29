@@ -1,0 +1,743 @@
+{
+  "id": "harmony",
+  "born": 1764234848788,
+  "energy": 0,
+  "threshold": 100,
+  "items": {
+    "m_1764234856086_9e82fe10": {
+      "id": "m_1764234856086_9e82fe10",
+      "type": "insight",
+      "text": "Test memory",
+      "tags": [
+        "test",
+        "memory"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764234856086,
+      "updatedAt": 1764234856086
+    },
+    "m_1764237457686_c374a2fa": {
+      "id": "m_1764237457686_c374a2fa",
+      "type": "pattern",
+      "text": "periphery uses catamorphisms over TypeScript AST - 'extract', 'count', 'patterns', 'types' algebras. graph-* functions for dependency traversal. Circular deps exist in discover module.",
+      "tags": [
+        "periphery",
+        "architecture",
+        "catamorphism"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764237457686,
+      "updatedAt": 1764237457686
+    },
+    "m_1764237479718_32cb4268": {
+      "id": "m_1764237479718_32cb4268",
+      "type": "pattern",
+      "text": "EntityAct inheritance: EntityAct → PlexusAct, TaskAct, CodeEntityAct. CodeEntityAct has commit/rollback for transactional code modifications.",
+      "tags": [
+        "periphery",
+        "entity-act",
+        "inheritance"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764237479718,
+      "updatedAt": 1764237479718
+    },
+    "m_1764237479719_b2cc0e86": {
+      "id": "m_1764237479719_b2cc0e86",
+      "type": "principle",
+      "text": "Discovery/Action separation is the core Arrival principle - sandboxed exploration vs batched mutations. Montessori-inspired: manipulate environment to learn, then commit deliberately.",
+      "tags": [
+        "arrival",
+        "architecture",
+        "montessori"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764237479719,
+      "updatedAt": 1764237479719
+    },
+    "m_1764237511018_70d725f2": {
+      "id": "m_1764237511018_70d725f2",
+      "type": "insight",
+      "text": "periphery is self-hosted: Discover class extends DiscoveryToolInteraction from Arrival. Catamorphism algebras: extract, count, patterns, dependencies, types. Hypergraph utilities for DOT export, metrics, cycle detection.",
+      "tags": [
+        "periphery",
+        "self-hosting",
+        "catamorphism",
+        "arrival"
+      ],
+      "importance": 0.7,
+      "energy": 0.7,
+      "createdAt": 1764237511018,
+      "updatedAt": 1764237511018
+    },
+    "m_1764237565569_e83db947": {
+      "id": "m_1764237565569_e83db947",
+      "type": "technique",
+      "text": "Rosetta layer in arrival-scheme: lipsToJs/jsToLips for bidirectional translation. JS arrays → cons pairs, objects → alists. Fantasy Land entities preserved for polymorphic ops. createRosettaWrapper makes any JS fn callable from Scheme.",
+      "tags": [
+        "arrival-scheme",
+        "rosetta",
+        "interop"
+      ],
+      "importance": 0.6,
+      "energy": 0.6,
+      "createdAt": 1764237565569,
+      "updatedAt": 1764237565569
+    },
+    "m_1764237614434_c7ecb7ae": {
+      "id": "m_1764237614434_c7ecb7ae",
+      "type": "insight",
+      "text": "DiscoveryToolInteraction is the core Arrival abstraction. Dynamic tool descriptions generated at runtime - available functions with Zod-derived signatures. Sandboxed Scheme execution with 5s timeout. 'NOTE FOR CLAUDE ON LIVE DESCRIPTION' personalizes per AI client. This IS 'memory about memory' - tool description contains live state.",
+      "tags": [
+        "arrival-mcp",
+        "discovery",
+        "tool-description",
+        "memory-about-memory"
+      ],
+      "importance": 0.8,
+      "energy": 0.8,
+      "createdAt": 1764237614434,
+      "updatedAt": 1764237614434
+    },
+    "m_1764238620116_9338de6e": {
+      "id": "m_1764238620116_9338de6e",
+      "type": "pattern",
+      "text": "periphery self-hosts on Arrival: Discover extends DiscoveryToolInteraction, Act extends ActionToolInteraction. The discovery/action separation is recursive - tools that enable discovery/action separation are themselves built using discovery/action separation.",
+      "tags": [
+        "periphery",
+        "arrival",
+        "self-hosting",
+        "recursion"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764238620116,
+      "updatedAt": 1764238620116
+    },
+    "m_1764238626297_8ba43b5d": {
+      "id": "m_1764238626297_8ba43b5d",
+      "type": "fact",
+      "text": "Monorepo has 256 files, 170 classes, 1595 edges. Plexus has many cycles (contagious materialization). periphery has cycles around discover.ts. arrival-mcp has ToolInteraction↔HonoMCPServer↔MCPServer cycle.",
+      "tags": [
+        "architecture",
+        "cycles",
+        "graph"
+      ],
+      "importance": 0.5,
+      "energy": 0.5,
+      "createdAt": 1764238626297,
+      "updatedAt": 1764238626297
+    },
+    "m_1764238673130_76d84ef4": {
+      "id": "m_1764238673130_76d84ef4",
+      "type": "insight",
+      "text": "periphery has e-graph equality saturation for code optimization. egraph-rules.ts defines declarative rewrite rules: mapFusion, filterMapFusion, composeAssoc (standard FP), plus Plexus-specific emancipationPattern and contagiousMaterialization. Saturation finds all equivalent forms automatically.",
+      "tags": [
+        "periphery",
+        "egraph",
+        "equality-saturation",
+        "plexus",
+        "optimization"
+      ],
+      "importance": 0.8,
+      "energy": 0.8,
+      "createdAt": 1764238673130,
+      "updatedAt": 1764238673130
+    },
+    "m_1764238700015_a464878a": {
+      "id": "m_1764238700015_a464878a",
+      "type": "principle",
+      "text": "hypergraph.ts is free algebra for graph construction. HyperGraph = Empty | Vertex | Edge | Overlay | Connect. foldHG is the catamorphism - 'one graph definition, infinite interpretations.' Overlay is union (assoc/commut/idemp), Connect is cross-product (assoc). This is the mathematical foundation for dependency analysis.",
+      "tags": [
+        "periphery",
+        "hypergraph",
+        "algebra",
+        "catamorphism",
+        "graph-theory"
+      ],
+      "importance": 0.9,
+      "energy": 0.9,
+      "createdAt": 1764238700015,
+      "updatedAt": 1764238700015
+    },
+    "m_1764238720018_1e128add": {
+      "id": "m_1764238720018_1e128add",
+      "type": "insight",
+      "text": "Foundation architecture is layered recursion: hypergraph (free algebra) → catamorphism (AST folds) → egraph (equality saturation) → discover/act (self-hosted on Arrival). Each layer has mathematical foundation. The tools that analyze the codebase are built using the patterns they analyze.",
+      "tags": [
+        "foundation",
+        "architecture",
+        "recursion",
+        "self-hosting",
+        "mathematical-foundation"
+      ],
+      "importance": 0.9,
+      "energy": 0.9,
+      "createdAt": 1764238720018,
+      "updatedAt": 1764238720018
+    },
+    "m_1764239011150_1a032b69": {
+      "id": "m_1764239011150_1a032b69",
+      "type": "fact",
+      "text": "Harmony already has working implementation: SpreadingActivationEngine (Collins & Loftus algorithm), ManifestGenerator (Louvain + PageRank), FileMemoryStore, FalkorDBMemoryStore, MemoryToolInteraction. The 'minimum viable experiment' in litepaper Section 8 is actually already past - we're using the tools right now.",
+      "tags": [
+        "harmony",
+        "implementation",
+        "status",
+        "mvp-complete"
+      ],
+      "importance": 0.9,
+      "energy": 0.9,
+      "createdAt": 1764239011150,
+      "updatedAt": 1764239011150
+    },
+    "m_1764239079556_ab52a93d": {
+      "id": "m_1764239079556_ab52a93d",
+      "type": "insight",
+      "text": "Roadmap realization: Harmony MVP is already built. SpreadingActivation, ManifestGenerator, MemoryToolInteraction all exist and work. The litepaper's 'minimum viable experiment' is past. What's actually needed: (1) validation of current impl, (2) Librarian agent for hygiene, (3) bootstrap context for fresh instantiation. Multi-agent is Phase 3.",
+      "tags": [
+        "harmony",
+        "roadmap",
+        "implementation",
+        "validation"
+      ],
+      "importance": 0.9,
+      "energy": 0.9,
+      "createdAt": 1764239079556,
+      "updatedAt": 1764239079556
+    },
+    "m_1764239506498_30b7af03": {
+      "id": "m_1764239506498_30b7af03",
+      "type": "insight",
+      "text": "ROADMAP.md created: Harmony MVP already exists (SpreadingActivation, ManifestGenerator, MemoryToolInteraction). Phase 0 is validation - measuring if memories are actually retrieved and influence decisions. Primary metric: memory utilization rate. Five test puzzles defined: Cross-Session Continuity, Associative Recall, Theme Emergence, Decay/Pruning, Scope Isolation.",
+      "tags": [
+        "harmony",
+        "roadmap",
+        "validation",
+        "mvp"
+      ],
+      "importance": 0.9,
+      "energy": 0.9,
+      "createdAt": 1764239506498,
+      "updatedAt": 1764239506498
+    },
+    "m_1764239514071_84b29a3e": {
+      "id": "m_1764239514071_84b29a3e",
+      "type": "technique",
+      "text": "Librarian agent spec: periodic memory hygiene without human intervention. Functions: (find-redundant threshold), (find-duplicates), (find-contradictions), (community-health), (merge-memories id1 id2 text), (prune-memory id reason). Exit criteria: modularity increases after run.",
+      "tags": [
+        "harmony",
+        "librarian",
+        "agent",
+        "hygiene"
+      ],
+      "importance": 0.8,
+      "energy": 0.8,
+      "createdAt": 1764239514071,
+      "updatedAt": 1764239514071
+    }
+  },
+  "edges": [
+    {
+      "from": "m_1764237457686_c374a2fa",
+      "to": "m_1764237479719_b2cc0e86",
+      "relation": "implements",
+      "weight": 0.8,
+      "lastReinforcedAt": 1764237489805
+    },
+    {
+      "from": "m_1764237479718_32cb4268",
+      "to": "m_1764237479719_b2cc0e86",
+      "relation": "implements",
+      "weight": 0.7,
+      "lastReinforcedAt": 1764237489807
+    },
+    {
+      "from": "m_1764237511018_70d725f2",
+      "to": "m_1764237457686_c374a2fa",
+      "relation": "builds-on",
+      "weight": 0.6,
+      "lastReinforcedAt": 1764237565571
+    },
+    {
+      "from": "m_1764237511018_70d725f2",
+      "to": "m_1764238620116_9338de6e",
+      "relation": "elaborates",
+      "weight": 0.8,
+      "lastReinforcedAt": 1764238636653
+    },
+    {
+      "from": "m_1764237457686_c374a2fa",
+      "to": "m_1764237511018_70d725f2",
+      "relation": "supports",
+      "weight": 0.7,
+      "lastReinforcedAt": 1764238636656
+    },
+    {
+      "from": "m_1764238673130_76d84ef4",
+      "to": "m_1764237457686_c374a2fa",
+      "relation": "extends",
+      "weight": 0.8,
+      "lastReinforcedAt": 1764238678484
+    },
+    {
+      "from": "m_1764238700015_a464878a",
+      "to": "m_1764238673130_76d84ef4",
+      "relation": "foundation-for",
+      "weight": 0.9,
+      "lastReinforcedAt": 1764238706452
+    },
+    {
+      "from": "m_1764238700015_a464878a",
+      "to": "m_1764237457686_c374a2fa",
+      "relation": "enables",
+      "weight": 0.7,
+      "lastReinforcedAt": 1764238706453
+    },
+    {
+      "from": "m_1764239506498_30b7af03",
+      "to": "m_1764239514071_84b29a3e",
+      "relation": "enables",
+      "weight": 0.7,
+      "lastReinforcedAt": 1764239517926
+    }
+  ],
+  "history": [
+    {
+      "t": 1764234856086,
+      "op": "remember",
+      "args": {
+        "id": "m_1764234856086_9e82fe10",
+        "type": "insight",
+        "tags": [
+          "test",
+          "memory"
+        ]
+      }
+    },
+    {
+      "t": 1764234863662,
+      "op": "recall",
+      "args": {
+        "query": "memory test",
+        "limit": 10,
+        "results": 1
+      }
+    },
+    {
+      "t": 1764237457686,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237457686_c374a2fa",
+        "type": "pattern",
+        "tags": [
+          "periphery",
+          "architecture",
+          "catamorphism"
+        ]
+      }
+    },
+    {
+      "t": 1764237465087,
+      "op": "recall",
+      "args": {
+        "query": "AST traversal patterns",
+        "limit": 5,
+        "results": 1
+      }
+    },
+    {
+      "t": 1764237479718,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237479718_32cb4268",
+        "type": "pattern",
+        "tags": [
+          "periphery",
+          "entity-act",
+          "inheritance"
+        ]
+      }
+    },
+    {
+      "t": 1764237479719,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237479719_b2cc0e86",
+        "type": "principle",
+        "tags": [
+          "arrival",
+          "architecture",
+          "montessori"
+        ]
+      }
+    },
+    {
+      "t": 1764237484386,
+      "op": "recall",
+      "args": {
+        "query": "",
+        "limit": 10,
+        "results": 4
+      }
+    },
+    {
+      "t": 1764237489805,
+      "op": "connect",
+      "args": {
+        "from": "m_1764237457686_c374a2fa",
+        "to": "m_1764237479719_b2cc0e86",
+        "relation": "implements"
+      }
+    },
+    {
+      "t": 1764237489807,
+      "op": "connect",
+      "args": {
+        "from": "m_1764237479718_32cb4268",
+        "to": "m_1764237479719_b2cc0e86",
+        "relation": "implements"
+      }
+    },
+    {
+      "t": 1764237511018,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237511018_70d725f2",
+        "type": "insight",
+        "tags": [
+          "periphery",
+          "self-hosting",
+          "catamorphism",
+          "arrival"
+        ]
+      }
+    },
+    {
+      "t": 1764237565569,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237565569_e83db947",
+        "type": "technique",
+        "tags": [
+          "arrival-scheme",
+          "rosetta",
+          "interop"
+        ]
+      }
+    },
+    {
+      "t": 1764237565571,
+      "op": "connect",
+      "args": {
+        "from": "m_1764237511018_70d725f2",
+        "to": "m_1764237457686_c374a2fa",
+        "relation": "builds-on"
+      }
+    },
+    {
+      "t": 1764237614434,
+      "op": "remember",
+      "args": {
+        "id": "m_1764237614434_c7ecb7ae",
+        "type": "insight",
+        "tags": [
+          "arrival-mcp",
+          "discovery",
+          "tool-description",
+          "memory-about-memory"
+        ]
+      }
+    },
+    {
+      "t": 1764238528098,
+      "op": "recall",
+      "args": {
+        "query": "architecture",
+        "limit": 10,
+        "results": 4
+      }
+    },
+    {
+      "t": 1764238620116,
+      "op": "remember",
+      "args": {
+        "id": "m_1764238620116_9338de6e",
+        "type": "pattern",
+        "tags": [
+          "periphery",
+          "arrival",
+          "self-hosting",
+          "recursion"
+        ]
+      }
+    },
+    {
+      "t": 1764238626297,
+      "op": "remember",
+      "args": {
+        "id": "m_1764238626297_8ba43b5d",
+        "type": "fact",
+        "tags": [
+          "architecture",
+          "cycles",
+          "graph"
+        ]
+      }
+    },
+    {
+      "t": 1764238632159,
+      "op": "recall",
+      "args": {
+        "query": "self-hosting",
+        "limit": 5,
+        "results": 4
+      }
+    },
+    {
+      "t": 1764238632173,
+      "op": "recall",
+      "args": {
+        "query": "catamorphism",
+        "limit": 5,
+        "results": 4
+      }
+    },
+    {
+      "t": 1764238636653,
+      "op": "connect",
+      "args": {
+        "from": "m_1764237511018_70d725f2",
+        "to": "m_1764238620116_9338de6e",
+        "relation": "elaborates"
+      }
+    },
+    {
+      "t": 1764238636656,
+      "op": "connect",
+      "args": {
+        "from": "m_1764237457686_c374a2fa",
+        "to": "m_1764237511018_70d725f2",
+        "relation": "supports"
+      }
+    },
+    {
+      "t": 1764238673130,
+      "op": "remember",
+      "args": {
+        "id": "m_1764238673130_76d84ef4",
+        "type": "insight",
+        "tags": [
+          "periphery",
+          "egraph",
+          "equality-saturation",
+          "plexus",
+          "optimization"
+        ]
+      }
+    },
+    {
+      "t": 1764238678484,
+      "op": "connect",
+      "args": {
+        "from": "m_1764238673130_76d84ef4",
+        "to": "m_1764237457686_c374a2fa",
+        "relation": "extends"
+      }
+    },
+    {
+      "t": 1764238700015,
+      "op": "remember",
+      "args": {
+        "id": "m_1764238700015_a464878a",
+        "type": "principle",
+        "tags": [
+          "periphery",
+          "hypergraph",
+          "algebra",
+          "catamorphism",
+          "graph-theory"
+        ]
+      }
+    },
+    {
+      "t": 1764238706452,
+      "op": "connect",
+      "args": {
+        "from": "m_1764238700015_a464878a",
+        "to": "m_1764238673130_76d84ef4",
+        "relation": "foundation-for"
+      }
+    },
+    {
+      "t": 1764238706453,
+      "op": "connect",
+      "args": {
+        "from": "m_1764238700015_a464878a",
+        "to": "m_1764237457686_c374a2fa",
+        "relation": "enables"
+      }
+    },
+    {
+      "t": 1764238720018,
+      "op": "remember",
+      "args": {
+        "id": "m_1764238720018_1e128add",
+        "type": "insight",
+        "tags": [
+          "foundation",
+          "architecture",
+          "recursion",
+          "self-hosting",
+          "mathematical-foundation"
+        ]
+      }
+    },
+    {
+      "t": 1764238725624,
+      "op": "recall",
+      "args": {
+        "query": "architecture",
+        "limit": 15,
+        "results": 9
+      }
+    },
+    {
+      "t": 1764239011150,
+      "op": "remember",
+      "args": {
+        "id": "m_1764239011150_1a032b69",
+        "type": "fact",
+        "tags": [
+          "harmony",
+          "implementation",
+          "status",
+          "mvp-complete"
+        ]
+      }
+    },
+    {
+      "t": 1764239079556,
+      "op": "remember",
+      "args": {
+        "id": "m_1764239079556_ab52a93d",
+        "type": "insight",
+        "tags": [
+          "harmony",
+          "roadmap",
+          "implementation",
+          "validation"
+        ]
+      }
+    },
+    {
+      "t": 1764239332983,
+      "op": "recall",
+      "args": {
+        "query": "architecture",
+        "limit": 10,
+        "results": 9
+      }
+    },
+    {
+      "t": 1764239332986,
+      "op": "recall",
+      "args": {
+        "query": "lifecycle",
+        "limit": 10,
+        "results": 0
+      }
+    },
+    {
+      "t": 1764239332989,
+      "op": "recall",
+      "args": {
+        "query": "scope",
+        "limit": 10,
+        "results": 0
+      }
+    },
+    {
+      "t": 1764239506498,
+      "op": "remember",
+      "args": {
+        "id": "m_1764239506498_30b7af03",
+        "type": "insight",
+        "tags": [
+          "harmony",
+          "roadmap",
+          "validation",
+          "mvp"
+        ]
+      }
+    },
+    {
+      "t": 1764239514071,
+      "op": "remember",
+      "args": {
+        "id": "m_1764239514071_84b29a3e",
+        "type": "technique",
+        "tags": [
+          "harmony",
+          "librarian",
+          "agent",
+          "hygiene"
+        ]
+      }
+    },
+    {
+      "t": 1764239517926,
+      "op": "connect",
+      "args": {
+        "from": "m_1764239506498_30b7af03",
+        "to": "m_1764239514071_84b29a3e",
+        "relation": "enables"
+      }
+    },
+    {
+      "t": 1764384013421,
+      "op": "recall",
+      "args": {
+        "query": "crystallization",
+        "limit": 10,
+        "results": 0
+      }
+    },
+    {
+      "t": 1764384017450,
+      "op": "recall",
+      "args": {
+        "query": "memory",
+        "limit": 10,
+        "results": 6
+      }
+    }
+  ],
+  "policy": {
+    "halfLifeDays": 7,
+    "reinforceDelta": 0.05,
+    "activationSteps": 3,
+    "activationDecay": 0.85,
+    "activationThreshold": 0.2,
+    "edgeWeightFloor": 0.01,
+    "clusterEdgeMinWeight": 0.2,
+    "clusterMinSize": 10,
+    "clusterKeepRecent": 5,
+    "explorationEpsilon": 0.05,
+    "summarizeTopKeywords": 8,
+    "summarizeMaxSnippets": 5,
+    "decayFn": "(lambda (success fail energy importance recency_ms base_half_ms) (let* ((total (+ success fail 1)) (ratio (/ success total)) (scale (+ 0.5 (* 1.5 ratio)))) (* base_half_ms scale)))",
+    "recallScoreFn": "(lambda (activation recency importance access success fail hour day) (+ (* 0.6 activation) (* 0.25 recency) (* 0.15 importance)))",
+    "explorationFn": "(lambda (limit tail_n acts recs imps accs succ fails hours days) (if (> tail_n 0) 0 -1))",
+    "clusterPercentile": 0.6,
+    "neighborTopK": 3,
+    "maxPairsPerRecall": 12,
+    "coactTopKPerNode": 3
+  },
+  "policyVersions": [],
+  "recentSessions": []
+}

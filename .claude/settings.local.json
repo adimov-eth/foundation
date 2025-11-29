@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/memory-session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "WebFetch(domain:arxiv.org)",
@@ -63,7 +76,8 @@
       "Bash(bun add:*)",
       "Bash(bun test:*)",
       "Bash(bun run test:*)",
-      "mcp__chrome-devtools__wait_for"
+      "mcp__chrome-devtools__wait_for",
+      "Bash(timeout 30 pnpm test:*)"
     ],
     "deny": [],
     "ask": []

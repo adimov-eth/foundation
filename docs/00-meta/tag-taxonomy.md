@@ -14,7 +14,7 @@ Controlled vocabulary for `tags`. Use only these (combine freely).
 
 ## Kind
 `package` · `cross-cutting` · `pattern` · `playbook` · `meta` · `history` · `reconciliation` ·
-`backlog` · `glossary` · `schema`
+`backlog` · `glossary` · `schema` · `reconstructed`
 
 ## System / area
 `plexus` · `arrival` · `scheme` · `inference` · `provenance` · `mcp` · `serializer` ·

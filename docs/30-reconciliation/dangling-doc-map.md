@@ -15,6 +15,13 @@ reference is an in-code comment pointing at a `docs/…` path that does not exis
 Every referencing `path:line` below was verified by `grep` against the working tree on
 2026-06-18. Backlog item [[90-backlog/items/07-p3-dangling-design-doc-refs]] tracks the cleanup.
 
+> 📐 **Recovery:** the lost docs below now have **code-grounded reconstructions** — each
+> reverse-engineered from the code it governed and anchored to `file:line` — under
+> [[reconstructed/_moc]] (`authority: derived`: *reconstructions, not originals*). One further lost
+> doc, `docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md`
+> (`arrival/arrival-chain/src/loader-extensions.ts:7`), surfaced after this ledger was written and is
+> reconstructed there too — 17 reconstructions in total.
+
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been
   re-vendored into `40-history/`. The in-code ref should be repointed at the archived copy.

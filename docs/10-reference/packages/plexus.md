@@ -106,7 +106,7 @@ Exports flow through `index.ts`. Signatures abbreviated.
 | `materializeVirtualStruct` | container (Y.Map/Y.Array) genesis for lazy fields | plexus/src/virtual-children-genesis.ts:169 |
 | `crdt-uuid` encode/decode | Feistel-scrambled prefix-discriminated `{clientId, clock}` codec | plexus/src/crdt-uuid.ts:153 / :191 |
 | materialized-* proxies | in-place diffing of `list/set/record/map` against Yjs containers | plexus/src/proxies/materialized-array.ts:32 |
-| `serializeKey` / `canonicalSort` | structural map-key serialization + cross-peer sort | plexus/src/proxies/key-serialization.ts:151 / PathMap.ts:24 |
+| `serializeKey` / `canonicalSort` | structural map-key serialization + cross-peer sort | plexus/src/proxies/key-serialization.ts:151 / PathMap.ts:23 |
 | mobx integration | `trackingHook` → mobx atoms; `runInAction` flush wrapper | plexus/src/mobx/index.ts:13 |
 
 ## Invariants

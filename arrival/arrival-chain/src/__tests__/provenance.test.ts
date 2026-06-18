@@ -1,5 +1,5 @@
 /**
- * Provenance algebra — per `docs/spec/arrival-chain.md` §5.
+ * Provenance algebra — per `docs/30-reconciliation/dangling-doc-map.md` §5.
  *
  * The exit-tap stamps every invocation with a `Set<call-id>` of upstream
  * provenance-marked invocations whose output flowed into its inputs.
@@ -525,7 +525,7 @@ describe("provenance × comparison-as-predicate", () => {
 });
 
 describe("provenance × spec §5.3 (car/cdr element-only)", () => {
-  // Spec §5.3 (docs/spec/arrival-chain.md:218): `(car (list a b)) → a, with
+  // Spec §5.3 (docs/30-reconciliation/dangling-doc-map.md:218): `(car (list a b)) → a, with
   // provenance P<A>`. Current impl in lips.ts:2067-2070 routes through
   // `withInputProvenance([list], list.car)` which unions the CONTAINER's
   // provenance (P<A,B>) onto the element. Result: `(car (list a b))` carries
@@ -585,7 +585,7 @@ describe("field-point absorption (idempotent re-projection)", () => {
   // `(:a (:b x))` minted `fieldPoint(fieldPoint(P,"b"),"a")` — a fresh id over an
   // already-synthetic origin — and an accumulating loop compounded that
   // quadratically. Absorption makes re-projecting a field-point return it
-  // unchanged. See docs/working-proposals/trace-provenance-idempotence-fix-2026-06-04.md.
+  // unchanged. See docs/30-reconciliation/dangling-doc-map.md.
 
   it("a field-point projected again returns itself (no second mint)", () => {
     const trace = new EvalTrace();

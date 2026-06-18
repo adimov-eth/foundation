@@ -8,8 +8,8 @@ canonical-for: []
 last-verified: 2026-06-18
 verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
-  - common/collections/src/defaulted-collections.ts:1   # DefaultedMap
-  - common/collections/src/defaulted-collections.ts:14  # DefaultedWeakMap
+  - common/collections/src/defaulted-collections.ts:16  # DefaultedMap
+  - common/collections/src/defaulted-collections.ts:34  # DefaultedWeakMap
   - common/collections/src/counter.ts:31                # Counter
   - common/collections/src/path-map.ts:108              # PathMap
   - common/collections/src/multimap.ts:22               # ArrayMultimap
@@ -32,8 +32,8 @@ Term: [[glossary#crdt]] (PathMap is used in CRDT-adjacent indexing).
 
 | Export | Signature / shape | File:line |
 |---|---|---|
-| `DefaultedMap<K,V>` | `Map` whose `get(key)` inserts `factory(key)` on miss | `common/collections/src/defaulted-collections.ts:1` |
-| `DefaultedWeakMap<K,V>` | same, over `WeakMap` (`K extends object`) | `common/collections/src/defaulted-collections.ts:14` |
+| `DefaultedMap<K,V>` | `Map` whose `get(key)` inserts `factory(key)` on miss | `common/collections/src/defaulted-collections.ts:16` |
+| `DefaultedWeakMap<K,V>` | same, over `WeakMap` (`K extends object`) | `common/collections/src/defaulted-collections.ts:34` |
 | `Counter<K>` | `Map<K,number>`; `get` returns `0` (read is side-effect-free), `increment(key,by=1)`, `keysAtLeast(min)` | `common/collections/src/counter.ts:31` |
 | `PathMap<K,V>` | tuple/set/scalar composite-key map over three tries; `get`/`set`/`has`/`getOrInsert`/`getOrInsertComputed`/`getCanonicalKey` | `common/collections/src/path-map.ts:108` |
 | `PathMapKey`, `PathMapKeyElement` (types) | the composite key shapes | `common/collections/src/path-map.ts:32`, `:30` |

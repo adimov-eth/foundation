@@ -553,6 +553,7 @@ export class Project extends PlexusModel<null> {
     result.catch(() => {}); // consumers attach handling via the handle; never an unhandled rejection
     userForms.catch(() => {});
     const finished = result.then((last) => schemeToJs(last, {}));
+    finished.catch(() => {});
     return new RunHandle(userForms, finished, result, envPromise);
   }
 

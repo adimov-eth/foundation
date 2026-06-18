@@ -18,11 +18,19 @@ import { Project } from "../project.js";
 import { singletonRouter } from "@here.build/arrival-inference";
 
 const stub = (delayMs = 0) => {
+  let active = 0;
+  let maxActive = 0;
   const complete = vi.fn(async (_s: ModelSpec) => {
-    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
-    return { value: { strength: "x", weakness: "y", challenge: "z" } };
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    try {
+      if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+      return { value: { strength: "x", weakness: "y", challenge: "z" } };
+    } finally {
+      active -= 1;
+    }
   });
-  return { complete };
+  return { complete, maxActive: () => maxActive };
 };
 
 const PROGRAM = `
@@ -81,12 +89,10 @@ describe("cross-fertilization — N×(N-1) critique matrix", () => {
     const backend = stub(60); // 4 × 3 = 12 calls; sequential would be 720ms
     project.bindInfer(createInferStore(singletonRouter(backend)));
 
-    const t0 = Date.now();
     await project.run(PROGRAM);
-    const elapsed = Date.now() - t0;
 
     expect(backend.complete).toHaveBeenCalledTimes(12);
-    expect(elapsed).toBeLessThan(300); // not 12 × 60 = 720
+    expect(backend.maxActive()).toBe(12);
   });
 
   it("adding a persona only invalidates 2N new cells, not (N+1)²", async () => {

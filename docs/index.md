@@ -33,14 +33,14 @@ This vault has **two interlinked layers** plus support:
 
 ## Honesty about this vault
 - [[source-layers]] — the three inputs (current code / Archive / prior audit).
-- [[dangling-doc-map]] — 18 in-code doc refs (2 recoverable, 16 lost).
+- [[dangling-doc-map]] — 19 in-code doc refs (2 recoverable, 17 lost).
 - [[version-drift]] — rename drift, ghost packages.
 - [[40-history/_moc|Vendored historical docs]] — frozen, dated.
-- [[90-backlog/_moc|Repair backlog]] — known breakages (documented, **not fixed**).
+- [[90-backlog/_moc|Repair backlog]] — original extraction breakages and their fixed/open status.
 
 ## Conventions
 [[conventions]] · [[front-matter-spec]] · [[agent-consumption-guide]] · [[glossary]] ·
 [[tag-taxonomy]].
 
-> **Repo state:** post-refactor half-state; `pnpm install` currently fails. This phase is
-> **research/documentation only — nothing is built or fixed.**
+> **Repo state:** workspace/lockfile extraction drift has been repaired. Use `corepack pnpm
+> install --frozen-lockfile`; see [[90-backlog/_moc|Repair backlog]] for fixed/open status.

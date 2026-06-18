@@ -7,7 +7,7 @@
  * coercion is co-located in the constructor, so a SchemeBytevector always
  * normalizes to a single Uint8Array payload.
  *
- * Boxing track: docs/plan-2026-06-10-boxing-track.md (S1).
+ * Boxing track: docs/30-reconciliation/dangling-doc-map.md (S1).
  */
 import { AValue, EMPTY_PROVENANCE } from "./AValue.js";
 import { markInteropBoundary } from "../interop-access.js";

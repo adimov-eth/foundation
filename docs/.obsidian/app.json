@@ -1,6 +1,5 @@
 {
   "alwaysUpdateLinks": true,
   "newLinkFormat": "shortest",
-  "useMarkdownLinks": false,
-  "attachmentFolderPath": "./_index"
+  "useMarkdownLinks": false
 }

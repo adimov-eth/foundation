@@ -10,8 +10,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 
 # `@here.build/foundations` — knowledge base
 
-Agent-first map of this monorepo. Agents: start at [[../CLAUDE|CLAUDE.md]] and the structured
-indices in [`_index/`](./_index/). Humans: browse below.
+Agent-first map of this monorepo. Agents: start at [`CLAUDE.md`](../CLAUDE.md) (repo root, outside
+this vault) and the structured indices in [`_index/`](./_index/). Humans: browse below.
 
 This vault has **two interlinked layers** plus support:
 

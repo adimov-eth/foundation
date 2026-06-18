@@ -1,0 +1,197 @@
+[
+  {
+    "term": "CRDT",
+    "definition": "Conflict-free Replicated Data Type; data that merges deterministically across peers.",
+    "see": "[[crdt-state-model]]"
+  },
+  {
+    "term": "Yjs",
+    "definition": "the CRDT library Plexus is layered on.",
+    "see": "[[crdt-state-model]]"
+  },
+  {
+    "term": "Plexus",
+    "definition": "the instance that owns a document root and orchestrates sync/undo/liminality.",
+    "see": "[[plexus]]"
+  },
+  {
+    "term": "PlexusModel",
+    "definition": "base class whose `@syncing` fields *are* the CRDT state.",
+    "see": "[[plexus]]"
+  },
+  {
+    "term": "`@syncing`",
+    "definition": "decorator marking a class/field as replicated.",
+    "see": "[[plexus]]"
+  },
+  {
+    "term": "shadow doc / main doc",
+    "definition": "Plexus's two-Y.Doc architecture: working copy (shadow) vs committed store (main).",
+    "see": "[[crdt-state-model]]"
+  },
+  {
+    "term": "liminality",
+    "definition": "holding ephemeral gesture writes on a shadow doc, committed as one atomic delta / undo step.",
+    "see": "[[crdt-state-model]]"
+  },
+  {
+    "term": "virtual genesis",
+    "definition": "deterministic, content-addressed spawning of conflict-free child entities.",
+    "see": "[[plexus]]"
+  },
+  {
+    "term": "materialization",
+    "definition": "writing a model's state into the Yjs CRDT layer.",
+    "see": "[[crdt-state-model]]"
+  },
+  {
+    "term": "arrival-scheme",
+    "definition": "the sandboxed Scheme interpreter (package `@here.build/arrival`), forked from LIPS.",
+    "see": "[[arrival]]"
+  },
+  {
+    "term": "membrane",
+    "definition": "the JS↔Scheme boundary exposing own-data only; the `@` interop form.",
+    "see": "[[membrane]]"
+  },
+  {
+    "term": "security-by-deletion",
+    "definition": "sandboxing by removing host-reaching verbs (`eval`, `load`, …) at source.",
+    "see": "[[security-by-deletion]]"
+  },
+  {
+    "term": "rosetta",
+    "definition": "automatic JS↔Scheme value conversion + `defineRosetta` for registering JS fns.",
+    "see": "[[arrival]]"
+  },
+  {
+    "term": "HalfBaked",
+    "definition": "lazy Promise carrier used in speculative evaluation.",
+    "see": "[[arrival]]"
+  },
+  {
+    "term": "flat-trampoline evaluator",
+    "definition": "generator-based, stack-safe evaluator (no recursion/promise chains).",
+    "see": "[[arrival]]"
+  },
+  {
+    "term": "S-expression",
+    "definition": "symbolic expression; the Lisp data/code form.",
+    "see": "[[s-expressions-vs-json]]"
+  },
+  {
+    "term": "InferStore",
+    "definition": "content-keyed single-flight cache for `(infer …)` calls.",
+    "see": "[[determinism-and-effects]]"
+  },
+  {
+    "term": "single-flight",
+    "definition": "identical in-flight requests share one backend call.",
+    "see": "[[determinism-and-effects]]"
+  },
+  {
+    "term": "content-keyed cache",
+    "definition": "cache key = content tuple `[model, prompt, schema, cacheKey]`.",
+    "see": "[[content-addressed-effects]]"
+  },
+  {
+    "term": "effect membrane / effect-log",
+    "definition": "record/replay seam for external effects (infer/http/sql content-keyed; mcp positional).",
+    "see": "[[determinism-and-effects]]"
+  },
+  {
+    "term": "ModelRouter",
+    "definition": "maps a model id/spec to a backend (`StaticRouter`, `LayeredRouter`, …).",
+    "see": "[[arrival-inference]]"
+  },
+  {
+    "term": "backend",
+    "definition": "provider adapter (anthropic/openai/openrouter/ollama/vercel).",
+    "see": "[[arrival-inference]]"
+  },
+  {
+    "term": "agentic loop",
+    "definition": "JS-side tool-call loop driving multi-turn inference.",
+    "see": "[[arrival-inference]]"
+  },
+  {
+    "term": "config-as-code",
+    "definition": "per-run knobs shipped as a `config.scm` required by the entry program.",
+    "see": "[[arrival-chain]]"
+  },
+  {
+    "term": "EvalTrace / Invocation",
+    "definition": "append-only observable record of an evaluation.",
+    "see": "[[provenance-model]]"
+  },
+  {
+    "term": "provenance",
+    "definition": "per-value lineage set, computed at boundaries.",
+    "see": "[[provenance-as-first-class]]"
+  },
+  {
+    "term": "region tree / statechart / forest",
+    "definition": "render-models derived from a trace.",
+    "see": "[[provenance-model]]"
+  },
+  {
+    "term": "reverse-chain slice",
+    "definition": "sound program slice via Perera–Cheney uneval (invert the forward cone).",
+    "see": "[[provenance-model]]"
+  },
+  {
+    "term": "MCP",
+    "definition": "Model Context Protocol.",
+    "see": "[[discovery-action-tiers]]"
+  },
+  {
+    "term": "DiscoveryTool",
+    "definition": "read tier: a sandboxed Scheme REPL over a capability's symbols.",
+    "see": "[[arrival-mcp]]"
+  },
+  {
+    "term": "ActionTool",
+    "definition": "mutation tier: a validated batch of typed actions.",
+    "see": "[[arrival-mcp]]"
+  },
+  {
+    "term": "McpEnvCapability",
+    "definition": "the shared env (symbols/config/resources) both tiers derive from.",
+    "see": "[[arrival-mcp]]"
+  },
+  {
+    "term": "Discovery/Action separation",
+    "definition": "exploring without side effects vs mutating in immutable-context batches.",
+    "see": "[[discovery-action-separation]]"
+  },
+  {
+    "term": "sweet-expression",
+    "definition": "readable surface for Scheme (`xs.map{ it * 2 }`), bidirectional.",
+    "see": "[[arrival-sweet]]"
+  },
+  {
+    "term": "chain-view",
+    "definition": "deterministic projection of a chain program into JS/Python.",
+    "see": "[[arrival-chain-view]]"
+  },
+  {
+    "term": "FSL-1.1-MIT",
+    "definition": "Functional Source License; converts to MIT 2 years after release.",
+    "see": "[[architecture-overview]]"
+  },
+  {
+    "term": "fragmentation hypothesis",
+    "definition": "agent drift as architecture-induced subprocess desync.",
+    "see": "[[fragmentation-hypothesis]]"
+  },
+  {
+    "term": "source layers",
+    "definition": "current code (authoritative) / Archive / prior-audit, the three inputs to this vault.",
+    "see": "[[source-layers]]"
+  },
+  {
+    "term": "dangling doc ref",
+    "definition": "an in-code reference to a design doc absent from the repo.",
+    "see": "[[dangling-doc-map]]"
+  }
+]

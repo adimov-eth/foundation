@@ -1,0 +1,1217 @@
+[
+  {
+    "anchor": "package.json:1",
+    "note": "docs/10-reference/architecture-overview.md",
+    "comment": "@here.build/foundations root, private monorepo"
+  },
+  {
+    "anchor": "pnpm-workspace.yaml:1",
+    "note": "docs/10-reference/architecture-overview.md",
+    "comment": "workspace package globs"
+  },
+  {
+    "anchor": "LICENSE.md:1",
+    "note": "docs/10-reference/architecture-overview.md",
+    "comment": "FSL-1.1-MIT"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:4",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "two Y.Docs: shadow working copy + main committed store"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:14",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "6 liminality-commit invariants"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:403",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "__undoManager__ + deleteFilter undo strategy"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:448",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "__liminalUndoManager__ (LIMINAL_ORIGIN, captureTimeout 0)"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:61",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "internalsStore WeakMap<PlexusModel, Internals>"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:159",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "Object.defineProperties materialization of schema fields"
+  },
+  {
+    "anchor": "plexus/src/decorators.ts:80",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "createClassDecorator (@syncing class decorator)"
+  },
+  {
+    "anchor": "plexus/src/virtual-children-genesis.ts:28",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "GENESIS_ORIGIN"
+  },
+  {
+    "anchor": "plexus/src/proxies/materialized-array.ts:165",
+    "note": "docs/10-reference/cross-cutting/crdt-state-model.md",
+    "comment": "in-place observer diffing"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:94",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "Cell (single-flight unit)"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:213",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "content-keyed single-flight store"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:57",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "EffectKind: infer/http/sql/mcp"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:77",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "canonical kind-tagged effect key"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:113",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "mcpEffectKey POSITIONAL, not content-keyed"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:130",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "stableJson (key-sorted canonical JSON)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/infer-kernel.ts:298",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "cache key [model,prompt,schema,cacheKey]"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:302",
+    "note": "docs/10-reference/cross-cutting/determinism-and-effects.md",
+    "comment": "Project.run (version-pinning seam)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:1",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "DiscoveryTool (read REPL, value not subclass)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:10",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "three membrane TIMES (eval/dispatch/describe)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:34",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "MCP_OUTPUT_BUDGET"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:1",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "ActionTool (batch mutations)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:12",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "shared context scope, declared/validated ONCE"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:1",
+    "note": "docs/10-reference/cross-cutting/discovery-action-tiers.md",
+    "comment": "McpEnvCapability (shared env both tiers derive from)"
+  },
+  {
+    "anchor": "arrival/arrival/src/membrane.ts:6",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "WRAPPER (fromJS/toJS) + CODEC layers"
+  },
+  {
+    "anchor": "arrival/arrival/src/membrane.ts:174",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "jsToWrapper WeakMap identity cache"
+  },
+  {
+    "anchor": "arrival/arrival/src/membrane.ts:185",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "per-wrapper entryCaches WeakMap"
+  },
+  {
+    "anchor": "arrival/arrival/src/interop-access.ts:4",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "own-data-only read policy"
+  },
+  {
+    "anchor": "arrival/arrival/src/interop-access.ts:41",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "INTEROP_BOUNDARY (module-local symbol)"
+  },
+  {
+    "anchor": "arrival/arrival/src/interop-access.ts:70",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "BUILTIN_BOUNDARY_PROTOTYPES fencing"
+  },
+  {
+    "anchor": "arrival/arrival/src/inference-env.ts:8",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "host-reaching verbs deleted at source"
+  },
+  {
+    "anchor": "arrival/arrival/README.md:8",
+    "note": "docs/10-reference/cross-cutting/membrane.md",
+    "comment": "0.x sandbox-escape warning"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:1",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "per-form EvalTrace (EvalTap, append-only)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:22",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "mint-only-at-boundaries provenance rule"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-to-regions.ts:1184",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "traceToRegions (RegionGraph)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-region-fold.ts:2",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "incremental region fold (parity)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/statechart.ts:147",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "traceToStatechart"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/statechart.ts:285",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "forwardCone"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/slice.ts:205",
+    "note": "docs/10-reference/cross-cutting/provenance-model.md",
+    "comment": "buildSlice (reverse-chain uneval)"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:106",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "toSExpr (JS value → SExpr)"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:331",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "formatSExpr (SExpr → text)"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:629",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "toSExprString (entrypoint, budgeted)"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:22",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "per-render truncation budget"
+  },
+  {
+    "anchor": "arrival/arrival/src/rosetta.ts:110",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "schemeToJs"
+  },
+  {
+    "anchor": "arrival/arrival/src/rosetta.ts:254",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "jsToScheme"
+  },
+  {
+    "anchor": "arrival/arrival/src/rosetta.ts:442",
+    "note": "docs/10-reference/cross-cutting/s-expressions-vs-json.md",
+    "comment": "Environment.defineRosetta"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/project.ts:14",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "projectToJs"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/project.ts:19",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "projectToJsRaw"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/python.ts:146",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "projectToPy"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/compile-project.ts:141",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "compileProject"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/types-emit.ts:753",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "emitTypes"
+  },
+  {
+    "anchor": "arrival/arrival-chain-view/src/compile-project.ts:52",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "comment": "DEP_VERSIONS (caret ranges)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:141",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "@syncing Project (doc root)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:302",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "Project.run (universal gateway)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:410",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "inferAndWait closure (content-keyed seam)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:856",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "runHypothesis (counterfactual)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/runner.ts:50",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "runPipeline (self-contained entry)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/infer-kernel.ts:308",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "inferIdentityKey (tools/params fold)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/infer-kernel.ts:324",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "recordInfer / reviveInfer / freshInfer"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/loader.ts:208",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "defaultResolvers (.scm/.json/.yaml/.toml/.ndjson/.txt/.hbs)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/loader.ts:302",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "makeProjectLoader (versionSet pinning)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:63",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "EffectKind (infer|http|sql|mcp)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:89",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "effectKey lowering (kind-tagged)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:313",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "comment": "invalidateForwardCone (cone subtraction)"
+  },
+  {
+    "anchor": "arrival/arrival-env/src/index.ts:1",
+    "note": "docs/10-reference/packages/arrival-env.md",
+    "comment": "package: protocol-only, no runtime"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:16",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "ModelRouter interface"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:21",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "StaticRouter"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:42",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "LayeredRouter"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:55",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "singletonRouter"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:65",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "emptyRouter"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:94",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "Cell (single-flight, ref-count abort)"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:215",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "InferStore"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:238",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "createInferStore"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:329",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "InferBinding"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/backends/_shared.ts:57",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "coerceModelJson (strict/repair/reasoning)"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/backends/_shared.ts:80",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "lazyBackend"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/agentic-loop.ts:30",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "DEFAULT_AGENTIC_MAX_ROUNDS = 24"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/agentic-loop.ts:105",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "runAgenticLoop"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/model.ts:170",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "ModelBackend"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/pricing.ts:42",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "comment": "referenceCost"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:173",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "McpEnvCapability"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:214",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "allAnnotations"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:30",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "McpAnnotation"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:183",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "DiscoveryTool"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:144",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "ToolCallCtx (above eval membrane)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:199",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "ActionTool"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:136",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "wrapBatch (atomicity)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/refs.ts:59",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "defineRef (ctx-aware resolution)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/refs.ts:368",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "FieldSpec primitives"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/dispatch.ts:18",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "serializeResult"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/sdk-adapter.ts:50",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "comment": "registerTools"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:268",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "EvalTrace (append-only EvalTap)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:149",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "Invocation"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:88",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "computeProvenance (spec §5)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:394",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "bindTask"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:549",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "markProvenancePoint"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-to-regions.ts:1184",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "traceToRegions"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-region-fold.ts:1",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "TraceRegionFold (incremental parity)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-to-forest.ts:193",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "traceToForest"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/statechart.ts:147",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "traceToStatechart"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/statechart.ts:285",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "forwardCone"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/slice.ts:205",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "buildSlice (reverse-chain uneval)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-snapshot.ts:1",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "snapshotTrace (PlainTrace)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-artifact.ts:1",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "comment": "serializeTrace / loadTraceArtifact"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/infer.ts:127",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "arrivalInferCapability (infer / infer/chat)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/infer.ts:40",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "InferFn — the host inference seam"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/infer.ts:93",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "asLlmModel coercion"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/infer.ts:78",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "canonicalizeMessages"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/derive.ts:60",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "arrivalDeriveCapability (mcp/llm/derive/llm-with)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:313",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "arrivalMcpCapability (mcp/call, mcp/list)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:356",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "arrivalAgenticCapability (infer/agentic/end-to-end)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:251",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "runAgenticInfer loop driver"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:120",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "McpEffectResolver — the MCP membrane seam"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:134",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "comment": "inertMcpResolver (disarmed default)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-ramda/src/index.ts:80",
+    "note": "docs/10-reference/packages/arrival-scheme-env-ramda.md",
+    "comment": "default export EnvCapability(\"scheme/ramda\")"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-ramda/src/index.ts:17",
+    "note": "docs/10-reference/packages/arrival-scheme-env-ramda.md",
+    "comment": "RAMDA verb table (aliased R.* ops)"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-ramda/src/index.ts:76",
+    "note": "docs/10-reference/packages/arrival-scheme-env-ramda.md",
+    "comment": "ramdaVerbs — the wired surface"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:106",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "toSExpr"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:331",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "formatSExpr"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:629",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "toSExprString"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:244",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "Symbol.toSExpr dispatch"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:121",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "console.error leak on circular ref"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:12",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "comment": "SEXPR_TAG"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-render.ts:894",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "schemeToSweet"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-read.ts:759",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "sweetToScheme"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-read.ts:664",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "readSweet"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-read.ts:461",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "readSweetExpr"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/index.ts:15",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "render primitives barrel"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-render.ts:30",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "comment": "accessor codec"
+  },
+  {
+    "anchor": "arrival/arrival/src/index.ts:139",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "bare exec/parse → generator path"
+  },
+  {
+    "anchor": "arrival/arrival/src/eval/evaluator.ts:670",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "flat-trampoline run()"
+  },
+  {
+    "anchor": "arrival/arrival/src/eval/evaluator.ts:893",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "TICK: abort + budget check"
+  },
+  {
+    "anchor": "arrival/arrival/src/eval/generator-exec.ts:94",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "exec ExecOptions"
+  },
+  {
+    "anchor": "arrival/arrival/src/eval/generator-exec.ts:54",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "budgetMs"
+  },
+  {
+    "anchor": "arrival/arrival/src/eval/generator-exec.ts:63",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "heapBudget"
+  },
+  {
+    "anchor": "arrival/arrival/src/inference-env.ts:26",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "inferenceEnv (Graal sweep)"
+  },
+  {
+    "anchor": "arrival/arrival/src/inference-env.ts:90",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "sandboxedEnv deprecated alias"
+  },
+  {
+    "anchor": "arrival/arrival/src/Environment.ts:247",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "Environment.defineRosetta"
+  },
+  {
+    "anchor": "arrival/arrival/src/rosetta.ts:55",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "RosettaFunction"
+  },
+  {
+    "anchor": "arrival/arrival/src/values/AValue.ts:42",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "AValue.provenance"
+  },
+  {
+    "anchor": "arrival/arrival/src/values/HalfBaked.ts:79",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "HalfBaked"
+  },
+  {
+    "anchor": "arrival/arrival/src/membrane.ts:837",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "readMember (@ interop)"
+  },
+  {
+    "anchor": "arrival/arrival/src/values/SchemeSymbol.ts:25",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "unbounded intern table (DoS)"
+  },
+  {
+    "anchor": "arrival/arrival/src/__tests__/sandbox-escape.test.ts:44",
+    "note": "docs/10-reference/packages/arrival.md",
+    "comment": "sandbox escape vectors"
+  },
+  {
+    "anchor": "common/collections/src/defaulted-collections.ts:1",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "DefaultedMap"
+  },
+  {
+    "anchor": "common/collections/src/defaulted-collections.ts:14",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "DefaultedWeakMap"
+  },
+  {
+    "anchor": "common/collections/src/counter.ts:31",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "Counter"
+  },
+  {
+    "anchor": "common/collections/src/path-map.ts:108",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "PathMap"
+  },
+  {
+    "anchor": "common/collections/src/multimap.ts:22",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "ArrayMultimap"
+  },
+  {
+    "anchor": "common/collections/src/multimap.ts:56",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "SetMultimap"
+  },
+  {
+    "anchor": "common/collections/src/computed-collections.ts:24",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "comment": "ComputedMap (/mobx subpath)"
+  },
+  {
+    "anchor": "common/error-invariant/src/index.ts:32",
+    "note": "docs/10-reference/packages/common-error-invariant.md",
+    "comment": "Error.invariant assignment"
+  },
+  {
+    "anchor": "common/error-invariant/src/index.ts:26",
+    "note": "docs/10-reference/packages/common-error-invariant.md",
+    "comment": "global ErrorConstructor augmentation"
+  },
+  {
+    "anchor": "common/error-invariant/src/index.ts:42",
+    "note": "docs/10-reference/packages/common-error-invariant.md",
+    "comment": "receiver-as-thrown-class (new this(...))"
+  },
+  {
+    "anchor": "common/error-invariant/src/index.ts:23",
+    "note": "docs/10-reference/packages/common-error-invariant.md",
+    "comment": "NODE_ENV read once at install time"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:272",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "nodejs config"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:286",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "browser config"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:301",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "shared config"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:316",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "cloudflare config"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:330",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "landing config"
+  },
+  {
+    "anchor": "common/eslint-config/index.js:242",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "comment": "reactConfig"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:1008",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "assignNames (flat pool)"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:384",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "resolveLexicalNames (scope tree)"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:38",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "ScopeSpec"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:99",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "ScopedEntity"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:282",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "onTie: burn | free | postfix"
+  },
+  {
+    "anchor": "common/lexical-namer/src/index.ts:506",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "comment": "onTie default = \"burn\""
+  },
+  {
+    "anchor": "common/tsconfig/package.json:9",
+    "note": "docs/10-reference/packages/common-tsconfig.md",
+    "comment": "exports map (purpose/* + env/*)"
+  },
+  {
+    "anchor": "common/tsconfig/env/node.json:1",
+    "note": "docs/10-reference/packages/common-tsconfig.md",
+    "comment": "node env base"
+  },
+  {
+    "anchor": "common/tsconfig/purpose/lib.json:1",
+    "note": "docs/10-reference/packages/common-tsconfig.md",
+    "comment": "lib purpose preset"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:61",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "internalsStore WeakMap<PlexusModel, Internals>"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:159",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "Object.defineProperties schema-field materialization"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:192",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "get uuid — throws without doc in CRDT-native mode"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:515",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "[referenceSymbol] — XmlElement seeding + UUID encode"
+  },
+  {
+    "anchor": "plexus/src/decorators.ts:80",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "createClassDecorator (@syncing(\"Name\"))"
+  },
+  {
+    "anchor": "plexus/src/decorators.ts:557",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "syncing decorator surface (.child/.list/.set/.record/.map/.virtual)"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:14",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "liminality 6-invariant commit sequence (doc comment)"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:294",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "Plexus constructor — two-doc shadow/main wiring"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:403",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "__undoManager__ deleteFilter (append-only shells)"
+  },
+  {
+    "anchor": "plexus/src/Plexus.ts:725",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "commitLiminality"
+  },
+  {
+    "anchor": "plexus/src/crdt-uuid.ts:153",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "encode {clientId, clock} → prefix-discriminated UUID"
+  },
+  {
+    "anchor": "plexus/src/virtual-children-genesis.ts:238",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "materializeVirtualChild (content-addressed genesis)"
+  },
+  {
+    "anchor": "plexus/src/walk.ts:32",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "walk (schema-aware child walker)"
+  },
+  {
+    "anchor": "plexus/src/walk.ts:145",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "buildVisitor"
+  },
+  {
+    "anchor": "plexus/src/proxies/key-serialization.ts:151",
+    "note": "docs/10-reference/packages/plexus.md",
+    "comment": "serializeKey — structural map-key equality"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:173",
+    "note": "docs/20-method/operating-as-agentic-framework.md",
+    "comment": "McpEnvCapability — shared env both tiers derive from"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:196",
+    "note": "docs/20-method/operating-as-agentic-framework.md",
+    "comment": "read tier (readOnlyHint)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:329",
+    "note": "docs/20-method/operating-as-agentic-framework.md",
+    "comment": "write tier — batch context snapshot"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/runner.ts:50",
+    "note": "docs/20-method/operating-as-agentic-framework.md",
+    "comment": "runPipeline — chain entry point"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:16",
+    "note": "docs/20-method/operating-as-agentic-framework.md",
+    "comment": "ModelRouter — model id → backend"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:14",
+    "note": "docs/20-method/patterns/batch-context-immutability.md",
+    "comment": "constraint: all actions in a batch share one context scope"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:105",
+    "note": "docs/20-method/patterns/batch-context-immutability.md",
+    "comment": "context resolved + validated ONCE per batch"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:329",
+    "note": "docs/20-method/patterns/batch-context-immutability.md",
+    "comment": "fullCtx snapshot"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:390",
+    "note": "docs/20-method/patterns/batch-context-immutability.md",
+    "comment": "same snapshot to every action handler"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:71",
+    "note": "docs/20-method/patterns/content-addressed-effects.md",
+    "comment": "keyOf — content tuple [model,prompt,schema,cacheKey]"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/infer-store.ts:225",
+    "note": "docs/20-method/patterns/content-addressed-effects.md",
+    "comment": "single-flight: identical key shares one Cell"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:62",
+    "note": "docs/20-method/patterns/content-addressed-effects.md",
+    "comment": "EffectKind: infer|http|sql|mcp"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:89",
+    "note": "docs/20-method/patterns/content-addressed-effects.md",
+    "comment": "effectKey / inferEffectKey — content-keyed"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/effect-log.ts:113",
+    "note": "docs/20-method/patterns/content-addressed-effects.md",
+    "comment": "mcpEffectKey — positional (server state)"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:196",
+    "note": "docs/20-method/patterns/discovery-action-separation.md",
+    "comment": "readOnlyHint — explore tier is side-effect-free"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:45",
+    "note": "docs/20-method/patterns/discovery-action-separation.md",
+    "comment": "sandboxed REPL env per call"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:329",
+    "note": "docs/20-method/patterns/discovery-action-separation.md",
+    "comment": "fullCtx snapshot built once per batch"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:390",
+    "note": "docs/20-method/patterns/discovery-action-separation.md",
+    "comment": "same fullCtx passed to every action"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/dispatch.ts:13",
+    "note": "docs/20-method/patterns/discovery-action-separation.md",
+    "comment": "errors returned as data (success:false), not thrown"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:268",
+    "note": "docs/20-method/patterns/provenance-as-first-class.md",
+    "comment": "EvalTrace — append-only record of an evaluation"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:149",
+    "note": "docs/20-method/patterns/provenance-as-first-class.md",
+    "comment": "Invocation — dynamic call record"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:173",
+    "note": "docs/20-method/patterns/provenance-as-first-class.md",
+    "comment": "per-value provenance set, computed at boundaries"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/slice.ts:1",
+    "note": "docs/20-method/patterns/provenance-as-first-class.md",
+    "comment": "reverse-chain slice (Galois uneval)"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/uneval.ts:11",
+    "note": "docs/20-method/patterns/provenance-as-first-class.md",
+    "comment": "Perera–Cheney uneval; purity = soundness theorem"
+  },
+  {
+    "anchor": "arrival/arrival/src/stdlib.ts:838",
+    "note": "docs/20-method/patterns/security-by-deletion.md",
+    "comment": "`.`/`get` host-reach verbs removed (host-language sweep)"
+  },
+  {
+    "anchor": "arrival/arrival/src/membrane.ts:836",
+    "note": "docs/20-method/patterns/security-by-deletion.md",
+    "comment": "readMember — own-data only, no interpreter internals"
+  },
+  {
+    "anchor": "arrival/arrival/src/env/polyglot.ts:11",
+    "note": "docs/20-method/patterns/security-by-deletion.md",
+    "comment": "@ / @? / @keys — the only blessed interop reads"
+  },
+  {
+    "anchor": "arrival/arrival/README.md:158",
+    "note": "docs/20-method/patterns/security-by-deletion.md",
+    "comment": "no filesystem/network/process/global primitives"
+  },
+  {
+    "anchor": "arrival/arrival/src/reader/Parser.ts:416",
+    "note": "docs/20-method/patterns/sexpr-over-json.md",
+    "comment": "text → datum reader"
+  },
+  {
+    "anchor": "arrival/arrival/src/values/Pair.ts:236",
+    "note": "docs/20-method/patterns/sexpr-over-json.md",
+    "comment": "cons cell (car/cdr) — the two-layer structure"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:106",
+    "note": "docs/20-method/patterns/sexpr-over-json.md",
+    "comment": "toSExpr — JS value → s-expr"
+  },
+  {
+    "anchor": "arrival/arrival-serializer/src/serializer.ts:312",
+    "note": "docs/20-method/patterns/sexpr-over-json.md",
+    "comment": "plain object → (dict :k v …), not flat KV"
+  },
+  {
+    "anchor": "arrival/arrival-sweet/src/sweet-read.ts:59",
+    "note": "docs/20-method/patterns/sexpr-over-json.md",
+    "comment": "sweet text → Node (readable surface)"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/model.ts:170",
+    "note": "docs/50-playbooks/add-a-provider-backend.md",
+    "comment": "ModelBackend contract"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/backends/_shared.ts:80",
+    "note": "docs/50-playbooks/add-a-provider-backend.md",
+    "comment": "lazyBackend"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:21",
+    "note": "docs/50-playbooks/add-a-provider-backend.md",
+    "comment": "StaticRouter"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-ramda/src/index.ts:80",
+    "note": "docs/50-playbooks/add-a-scheme-env-pack.md",
+    "comment": "minimal symbols-only pack"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/derive.ts:60",
+    "note": "docs/50-playbooks/add-a-scheme-env-pack.md",
+    "comment": "config-less algebra pack"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/infer.ts:127",
+    "note": "docs/50-playbooks/add-a-scheme-env-pack.md",
+    "comment": "config-bearing pack with deps"
+  },
+  {
+    "anchor": "arrival/arrival-scheme-env-infer/src/mcp.ts:356",
+    "note": "docs/50-playbooks/add-a-scheme-env-pack.md",
+    "comment": "dependent pack (deps on two caps)"
+  },
+  {
+    "anchor": "plexus/src/decorators.ts:557",
+    "note": "docs/50-playbooks/add-a-syncing-field.md",
+    "comment": "@syncing decorator surface"
+  },
+  {
+    "anchor": "plexus/src/PlexusModel.ts:92",
+    "note": "docs/50-playbooks/add-a-syncing-field.md",
+    "comment": "PlexusInit<T> required/optional derivation"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/program.ts:53",
+    "note": "docs/50-playbooks/add-a-syncing-field.md",
+    "comment": "real model with val + child-list + child-map + child fields"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/McpEnvCapability.ts:173",
+    "note": "docs/50-playbooks/author-an-mcp-tool.md",
+    "comment": "McpEnvCapability"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/DiscoveryTool.ts:183",
+    "note": "docs/50-playbooks/author-an-mcp-tool.md",
+    "comment": "DiscoveryTool"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/ActionTool.ts:199",
+    "note": "docs/50-playbooks/author-an-mcp-tool.md",
+    "comment": "ActionTool"
+  },
+  {
+    "anchor": "arrival/arrival-mcp/src/sdk-adapter.ts:50",
+    "note": "docs/50-playbooks/author-an-mcp-tool.md",
+    "comment": "registerTools"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/runner.ts:50",
+    "note": "docs/50-playbooks/run-a-pipeline.md",
+    "comment": "runPipeline"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/runner.ts:18",
+    "note": "docs/50-playbooks/run-a-pipeline.md",
+    "comment": "RunPipelineOptions"
+  },
+  {
+    "anchor": "arrival/arrival-inference/src/registry.ts:55",
+    "note": "docs/50-playbooks/run-a-pipeline.md",
+    "comment": "singletonRouter"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:170",
+    "note": "docs/50-playbooks/run-a-pipeline.md",
+    "comment": "config-as-code (config.scm)"
+  },
+  {
+    "anchor": "arrival/arrival-chain/src/project.ts:1010",
+    "note": "docs/50-playbooks/trace-and-read-provenance.md",
+    "comment": "Project.runTraced"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace.ts:268",
+    "note": "docs/50-playbooks/trace-and-read-provenance.md",
+    "comment": "EvalTrace"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-to-forest.ts:193",
+    "note": "docs/50-playbooks/trace-and-read-provenance.md",
+    "comment": "traceToForest"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/trace-to-regions.ts:1184",
+    "note": "docs/50-playbooks/trace-and-read-provenance.md",
+    "comment": "traceToRegions"
+  },
+  {
+    "anchor": "arrival/arrival-provenance/src/slice.ts:205",
+    "note": "docs/50-playbooks/trace-and-read-provenance.md",
+    "comment": "buildSlice"
+  }
+]

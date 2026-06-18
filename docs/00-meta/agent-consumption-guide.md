@@ -14,7 +14,7 @@ How an autonomous agent should use this vault efficiently.
 
 ## Load order (cheap → rich)
 
-1. **`docs/_index/*.json`** — structured maps, cheapest to load. Start here:
+1. **`docs/_index/*.json`** — structured maps, cheapest to load (manifest: [[_index/README]]). Start here:
    - `packages.json` — every package: path, role, entrypoints, key files, deps.
    - `symbols.json` — key exports → signature → `file:line`.
    - `concepts.json` — concept → canonical note + code anchors.

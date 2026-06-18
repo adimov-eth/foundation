@@ -1,0 +1,277 @@
+[
+  {
+    "name": "plexus",
+    "repo_path": "plexus",
+    "note": "docs/10-reference/packages/plexus.md",
+    "role": "- **CRDT-as-classes** — extend PlexusModel, decorate with",
+    "code_anchors": [
+      "plexus/src/PlexusModel.ts:61            # internalsStore WeakMap<PlexusModel, Internals>",
+      "plexus/src/PlexusModel.ts:159           # Object.defineProperties schema-field materialization",
+      "plexus/src/PlexusModel.ts:192           # get uuid — throws without doc in CRDT-native mode",
+      "plexus/src/PlexusModel.ts:515           # [referenceSymbol] — XmlElement seeding + UUID encode",
+      "plexus/src/decorators.ts:80             # createClassDecorator (@syncing(\"Name\"))",
+      "plexus/src/decorators.ts:557            # syncing decorator surface (.child/.list/.set/.record/.map/.virtual)",
+      "plexus/src/Plexus.ts:14                 # liminality 6-invariant commit sequence (doc comment)",
+      "plexus/src/Plexus.ts:294                # Plexus constructor — two-doc shadow/main wiring",
+      "plexus/src/Plexus.ts:403                # __undoManager__ deleteFilter (append-only shells)",
+      "plexus/src/Plexus.ts:725               # commitLiminality",
+      "plexus/src/crdt-uuid.ts:153             # encode {clientId, clock} → prefix-discriminated UUID",
+      "plexus/src/virtual-children-genesis.ts:238  # materializeVirtualChild (content-addressed genesis)",
+      "plexus/src/walk.ts:32                   # walk (schema-aware child walker)",
+      "plexus/src/walk.ts:145                  # buildVisitor",
+      "plexus/src/proxies/key-serialization.ts:151 # serializeKey — structural map-key equality"
+    ]
+  },
+  {
+    "name": "arrival",
+    "repo_path": "arrival/arrival",
+    "note": "docs/10-reference/packages/arrival.md",
+    "role": "- **Entry**: bare exec/parse resolve to the generator path, shadowing the stdlib star-export",
+    "code_anchors": [
+      "arrival/arrival/src/index.ts:139                  # bare exec/parse → generator path",
+      "arrival/arrival/src/eval/evaluator.ts:670         # flat-trampoline run()",
+      "arrival/arrival/src/eval/evaluator.ts:893         # TICK: abort + budget check",
+      "arrival/arrival/src/eval/generator-exec.ts:94     # exec ExecOptions",
+      "arrival/arrival/src/eval/generator-exec.ts:54     # budgetMs",
+      "arrival/arrival/src/eval/generator-exec.ts:63     # heapBudget",
+      "arrival/arrival/src/inference-env.ts:26           # inferenceEnv (Graal sweep)",
+      "arrival/arrival/src/inference-env.ts:90           # sandboxedEnv deprecated alias",
+      "arrival/arrival/src/Environment.ts:247            # Environment.defineRosetta",
+      "arrival/arrival/src/rosetta.ts:55                 # RosettaFunction",
+      "arrival/arrival/src/values/AValue.ts:42           # AValue.provenance",
+      "arrival/arrival/src/values/HalfBaked.ts:79        # HalfBaked",
+      "arrival/arrival/src/membrane.ts:837               # readMember (@ interop)",
+      "arrival/arrival/src/values/SchemeSymbol.ts:25     # unbounded intern table (DoS)",
+      "arrival/arrival/src/__tests__/sandbox-escape.test.ts:44   # sandbox escape vectors"
+    ]
+  },
+  {
+    "name": "arrival-chain",
+    "repo_path": "arrival/arrival-chain",
+    "note": "docs/10-reference/packages/arrival-chain.md",
+    "role": "The content-addressed inference substrate. Sits on glossary#Plexus (the synced",
+    "code_anchors": [
+      "arrival/arrival-chain/src/project.ts:141        # @syncing Project (doc root)",
+      "arrival/arrival-chain/src/project.ts:302        # Project.run (universal gateway)",
+      "arrival/arrival-chain/src/project.ts:410        # inferAndWait closure (content-keyed seam)",
+      "arrival/arrival-chain/src/project.ts:856        # runHypothesis (counterfactual)",
+      "arrival/arrival-chain/src/runner.ts:50          # runPipeline (self-contained entry)",
+      "arrival/arrival-chain/src/infer-kernel.ts:308   # inferIdentityKey (tools/params fold)",
+      "arrival/arrival-chain/src/infer-kernel.ts:324   # recordInfer / reviveInfer / freshInfer",
+      "arrival/arrival-chain/src/loader.ts:208         # defaultResolvers (.scm/.json/.yaml/.toml/.ndjson/.txt/.hbs)",
+      "arrival/arrival-chain/src/loader.ts:302         # makeProjectLoader (versionSet pinning)",
+      "arrival/arrival-chain/src/effect-log.ts:63      # EffectKind (infer|http|sql|mcp)",
+      "arrival/arrival-chain/src/effect-log.ts:89      # effectKey lowering (kind-tagged)",
+      "arrival/arrival-chain/src/effect-log.ts:313     # invalidateForwardCone (cone subtraction)"
+    ]
+  },
+  {
+    "name": "arrival-inference",
+    "repo_path": "arrival/arrival-inference",
+    "note": "docs/10-reference/packages/arrival-inference.md",
+    "role": "The \"talk to LLMs\" layer — the inference plane every host",
+    "code_anchors": [
+      "arrival/arrival-inference/src/registry.ts:16        # ModelRouter interface",
+      "arrival/arrival-inference/src/registry.ts:21        # StaticRouter",
+      "arrival/arrival-inference/src/registry.ts:42        # LayeredRouter",
+      "arrival/arrival-inference/src/registry.ts:55        # singletonRouter",
+      "arrival/arrival-inference/src/registry.ts:65        # emptyRouter",
+      "arrival/arrival-inference/src/infer-store.ts:94      # Cell (single-flight, ref-count abort)",
+      "arrival/arrival-inference/src/infer-store.ts:215     # InferStore",
+      "arrival/arrival-inference/src/infer-store.ts:238     # createInferStore",
+      "arrival/arrival-inference/src/infer-store.ts:329     # InferBinding",
+      "arrival/arrival-inference/src/backends/_shared.ts:57 # coerceModelJson (strict/repair/reasoning)",
+      "arrival/arrival-inference/src/backends/_shared.ts:80 # lazyBackend",
+      "arrival/arrival-inference/src/agentic-loop.ts:30     # DEFAULT_AGENTIC_MAX_ROUNDS = 24",
+      "arrival/arrival-inference/src/agentic-loop.ts:105    # runAgenticLoop",
+      "arrival/arrival-inference/src/model.ts:170           # ModelBackend",
+      "arrival/arrival-inference/src/pricing.ts:42          # referenceCost"
+    ]
+  },
+  {
+    "name": "arrival-provenance",
+    "repo_path": "arrival/arrival-provenance",
+    "note": "docs/10-reference/packages/arrival-provenance.md",
+    "role": "Read-only trace analysis. It captures an EvalTrace",
+    "code_anchors": [
+      "arrival/arrival-provenance/src/trace.ts:268          # EvalTrace (append-only EvalTap)",
+      "arrival/arrival-provenance/src/trace.ts:149          # Invocation",
+      "arrival/arrival-provenance/src/trace.ts:88           # computeProvenance (spec §5)",
+      "arrival/arrival-provenance/src/trace.ts:394          # bindTask",
+      "arrival/arrival-provenance/src/trace.ts:549          # markProvenancePoint",
+      "arrival/arrival-provenance/src/trace-to-regions.ts:1184 # traceToRegions",
+      "arrival/arrival-provenance/src/trace-region-fold.ts:1 # TraceRegionFold (incremental parity)",
+      "arrival/arrival-provenance/src/trace-to-forest.ts:193 # traceToForest",
+      "arrival/arrival-provenance/src/statechart.ts:147     # traceToStatechart",
+      "arrival/arrival-provenance/src/statechart.ts:285     # forwardCone",
+      "arrival/arrival-provenance/src/slice.ts:205          # buildSlice (reverse-chain uneval)",
+      "arrival/arrival-provenance/src/trace-snapshot.ts:1   # snapshotTrace (PlainTrace)",
+      "arrival/arrival-provenance/src/trace-artifact.ts:1   # serializeTrace / loadTraceArtifact"
+    ]
+  },
+  {
+    "name": "arrival-chain-view",
+    "repo_path": "arrival/arrival-chain-view",
+    "note": "docs/10-reference/packages/arrival-chain-view.md",
+    "role": "The pipeline lowers a chain Scheme program through desugar → lower → assemble →",
+    "code_anchors": [
+      "arrival/arrival-chain-view/src/project.ts:14            # projectToJs",
+      "arrival/arrival-chain-view/src/project.ts:19            # projectToJsRaw",
+      "arrival/arrival-chain-view/src/python.ts:146           # projectToPy",
+      "arrival/arrival-chain-view/src/compile-project.ts:141  # compileProject",
+      "arrival/arrival-chain-view/src/types-emit.ts:753       # emitTypes",
+      "arrival/arrival-chain-view/src/compile-project.ts:52   # DEP_VERSIONS (caret ranges)"
+    ]
+  },
+  {
+    "name": "arrival-sweet",
+    "repo_path": "arrival/arrival-sweet",
+    "note": "docs/10-reference/packages/arrival-sweet.md",
+    "role": "schemeToSweet renders stored canonical Scheme as the readable sweet form; sweetToScheme /",
+    "code_anchors": [
+      "arrival/arrival-sweet/src/sweet-render.ts:894   # schemeToSweet",
+      "arrival/arrival-sweet/src/sweet-read.ts:759     # sweetToScheme",
+      "arrival/arrival-sweet/src/sweet-read.ts:664      # readSweet",
+      "arrival/arrival-sweet/src/sweet-read.ts:461      # readSweetExpr",
+      "arrival/arrival-sweet/src/index.ts:15            # render primitives barrel",
+      "arrival/arrival-sweet/src/sweet-render.ts:30     # accessor codec"
+    ]
+  },
+  {
+    "name": "arrival-mcp",
+    "repo_path": "arrival/arrival-mcp",
+    "note": "docs/10-reference/packages/arrival-mcp.md",
+    "role": "MCP tools-as-values, built on the official @modelcontextprotocol/sdk.",
+    "code_anchors": [
+      "arrival/arrival-mcp/src/McpEnvCapability.ts:173   # McpEnvCapability",
+      "arrival/arrival-mcp/src/McpEnvCapability.ts:214    # allAnnotations",
+      "arrival/arrival-mcp/src/McpEnvCapability.ts:30      # McpAnnotation",
+      "arrival/arrival-mcp/src/DiscoveryTool.ts:183        # DiscoveryTool",
+      "arrival/arrival-mcp/src/DiscoveryTool.ts:144        # ToolCallCtx (above eval membrane)",
+      "arrival/arrival-mcp/src/ActionTool.ts:199           # ActionTool",
+      "arrival/arrival-mcp/src/ActionTool.ts:136           # wrapBatch (atomicity)",
+      "arrival/arrival-mcp/src/refs.ts:59                  # defineRef (ctx-aware resolution)",
+      "arrival/arrival-mcp/src/refs.ts:368                 # FieldSpec primitives",
+      "arrival/arrival-mcp/src/dispatch.ts:18              # serializeResult",
+      "arrival/arrival-mcp/src/sdk-adapter.ts:50           # registerTools"
+    ]
+  },
+  {
+    "name": "arrival-serializer",
+    "repo_path": "arrival/arrival-serializer",
+    "note": "docs/10-reference/packages/arrival-serializer.md",
+    "role": "toSExpr walks a JS value into an SExpr tree (cycle-safe DFS); formatSExpr pretty-prints it;",
+    "code_anchors": [
+      "arrival/arrival-serializer/src/serializer.ts:106   # toSExpr",
+      "arrival/arrival-serializer/src/serializer.ts:331   # formatSExpr",
+      "arrival/arrival-serializer/src/serializer.ts:629   # toSExprString",
+      "arrival/arrival-serializer/src/serializer.ts:244   # Symbol.toSExpr dispatch",
+      "arrival/arrival-serializer/src/serializer.ts:121   # console.error leak on circular ref",
+      "arrival/arrival-serializer/src/serializer.ts:12    # SEXPR_TAG"
+    ]
+  },
+  {
+    "name": "arrival-env",
+    "repo_path": "arrival/arrival-env",
+    "note": "docs/10-reference/packages/arrival-env.md",
+    "role": "A single file (src/index.ts). Importing the package is an **idempotent side-effect import**: it",
+    "code_anchors": [
+      "arrival/arrival-env/src/index.ts:1     # package: protocol-only, no runtime"
+    ]
+  },
+  {
+    "name": "arrival-scheme-env-infer",
+    "repo_path": "arrival/arrival-scheme-env-infer",
+    "note": "docs/10-reference/packages/arrival-scheme-env-infer.md",
+    "role": "The **inference palette pack** for the scheme env. Package @here.build/arrival-scheme-env-infer.",
+    "code_anchors": [
+      "arrival/arrival-scheme-env-infer/src/infer.ts:127     # arrivalInferCapability (infer / infer/chat)",
+      "arrival/arrival-scheme-env-infer/src/infer.ts:40      # InferFn — the host inference seam",
+      "arrival/arrival-scheme-env-infer/src/infer.ts:93      # asLlmModel coercion",
+      "arrival/arrival-scheme-env-infer/src/infer.ts:78      # canonicalizeMessages",
+      "arrival/arrival-scheme-env-infer/src/derive.ts:60     # arrivalDeriveCapability (mcp/llm/derive/llm-with)",
+      "arrival/arrival-scheme-env-infer/src/mcp.ts:313       # arrivalMcpCapability (mcp/call, mcp/list)",
+      "arrival/arrival-scheme-env-infer/src/mcp.ts:356       # arrivalAgenticCapability (infer/agentic/end-to-end)",
+      "arrival/arrival-scheme-env-infer/src/mcp.ts:251       # runAgenticInfer loop driver",
+      "arrival/arrival-scheme-env-infer/src/mcp.ts:120       # McpEffectResolver — the MCP membrane seam",
+      "arrival/arrival-scheme-env-infer/src/mcp.ts:134       # inertMcpResolver (disarmed default)"
+    ]
+  },
+  {
+    "name": "arrival-scheme-env-ramda",
+    "repo_path": "arrival/arrival-scheme-env-ramda",
+    "note": "docs/10-reference/packages/arrival-scheme-env-ramda.md",
+    "role": "The **opt-in Ramda palette pack** for the scheme env. Package",
+    "code_anchors": [
+      "arrival/arrival-scheme-env-ramda/src/index.ts:80   # default export EnvCapability(\"scheme/ramda\")",
+      "arrival/arrival-scheme-env-ramda/src/index.ts:17   # RAMDA verb table (aliased R.* ops)",
+      "arrival/arrival-scheme-env-ramda/src/index.ts:76   # ramdaVerbs — the wired surface"
+    ]
+  },
+  {
+    "name": "common-collections",
+    "repo_path": "common/collections",
+    "note": "docs/10-reference/packages/common-collections.md",
+    "role": "Package @here.build/collections — small Map/WeakMap subclasses that capture recurring",
+    "code_anchors": [
+      "common/collections/src/defaulted-collections.ts:1   # DefaultedMap",
+      "common/collections/src/defaulted-collections.ts:14  # DefaultedWeakMap",
+      "common/collections/src/counter.ts:31                # Counter",
+      "common/collections/src/path-map.ts:108              # PathMap",
+      "common/collections/src/multimap.ts:22               # ArrayMultimap",
+      "common/collections/src/multimap.ts:56               # SetMultimap",
+      "common/collections/src/computed-collections.ts:24   # ComputedMap (/mobx subpath)"
+    ]
+  },
+  {
+    "name": "common-error-invariant",
+    "repo_path": "common/error-invariant",
+    "note": "docs/10-reference/packages/common-error-invariant.md",
+    "role": "Package @here.build/error-invariant — a **side-effect import** that installs a global",
+    "code_anchors": [
+      "common/error-invariant/src/index.ts:32   # Error.invariant assignment",
+      "common/error-invariant/src/index.ts:26   # global ErrorConstructor augmentation",
+      "common/error-invariant/src/index.ts:42   # receiver-as-thrown-class (new this(...))",
+      "common/error-invariant/src/index.ts:23   # NODE_ENV read once at install time"
+    ]
+  },
+  {
+    "name": "common-lexical-namer",
+    "repo_path": "common/lexical-namer",
+    "note": "docs/10-reference/packages/common-lexical-namer.md",
+    "role": "Package @here.build/lexical-namer — priority-based, lexically-scope-aware name assignment.",
+    "code_anchors": [
+      "common/lexical-namer/src/index.ts:1008   # assignNames (flat pool)",
+      "common/lexical-namer/src/index.ts:384     # resolveLexicalNames (scope tree)",
+      "common/lexical-namer/src/index.ts:38      # ScopeSpec",
+      "common/lexical-namer/src/index.ts:99      # ScopedEntity",
+      "common/lexical-namer/src/index.ts:282     # onTie: burn | free | postfix",
+      "common/lexical-namer/src/index.ts:506     # onTie default = \"burn\""
+    ]
+  },
+  {
+    "name": "common-eslint-config",
+    "repo_path": "common/eslint-config",
+    "note": "docs/10-reference/packages/common-eslint-config.md",
+    "role": "Package @here.build/eslint-configs — shared ESLint flat configs for Here.build packages",
+    "code_anchors": [
+      "common/eslint-config/index.js:272   # nodejs config",
+      "common/eslint-config/index.js:286   # browser config",
+      "common/eslint-config/index.js:301   # shared config",
+      "common/eslint-config/index.js:316   # cloudflare config",
+      "common/eslint-config/index.js:330   # landing config",
+      "common/eslint-config/index.js:242   # reactConfig"
+    ]
+  },
+  {
+    "name": "common-tsconfig",
+    "repo_path": "common/tsconfig",
+    "note": "docs/10-reference/packages/common-tsconfig.md",
+    "role": "Package @here.build/tsconfig — shared TypeScript configuration for Here.build packages",
+    "code_anchors": [
+      "common/tsconfig/package.json:9      # exports map (purpose/* + env/*)",
+      "common/tsconfig/env/node.json:1     # node env base",
+      "common/tsconfig/purpose/lib.json:1  # lib purpose preset"
+    ]
+  }
+]

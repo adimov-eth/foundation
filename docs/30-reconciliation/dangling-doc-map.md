@@ -16,12 +16,10 @@ Every referencing `path:line` below was verified by `grep` against the working t
 2026-06-18, then fixed in [[90-backlog/items/07-p3-dangling-design-doc-refs]]. This note is the
 historical reconciliation ledger, not a list of currently dangling refs.
 
-> 📐 **Recovery:** the lost docs below now have **code-grounded reconstructions** — each
+> 📐 **Recovery:** all **17** lost docs below now have **code-grounded reconstructions** — each
 > reverse-engineered from the code it governed and anchored to `file:line` — under
-> [[reconstructed/_moc]] (`authority: derived`: *reconstructions, not originals*). One further lost
-> doc, `docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md`
-> (`arrival/arrival-chain/src/loader-extensions.ts:7`), surfaced after this ledger was written and is
-> reconstructed there too — 17 reconstructions in total.
+> [[reconstructed/_moc]] (`authority: derived`: *reconstructions, not originals*; they record what
+> each doc *must have specified* given the implementation, not its original text).
 
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been

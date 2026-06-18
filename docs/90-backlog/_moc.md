@@ -25,7 +25,7 @@ are not deleted.
 | 07 | **P3** | fixed | [[items/07-p3-dangling-design-doc-refs]] | dangling design-doc references in code | M | low |
 | 08 | **P1** | open | [[items/08-p1-lint-debt-after-install-repair]] | `turbo lint` exposes serializer/config lint debt after install repair | M | med |
 | 09 | **P1** | fixed | [[items/09-p1-arrival-chain-view-type-lens-test]] | restored minimal type-lens fixture for `arrival-chain-view` bite tests | M | med |
-| 10 | **P1** | open | [[items/10-p1-timing-sensitive-tests-under-load]] | full-suite load exposes wall-clock timing threshold flakes | M | med |
+| 10 | **P1** | partial | [[items/10-p1-timing-sensitive-tests-under-load]] | `arrival` abort timing fixed; `arrival-chain` wall-clock thresholds remain | S | med |
 
 ## Legend
 

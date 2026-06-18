@@ -274,6 +274,14 @@ export interface RunOptions {
    */
   budgetMs?: number;
   /**
+   * Optional observability hook fired at the trampoline's abort/budget checkpoint.
+   *
+   * This is deliberately tied to the same 1000-iteration / 5ms cadence that
+   * checks `signal` and `budgetMs`, so tests can assert checkpoint reachability
+   * without treating CI wall-clock load as program semantics.
+   */
+  onTrampolineCheckpoint?: () => void;
+  /**
    * Opt into Tier 2 speculative evaluation for this run (see `EvalContext.speculate`).
    * Default false = byte-identical to today. Set on the root `EvalContext` and
    * propagated structurally; consumed by the collection operators + comparison
@@ -643,8 +651,7 @@ function env_get(env: Environment, sym: SchemeSymbol): SchemeValue {
   // resolved by Environment.get's property-splitting path, which _lookupWithResolvers
   // does not implement. Delegate ONLY after the direct miss (matching Environment.get's
   // "dot notation only after direct lookup fails" ordering), so the hot path is unchanged.
-  const hasObjectParts =
-    (sym as unknown as { [key: symbol]: unknown })[SchemeSymbol.object] != null;
+  const hasObjectParts = (sym as unknown as { [key: symbol]: unknown })[SchemeSymbol.object] != null;
   if (hasObjectParts || (typeof name === "string" && name.includes("."))) {
     return env.get(sym);
   }
@@ -667,11 +674,8 @@ function env_get(env: Environment, sym: SchemeSymbol): SchemeValue {
  * 5. Tracks stack frames for error reporting
  * 6. Honors an optional AbortSignal at iteration boundaries
  */
-async function run<T>(
-  generator: Generator<unknown, T, unknown>,
-  options: RunOptions = {},
-): Promise<T> {
-  const { signal, budgetMs } = options;
+async function run<T>(generator: Generator<unknown, T, unknown>, options: RunOptions = {}): Promise<T> {
+  const { signal, budgetMs, onTrampolineCheckpoint } = options;
 
   // Fast-fail: if the caller passed an already-aborted signal, refuse
   // before allocating the trampoline state. Mirrors fetch() semantics.
@@ -683,8 +687,7 @@ async function run<T>(
   // per-TICK comparison short-circuits to a single `!== undefined` check.
   // A non-positive budget means "already expired" — refuse on entry, the
   // budget analogue of the pre-aborted-signal fast path above.
-  const deadline =
-    budgetMs === undefined ? undefined : performance.now() + budgetMs;
+  const deadline = budgetMs === undefined ? undefined : performance.now() + budgetMs;
   if (deadline !== undefined && budgetMs! <= 0) {
     throw new SchemeError(`execution budget exceeded (${budgetMs}ms)`, []);
   }
@@ -891,6 +894,7 @@ async function run<T>(
         // event-loop yield itself — the 1000-iter / 5ms cadence IS the
         // natural abort-check cadence.
         if (iterations > 1000 || performance.now() - lastYield > 5) {
+          onTrampolineCheckpoint?.();
           if (signal?.aborted) {
             throw signal.reason ?? new DOMException("aborted", "AbortError");
           }
@@ -1001,9 +1005,7 @@ function restrictControlFlowProvenance(predicate: SchemeValue, armResult: Scheme
  * returns `armResult` — the trampoline applies this hook before sending the
  * value back, so the transform already happened for the non-collapsed path.
  */
-function controlFlowResolve(
-  predicate: SchemeValue,
-): ((value: unknown) => unknown | undefined) | undefined {
+function controlFlowResolve(predicate: SchemeValue): ((value: unknown) => unknown | undefined) | undefined {
   if (!(predicate instanceof AValue) || predicate.provenance.size === 0) return undefined;
   return (value: unknown): unknown | undefined => {
     const stamped = restrictControlFlowProvenance(predicate, value as SchemeValue);
@@ -2375,7 +2377,6 @@ function* evalTry(rest: SchemeValue, ctx: EvalContext): EvalGenerator {
   // Yield the promise for the trampoline to await
   return yield resultPromise;
 }
-
 
 // ============================================================================
 // Core Evaluator

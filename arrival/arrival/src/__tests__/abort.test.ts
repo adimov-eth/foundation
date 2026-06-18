@@ -29,16 +29,17 @@ import { describe, expect, it } from "vitest";
 import { exec, execExpr, parse } from "../eval/generator-exec";
 
 describe("AbortSignal execution budget", () => {
-  it("aborts an infinite loop when AbortSignal fires", async () => {
+  it("aborts an infinite loop at the trampoline checkpoint", async () => {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 50);
-    const start = Date.now();
+    const reason = new Error("checkpoint budget exhausted");
+    let checkpoints = 0;
+
     // Use `(do () (#f))` — a do-loop with a constant-false test runs entirely
     // INSIDE one generator's `while(true)` (see evalDo at evaluator.ts:1558),
     // so iteration cycles through `yield { call: evaluate(test) }` and tail-
     // pops back to the same frame. The trampoline's stack[] and the JS
     // microtask chain stay flat, and the TICK abort check at the 5ms / 1000-
-    // iter cadence delivers the signal cleanly within ~one tick of the timer.
+    // iter cadence is reachable without named-let recursion hazards.
     //
     // War story: this test used to drive the loop via `(let loop () (loop))`
     // on the assumption that named-let iterated inside the trampoline. It
@@ -57,25 +58,34 @@ describe("AbortSignal execution budget", () => {
     // flat. `(define (loop) (loop)) (loop)` has the same hazard for the same
     // reason — it goes through evalLambda's `run(...)` wrapper.
     await expect(
-      exec("(do () (#f))", { signal: ctrl.signal }),
-    ).rejects.toThrow(/abort/i);
-    // Generous upper bound: the trampoline only checks at the 5ms / 1000-iter
-    // cadence, so abort propagates within ~one tick of the 50ms timer.
-    expect(Date.now() - start).toBeLessThan(2000);
+      exec("(do () (#f))", {
+        signal: ctrl.signal,
+        onTrampolineCheckpoint: () => {
+          checkpoints += 1;
+          ctrl.abort(reason);
+        },
+      }),
+    ).rejects.toThrow("checkpoint budget exhausted");
+
+    expect(ctrl.signal.aborted).toBe(true);
+    expect(checkpoints).toBe(1);
   });
 
-  it("throws immediately when signal is already aborted at start", async () => {
+  it("throws before reaching a checkpoint when signal is already aborted at start", async () => {
     const ctrl = new AbortController();
+    let checkpoints = 0;
     ctrl.abort();
-    const start = Date.now();
     await expect(
-      exec("(+ 1 2)", { signal: ctrl.signal }),
+      exec("(+ 1 2)", {
+        signal: ctrl.signal,
+        onTrampolineCheckpoint: () => {
+          checkpoints += 1;
+        },
+      }),
     ).rejects.toThrow(/abort/i);
-    // Pre-abort fast path: no trampoline state allocated, throw on entry.
-    // This should be effectively instantaneous (sub-millisecond), but we
-    // give a wide margin to allow for parse/import overhead from the lazy
-    // lips bootstrap on first invocation in the suite.
-    expect(Date.now() - start).toBeLessThan(500);
+    // Pre-abort fast path: no trampoline checkpoint reached, so no timing
+    // assertion is needed to prove immediate refusal.
+    expect(checkpoints).toBe(0);
   });
 
   it("preserves signal.reason through the throw", async () => {

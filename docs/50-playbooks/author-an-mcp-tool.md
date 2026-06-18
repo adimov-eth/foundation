@@ -39,9 +39,9 @@ contract (`describe()`/`call()`), mounted with `registerTools`. See [[arrival-mc
    (`ActionTool.ts:199`). Declare typed `Act`s with NAMED props (`FieldSpec` from
    `refs.ts`, which can be a `Ref` resolving a UUID/name/instance against the live ctx
    — `defineRef`, `refs.ts:59`). The batch shares ONE `context` scope **validated/
-   resolved once** ([[batch-context-immutability]]); it runs sequentially with
-   rollback-report, and an optional `wrapBatch` (`ActionTool.ts:136`) makes the burst
-   atomic. Dispatch by receiver class via `on`/`receiverKey`.
+   resolved once** ([[batch-context-immutability]]); it runs sequentially
+   **stop-on-first-failure** (a failing action halts the rest, prior actions persist), and an
+   optional `wrapBatch` (`ActionTool.ts:136`) makes the burst atomic. Dispatch by receiver class via `on`/`receiverKey`.
 
 4. **Register on a server** (`sdk-adapter.ts:50`):
    ```ts

@@ -198,6 +198,7 @@ concepts = {}
 for relnote, (fm, body) in NOTES.items():
     for c in fm.get("canonical-for", []):
         concepts[c] = "docs/" + relnote
+concepts = dict(sorted(concepts.items()))  # deterministic order for clean idempotency
 
 # ── glossary.json ───────────────────────────────────────────────────────────────
 gloss = []

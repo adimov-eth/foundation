@@ -29,7 +29,7 @@ mutate in immutable-context batches). Terms: [[glossary#mcp]], [[glossary#discov
 | Tier | Tool | Shape | Side effects |
 |---|---|---|---|
 | read | `DiscoveryTool` | a sandboxed Scheme **REPL** over a capability's symbols (`{expr, intent}` ∪ the capability's config). | none — exploration only. |
-| mutation | `ActionTool` | a validated **batch** of tuple-invoked typed actions (`["place-node", {position, target}]`) sharing one context scope, with rollback-report on failure. | mutates. |
+| mutation | `ActionTool` | a validated **batch** of tuple-invoked typed actions (`["place-node", {position, target}]`) sharing one context scope; **stop-on-first-failure** (a failing action halts the rest, prior actions persist) unless a `wrapBatch` supplies atomicity. | mutates. |
 
 Both are **values, not subclasses** (`new DiscoveryTool(...)` / `new ActionTool(...)`), and both
 derive from the same `McpEnvCapability` (`arrival/arrival-mcp/src/McpEnvCapability.ts:1`) — the

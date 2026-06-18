@@ -2,7 +2,7 @@
 // Elements are plain JS numbers from a small domain so collisions make the
 // Setoid laws (symmetry/transitivity) bite; the Functor transforms are
 // number→number. equalClone forges a fresh distinct-but-equal payload.
-// (Boxing track S5 — docs/plan-2026-06-10-boxing-track.md.)
+// (Boxing track S5 — docs/30-reconciliation/dangling-doc-map.md.)
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { SchemeVector } from "../values/SchemeVector.js";

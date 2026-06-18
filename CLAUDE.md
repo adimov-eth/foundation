@@ -25,12 +25,28 @@ is architecture-induced, and is countered by the patterns in [[pattern-catalogue
 is intended to be reused as a *framework for agentic work on future projects* — see
 [[operating-as-agentic-framework]].
 
-## ⚠️ Current repo state — read before running anything
+## Current repo state — read before running anything
 
-This is a **post-refactor half-state**. **`pnpm install` currently fails** (stale lockfile,
-ghost workspace packages). Do **not** assume a clean build. The full, evidence-bearing list of
-known breakages is the repair backlog: [[docs/90-backlog/_moc|repair backlog]]. None are fixed
-yet — this repo phase is **documentation/research only; build nothing**.
+The extraction repair has reconciled the workspace and lockfile: `corepack pnpm install
+--frozen-lockfile` now validates against the current `plexus`, `arrival/*`, and `common/*`
+workspace. `build`, `typecheck`, and docs-index validation are expected to pass on the repair branch.
+The original evidence-bearing repair queue remains in [[docs/90-backlog/_moc|repair backlog]];
+items marked `fixed` record the validating commands instead of being deleted.
+
+Known non-green checks are deliberately tracked, not hidden:
+
+- `corepack pnpm lint` remains red on `arrival-serializer` strict/config lint debt — see
+  [[docs/90-backlog/items/08-p1-lint-debt-after-install-repair]].
+- `corepack pnpm test` currently reaches timing-sensitive runtime tests and can fail under
+  full-suite load while focused tests pass — see [[docs/90-backlog/items/10-p1-timing-sensitive-tests-under-load]].
+
+Bootstrap submodules before running the full local suite or tests that exercise vendored
+Scheme behavior:
+
+```bash
+git submodule update --init --recursive
+corepack pnpm install --frozen-lockfile
+```
 
 ## How to navigate the knowledge base
 
@@ -47,8 +63,8 @@ yet — this repo phase is **documentation/research only; build nothing**.
 
 ## Working rules in this repo
 
-- This phase **builds nothing** and **fixes nothing** — it only produces documentation under
-  `docs/` and this file. Do not modify source code.
+- Preserve reconciliation honesty: if a claim is historical, lost, inferred, or current-state,
+  label it that way.
 - When you state a fact about the code, anchor it with `path:line`. If you cannot verify it,
   mark it unverified.
 - Conventions for the vault live in [[conventions]]; note front-matter in [[front-matter-spec]].

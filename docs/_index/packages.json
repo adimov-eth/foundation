@@ -371,8 +371,8 @@
     ],
     "deps": [],
     "code_anchors": [
-      "common/collections/src/defaulted-collections.ts:1",
-      "common/collections/src/defaulted-collections.ts:14",
+      "common/collections/src/defaulted-collections.ts:16",
+      "common/collections/src/defaulted-collections.ts:34",
       "common/collections/src/counter.ts:31",
       "common/collections/src/path-map.ts:108",
       "common/collections/src/multimap.ts:22",
@@ -390,9 +390,10 @@
     ],
     "deps": [],
     "code_anchors": [
-      "common/error-invariant/src/index.ts:32",
-      "common/error-invariant/src/index.ts:26",
-      "common/error-invariant/src/index.ts:42",
+      "common/error-invariant/src/index.ts:25",
+      "common/error-invariant/src/index.ts:33",
+      "common/error-invariant/src/index.ts:27",
+      "common/error-invariant/src/index.ts:43",
       "common/error-invariant/src/index.ts:23"
     ]
   },

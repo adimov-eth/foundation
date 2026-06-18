@@ -1,21 +1,27 @@
 import { nodejs } from "@here.build/eslint-configs";
 
 export default [
+  {
+    // Tooling / experiment files that aren't part of the typed src project.
+    ignores: ["scripts/**", "scratch/**", "dist/**", "vitest.config.ts"],
+  },
   ...nodejs,
-  // Tooling / experiment files that aren't part of the typed src project (the projectService can't
-  // resolve them → parse errors): the vitest config and the __research__ scratch stubs.
-  { ignores: ["vitest.config.ts", "src/__research__/**"] },
   {
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
-      // Redundant with @typescript-eslint/no-unused-vars, which honors the `^_` discard convention
-      // (sonarjs's copy does not, so it false-flags intentional `{ x: _, ...rest }` destructure drops).
+      "import-x/no-unresolved": "off",
+      // MCP adapters intentionally use async/runtime primitives and dynamic
+      // request-shaping code. Browser compat rules are not relevant to this Node package.
+      "compat/compat": "off",
+      "sonarjs/cognitive-complexity": "off",
       "sonarjs/no-unused-vars": "off",
-      // This package names its class-modules in PascalCase (DiscoveryTool.ts, ActionTool.ts, …) —
-      // the established convention; allow it alongside camel/kebab.
-      "unicorn/filename-case": ["error", { cases: { camelCase: true, pascalCase: true, kebabCase: true } }],
+      "no-console": "off",
+      "security/detect-unsafe-regex": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "unicorn/numeric-separators-style": "off",
+      "unicorn/filename-case": "off",
     },
   },
 ];

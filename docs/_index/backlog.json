@@ -54,5 +54,29 @@
     "slug": "dangling-design-doc-refs",
     "title": "P3 — dangling design-doc references in code",
     "note": "docs/90-backlog/items/07-p3-dangling-design-doc-refs.md"
+  },
+  {
+    "id": "08-p1-lint-debt-after-install-repair",
+    "order": 8,
+    "priority": "P1",
+    "slug": "lint-debt-after-install-repair",
+    "title": "P1 — lint debt exposed after install repair",
+    "note": "docs/90-backlog/items/08-p1-lint-debt-after-install-repair.md"
+  },
+  {
+    "id": "09-p1-arrival-chain-view-type-lens-test",
+    "order": 9,
+    "priority": "P1",
+    "slug": "arrival-chain-view-type-lens-test",
+    "title": "P1 — arrival-chain-view type-lens semantic fixture restored",
+    "note": "docs/90-backlog/items/09-p1-arrival-chain-view-type-lens-test.md"
+  },
+  {
+    "id": "10-p1-timing-sensitive-tests-under-load",
+    "order": 10,
+    "priority": "P1",
+    "slug": "timing-sensitive-tests-under-load",
+    "title": "P1 — timing-sensitive tests fail under full-suite load",
+    "note": "docs/90-backlog/items/10-p1-timing-sensitive-tests-under-load.md"
   }
 ]

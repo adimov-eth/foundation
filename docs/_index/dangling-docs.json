@@ -102,6 +102,12 @@
     "recovered_as": ""
   },
   {
+    "ref": "docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-chain/src/loader-extensions.ts:7",
+    "recovered_as": ""
+  },
+  {
     "ref": "docs/CONSTRAINT-KERNEL-SPEC.md",
     "status": "lost",
     "referenced_by": "arrival/arrival/src/oracle/index.ts:4",

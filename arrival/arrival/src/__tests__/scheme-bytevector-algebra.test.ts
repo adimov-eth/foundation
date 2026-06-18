@@ -3,7 +3,7 @@
 // single-byte, and prefix relationships (so Ord totality/antisymmetry and
 // Setoid symmetry/transitivity are actually exercised). equalClone forges a
 // fresh distinct-but-equal payload, exercising value equality a bare `===`
-// would miss. (Boxing track S1 — docs/plan-2026-06-10-boxing-track.md.)
+// would miss. (Boxing track S1 — docs/30-reconciliation/dangling-doc-map.md.)
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { SchemeBytevector } from "../values/SchemeBytevector.js";

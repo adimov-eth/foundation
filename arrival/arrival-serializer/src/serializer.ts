@@ -118,7 +118,6 @@ export function toSExpr(obj: any, visited: Set<any> = new Set()): SExpr {
       if (typeof obj[Symbol.SExpr] === "function" && "uuid" in obj) {
         return ["circular-reference-to", [obj[Symbol.SExpr], toSExpr(obj.uuid)]];
       } else {
-        console.error("circular reference found while serializing", obj);
         throw new Error("Circular reference detected");
       }
     }
@@ -286,7 +285,8 @@ function toSExprDispatch(obj: any, visited: Set<any>): SExpr {
     for (const [key, value] of all.slice(0, activeCaps.maxItems)) {
       entries.push(`:${String(key)}`, toSExpr(value, visited));
     }
-    if (all.length > activeCaps.maxItems) entries.push(truncatedMarker(`+${all.length - activeCaps.maxItems} more of ${all.length}`));
+    if (all.length > activeCaps.maxItems)
+      entries.push(truncatedMarker(`+${all.length - activeCaps.maxItems} more of ${all.length}`));
     return ["map", ...entries];
   }
 
@@ -316,7 +316,8 @@ function toSExprDispatch(obj: any, visited: Set<any>): SExpr {
     for (const [key, value] of all.slice(0, activeCaps.maxItems)) {
       entries.push(`:${key}`, toSExpr(value, visited));
     }
-    if (all.length > activeCaps.maxItems) entries.push(truncatedMarker(`+${all.length - activeCaps.maxItems} more of ${all.length}`));
+    if (all.length > activeCaps.maxItems)
+      entries.push(truncatedMarker(`+${all.length - activeCaps.maxItems} more of ${all.length}`));
     return ["dict", ...entries];
   }
 
@@ -637,7 +638,7 @@ export const toSExprString = (obj: any, optsOrIndent: number | SerializeOpts = 0
 
   const maxTotalChars = opts.maxTotalChars ?? DEFAULT_TOTAL;
   let maxItems = opts.maxItems ?? 100;
-  let maxStringChars = opts.maxStringChars ?? 2_000;
+  let maxStringChars = opts.maxStringChars ?? 2000;
 
   const render = (): string => {
     activeCaps = { maxItems, maxStringChars };
@@ -679,7 +680,11 @@ export const sexpr = (tag: string, ...args: any[]): SExprDefinition => [SEXPR_TA
 /**
  * Helper to create a map from object
  */
-export const smap = (obj: Record<string, any>): SExprDefinition => [SEXPR_TAG, "dict", ...Object.entries(obj).flatMap(([k, v]) => [`:${k}`, v])];
+export const smap = (obj: Record<string, any>): SExprDefinition => [
+  SEXPR_TAG,
+  "dict",
+  ...Object.entries(obj).flatMap(([k, v]) => [`:${k}`, v]),
+];
 
 /**
  * Helper to create a list

@@ -13,6 +13,22 @@ const echoStub = (delayMs = 0) =>
     return { value: `echo(${s.model}):${s.prompt}` };
   });
 
+const concurrentEchoStub = (delayMs: number) => {
+  let active = 0;
+  let maxActive = 0;
+  const complete = vi.fn(async (s: ModelSpec) => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    try {
+      await new Promise((r) => setTimeout(r, delayMs));
+      return { value: `echo(${s.model}):${s.prompt}` };
+    } finally {
+      active -= 1;
+    }
+  });
+  return { complete, maxActive: () => maxActive };
+};
+
 describe("Project.run — the converge kernel", () => {
   it("converges a chain of dependent infers", async () => {
     const project = ArrivalChain.bootstrap(new Project()).root;
@@ -49,19 +65,18 @@ describe("Project.run — the converge kernel", () => {
 
   it("auto-parallelizes (map infer …) — frontier resolves concurrently", async () => {
     const project = ArrivalChain.bootstrap(new Project()).root;
-    const complete = echoStub(60);
-    project.bindInfer(createInferStore(singletonRouter({ complete })));
+    const backend = concurrentEchoStub(60);
+    project.bindInfer(createInferStore(singletonRouter({ complete: backend.complete })));
 
-    const t0 = Date.now();
     await project.run(`
       (apply string-append
         (map (lambda (n) (car (infer "m" n)))
              (list "n0" "n1" "n2" "n3" "n4" "n5" "n6" "n7")))
     `);
-    const elapsed = Date.now() - t0;
 
-    expect(complete).toHaveBeenCalledTimes(8);
-    expect(elapsed).toBeLessThan(300); // 8 × 60 = 480 sequential
+
+    expect(backend.complete).toHaveBeenCalledTimes(8);
+    expect(backend.maxActive()).toBe(8);
   });
 
   it("dedups identical specs to a single backend call within a run", async () => {

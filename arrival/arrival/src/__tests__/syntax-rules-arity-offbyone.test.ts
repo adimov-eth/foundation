@@ -14,7 +14,7 @@
 // the first block (fixed-arity + arity-discrimination + ellipsis) now passes and
 // is plain `it`. The vector-pattern block below stays `it.fails` — those are the
 // SEPARATE expander defect (boxing-track S9: needs a SchemeVector unwrap in the
-// matcher/expander, not just the off-by-one). docs/plan-2026-06-10-boxing-track.md.
+// matcher/expander, not just the off-by-one). docs/30-reconciliation/dangling-doc-map.md.
 import { describe, expect, it } from "vitest";
 import { initBridge } from "../bridge.js";
 import { SchemeVector } from "../values/SchemeVector.js";

@@ -1,0 +1,38 @@
+name: Docs KB substrate
+
+# Validates the agent-first knowledge-base substrate under docs/. Dependency-free
+# (pure-Python; no pnpm install — unaffected by the repo's known install blocker).
+# Runs on any PR that touches docs/ (regardless of base branch) and on pushes to main.
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+
+jobs:
+  docs-substrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 1. Anchors resolve, wikilinks (incl. glossary #slug) resolve, no duplicate
+      #    canonical-for, full front-matter, all _index/*.json parse.
+      - name: Validate KB (links, anchors, schema)
+        run: python3 docs/_index/check.py
+
+      # 2. The committed indices must equal a fresh regeneration — catches drift
+      #    when a note changed but docs/_index/*.json was not rebuilt.
+      - name: Indices are regenerated and idempotent
+        run: |
+          python3 docs/_index/build_index.py
+          git diff --exit-code -- docs/_index \
+            || { echo "::error::docs/_index is stale — run 'python3 docs/_index/build_index.py' and commit."; exit 1; }

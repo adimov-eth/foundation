@@ -13,7 +13,7 @@ verified-against: claude/vibrant-meitner-ask7xn
 The current source tree references **18 design docs** that no longer ship in the tree. Each
 reference is an in-code comment pointing at a `docs/…` path that does not exist at that path.
 Every referencing `path:line` below was verified by `grep` against the working tree on
-2026-06-18. Backlog item [[items/07-p3-dangling-design-doc-refs]] tracks the cleanup.
+2026-06-18. Backlog item [[90-backlog/items/07-p3-dangling-design-doc-refs]] tracks the cleanup.
 
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been

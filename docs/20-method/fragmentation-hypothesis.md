@@ -12,7 +12,7 @@ verified-against: claude/vibrant-meitner-ask7xn
 
 > The kernel thesis of Layer 2. This is the *living* note; the frozen source artifact is
 > vendored at [[fragmentation-hypothesis.archived]] (40-history). Term:
-> [[glossary#fragmentation hypothesis]].
+> [[glossary#fragmentation-hypothesis]].
 
 **Status: working hypothesis seeking validation. Observational; correlation ≠ causation.**
 

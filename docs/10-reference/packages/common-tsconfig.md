@@ -1,5 +1,6 @@
 ---
 title: common-tsconfig
+summary: Shared TypeScript configuration for Here.build packages, split into purpose (lib vs app) and env (node, cf, browser, consumer) subpath presets
 layer: reference
 status: verified
 tags: [package, common, tooling, typescript]

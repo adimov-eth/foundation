@@ -15,6 +15,7 @@
   "shadow-main-doc": "docs/10-reference/cross-cutting/crdt-state-model.md",
   "liminality": "docs/10-reference/cross-cutting/crdt-state-model.md",
   "materialization": "docs/10-reference/cross-cutting/crdt-state-model.md",
+  "index-manifest": "docs/_index/README.md",
   "fragmentation-hypothesis": "docs/20-method/fragmentation-hypothesis.md",
   "discovery-action-separation": "docs/20-method/patterns/discovery-action-separation.md",
   "batch-context-immutability": "docs/20-method/patterns/batch-context-immutability.md",

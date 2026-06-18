@@ -1,5 +1,6 @@
 ---
 title: arrival-chain-view
+summary: A faithful, deterministic projection of arrival-chain Scheme into a target language (JS, then Python) — the read-view glass over a chain program.
 layer: reference
 status: in-review
 tags: [package, arrival, chain-view, projection, scheme]
@@ -13,6 +14,12 @@ code-anchors:
   - arrival/arrival-chain-view/src/compile-project.ts:141  # compileProject
   - arrival/arrival-chain-view/src/types-emit.ts:753       # emitTypes
   - arrival/arrival-chain-view/src/compile-project.ts:52   # DEP_VERSIONS (caret ranges)
+  - arrival/arrival-chain-view/src/prompt.ts:318           # compilePromptToTs
+  - arrival/arrival-chain-view/src/prompt.ts:324           # aiClientModule
+  - arrival/arrival-chain-view/src/prompt.ts:305           # getPromptBackend
+  - arrival/arrival-chain-view/src/prompt.ts:288           # PROMPT_BACKENDS
+  - arrival/arrival-chain-view/src/prompt.ts:31            # PromptBackend
+  - arrival/arrival-chain-view/src/prompt.ts:20            # PromptModule
 ---
 
 # arrival-chain-view
@@ -40,6 +47,12 @@ The pipeline lowers a chain Scheme program through `desugar` → `lower` → `as
 | `sliceToTypeScript` | provenance-slice → TS | `slice-to-ts.ts`; `index.ts:6` |
 | `formatJs` | eslint/prettier pass | `format.ts`; `index.ts:7` |
 | `cleanName` / `nameCandidates` / `pyName` | identifier projection | `names.ts` / `python.ts`; `index.ts:8,18` |
+| `compilePromptToTs` | `(source: string, promptName: string) => CompiledPrompt` (compile a `.prompt` → ax `.prompt.ts`) | `prompt.ts:318` |
+| `aiClientModule` | `() => string` (the shared ax `_ai.ts` client module) | `prompt.ts:324` |
+| `getPromptBackend` | `(id: PromptBackend["id"]) => PromptBackend` | `prompt.ts:305` |
+| `PROMPT_BACKENDS` | `Record<PromptBackend["id"], PromptBackend>` (ax / langchain-js / dspy / langchain-py registry) | `prompt.ts:288` |
+| `PromptBackend` | interface (`id`, `lang`, `compile`, `client`) | `prompt.ts:31` |
+| `PromptModule` | interface (`filename`, `code`, `exportName`, `inputs`) | `prompt.ts:20` |
 
 (`index.ts:5-21` is the barrel.)
 

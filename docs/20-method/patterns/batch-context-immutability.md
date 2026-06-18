@@ -16,7 +16,7 @@ code-anchors:
 # Batch context-immutability
 
 > Pattern (the *why*). Reference (the *what*): [[discovery-action-tiers]] (the ActionTool batch).
-> Term: [[glossary#ActionTool]].
+> Term: [[glossary#actiontool]].
 
 ## Problem
 

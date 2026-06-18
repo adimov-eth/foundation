@@ -1,5 +1,6 @@
 ---
 title: arrival-serializer
+summary: A JS-to-S-expression serializer that dispatches on the arrival-env Symbol protocol, rendering plain objects as (dict :k v ...) forms.
 layer: reference
 status: in-review
 tags: [package, arrival, serialization, s-expression]

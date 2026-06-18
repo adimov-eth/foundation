@@ -1,5 +1,6 @@
 ---
 title: arrival-scheme-env-infer
+summary: The inference palette pack for the scheme env, shipping infer/infer-chat verbs plus the dependent MCP-agentic capability as EnvCapability values rooted into a chain base env
 layer: reference
 status: verified
 tags: [package, arrival, inference, mcp, cross-cutting]

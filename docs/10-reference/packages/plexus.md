@@ -1,5 +1,6 @@
 ---
 title: plexus
+summary: Reactive CRDT state management over Yjs — plain TypeScript classes become the CRDT via @syncing decorators.
 layer: reference
 status: verified
 tags: [package, plexus, crdt, cross-cutting]
@@ -27,7 +28,7 @@ code-anchors:
 # plexus
 
 CRDT state modeled as TypeScript classes. A `@syncing` class's fields **are** the replicated
-state; Plexus materializes them into a [[glossary#Yjs|Yjs]] document and keeps them in sync,
+state; Plexus materializes them into a [[glossary#yjs|Yjs]] document and keeps them in sync,
 undoable, and reactive. The largest, most heavily tested package in the repo (~1080 cases).
 
 For the cross-cutting mechanics (two-doc architecture, materialization, liminality semantics),
@@ -36,10 +37,10 @@ it does not restate them.
 
 ## Overview
 
-- **CRDT-as-classes** — extend [[glossary#PlexusModel|PlexusModel]], decorate with
-  [[glossary#`@syncing`|@syncing]]; field declarations become a `schema`, and reads/writes proxy
+- **CRDT-as-classes** — extend [[glossary#plexusmodel|PlexusModel]], decorate with
+  [[glossary#syncing|@syncing]]; field declarations become a `schema`, and reads/writes proxy
   into Yjs `XmlElement` attributes (`decorators.ts:557`, `PlexusModel.ts:159`).
-- **Two Y.Docs per [[glossary#Plexus|Plexus]] instance** — shadow (working copy) + main
+- **Two Y.Docs per [[glossary#plexus|Plexus]] instance** — shadow (working copy) + main
   (committed store), origin-routed. See [[crdt-state-model]]; constructor wiring at
   `Plexus.ts:294`.
 - **CRDT-native identity** — an entity's `uuid` IS its physical `{clientId, clock}` Yjs address,
@@ -47,7 +48,7 @@ it does not restate them.
   materialization; no doc → `.uuid` throws (`PlexusModel.ts:192`).
 - **[[glossary#liminality|liminality]]** — ephemeral gesture writes held on shadow, committed as
   one atomic delta / undo step (`Plexus.ts:14`, `:725`).
-- **[[glossary#virtual genesis|virtual genesis]]** — content-addressed child spawning; two peers
+- **[[glossary#virtual-genesis|virtual genesis]]** — content-addressed child spawning; two peers
   producing the same child get byte-identical Items (`virtual-children-genesis.ts:238`).
 
 ## Public API
@@ -180,5 +181,5 @@ Plus top-level `virtual-children-genesis.test.ts`, `virtual-map.test.ts`,
 ## See also
 
 - [[crdt-state-model]] — two-doc architecture, materialization, liminality (canonical).
-- [[glossary#Plexus]], [[glossary#PlexusModel]], [[glossary#`@syncing`]], [[glossary#liminality]],
-  [[glossary#virtual genesis]].
+- [[glossary#plexus]], [[glossary#plexusmodel]], [[glossary#syncing]], [[glossary#liminality]],
+  [[glossary#virtual-genesis]].

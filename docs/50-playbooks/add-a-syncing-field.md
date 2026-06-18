@@ -14,7 +14,7 @@ code-anchors:
 
 # Add a syncing field
 
-Recipe for adding one replicated field to a [[glossary#PlexusModel|PlexusModel]]. A `@syncing`
+Recipe for adding one replicated field to a [[glossary#plexusmodel|PlexusModel]]. A `@syncing`
 field's value **is** CRDT state — see [[plexus]] for the API and [[crdt-state-model]] for the
 mechanics. Use a real model as a template: `arrival/arrival-chain/src/program.ts:53`.
 
@@ -35,7 +35,7 @@ emancipated on reparent; plain = a non-owning reference).
 
 - Declared with the stage-3 **`accessor`** keyword — not a plain property.
 - `@syncing.virtual(factory)` is assignment-blocked; entries auto-materialize on `.get(key)` via
-  content-addressed [[glossary#virtual genesis|genesis]] (`plexus/src/decorators.ts:605`). Owner
+  content-addressed [[glossary#virtual-genesis|genesis]] (`plexus/src/decorators.ts:605`). Owner
   must be doc-connected; ephemeral `.get()` throws.
 - The **class** must be `@syncing("Name")`-decorated, and so must every ancestor class — see
   Invariant 3 in [[plexus]].
@@ -68,7 +68,7 @@ class Program extends PlexusModel<Project> {
 - Keys inherited from `PlexusModel` itself are excluded.
 
 ```ts
-const v = new ProgramVersion({ source });          // arrival-chain/src/program.ts:64
+const v = new ProgramVersion({ source });          // arrival/arrival-chain/src/program.ts:64
 program.versions.push(v);                            // attach → materializes + adopts
 ```
 

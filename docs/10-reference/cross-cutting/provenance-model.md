@@ -54,7 +54,7 @@ the one observable being the `#entries` box (`arrival/arrival-provenance/src/tra
 | Model | Entry | Notes |
 |---|---|---|
 | region tree | `traceToRegions` → `RegionGraph` (`trace-to-regions.ts:1184`) | regions ARE boxes with boundary ports; `regionsAt` (`:674`) is the per-invocation walk. |
-| incremental region fold | `TraceRegionFold` (`trace-region-fold.ts:2`) | streaming twin of `traceToRegions`; maintains the SAME `RegionGraph` incrementally and reuses the exact pure helpers — **parity** is enforced by `__tests__/trace-region-fold.test.ts`. |
+| incremental region fold | `TraceRegionFold` (`trace-region-fold.ts:2`) | streaming twin of `traceToRegions`; maintains the SAME `RegionGraph` incrementally and reuses the exact pure helpers — **parity** is enforced by the cross-package test `arrival/arrival-chain/src/__tests__/trace-region-fold.test.ts` (it lives in the consuming chain suite, not in arrival-provenance). |
 | statechart | `traceToStatechart` (`statechart.ts:147`) | causal statechart; pure, plain snapshot. |
 
 `forwardCone(chart, id)` returns the set of nodes causally downstream of `id`

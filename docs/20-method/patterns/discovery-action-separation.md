@@ -16,14 +16,14 @@ code-anchors:
 
 # Discovery/Action separation
 
-> Pattern (the *why*). Reference (the *what*): [[discovery-action-tiers]]. Term: [[glossary#Discovery/Action separation]].
+> Pattern (the *why*). Reference (the *what*): [[discovery-action-tiers]]. Term: [[glossary#discovery-action-separation]].
 
 ## Problem
 
 In standard tool architectures **every tool call is an action** — there is no side-effect-free
 way to look. An agent that wants to *explore* ("what fields exist? what's the shape of this?")
 must do so by *executing*, threading exploration through the same mutation pathway as commitment.
-Per the [[fragmentation-hypothesis]] this is a prime driver of [[glossary#fragmentation hypothesis|subprocess desync]]:
+Per the [[fragmentation-hypothesis]] this is a prime driver of [[glossary#fragmentation-hypothesis|subprocess desync]]:
 the exploratory reasoning pattern fires the execution pathway, a misfire triggers a failsafe
 restore, and distinct response patterns end up operating on inconsistent state.
 
@@ -50,14 +50,15 @@ its context once.
   `arrival/arrival-mcp/src/ActionTool.ts:390` (same `fullCtx` handed to each `act.handle`).
 - Soft failures (e.g. validation) surface as data, not exceptions —
   `arrival/arrival-mcp/src/dispatch.ts:13` (`success: false` convention).
-- Both tiers derive from the same [[glossary#McpEnvCapability|McpEnvCapability]] — see [[arrival-mcp]].
+- Both tiers derive from the same [[glossary#mcpenvcapability|McpEnvCapability]] — see [[arrival-mcp]].
 
 ## Why it counters drift
 
 Exploration no longer fires the execution pathway, so the explore→panic→restore cascade in the
 [[fragmentation-hypothesis]] has no trigger. Errors-as-data keep the agent in one coherent state
-rather than a failsafe restore to an earlier checkpoint. Observed effect: 50+ tool-call chains
-without drift vs ~5-15 in immediate-execution MCP (observational; correlation ≠ causation).
+rather than a failsafe restore to an earlier checkpoint. Observed effect: markedly longer
+drift-free tool-call chains than immediate-execution MCP — see [[fragmentation-hypothesis]] for
+the figure and its caveats (observational; correlation ≠ causation).
 
 ## How to apply elsewhere
 

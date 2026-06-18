@@ -15,7 +15,7 @@ code-anchors:
 # Add a provider backend
 
 Teach the [[arrival-inference|inference plane]] to talk to a new LLM provider. A
-backend is a value implementing `ModelBackend`; a [[glossary#ModelRouter|router]] maps
+backend is a value implementing `ModelBackend`; a [[glossary#modelrouter|router]] maps
 model ids to it; `(infer "model-id" …)` then routes there.
 
 ## Steps

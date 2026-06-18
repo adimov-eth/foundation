@@ -1,5 +1,6 @@
 ---
 title: arrival-scheme-env-ramda
+summary: An opt-in arrival-scheme palette pack wiring Ramda accessor/path/collection/logic/string verbs into the env
 layer: reference
 status: verified
 tags: [package, arrival, env-pack]

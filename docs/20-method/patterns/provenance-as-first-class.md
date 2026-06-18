@@ -17,7 +17,7 @@ code-anchors:
 # Provenance as first-class
 
 > Pattern (the *why*). Reference (the *what*): [[provenance-model]]. Terms:
-> [[glossary#provenance]], [[glossary#EvalTrace / Invocation]], [[glossary#reverse-chain slice]].
+> [[glossary#provenance]], [[glossary#evaltrace-invocation]], [[glossary#reverse-chain-slice]].
 
 ## Problem
 

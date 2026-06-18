@@ -4,6 +4,7 @@ layer: reference
 status: verified
 tags: [package, arrival, mcp, cross-cutting]
 canonical-for: []
+summary: MCP tools-as-values over the official SDK — a read tier (DiscoveryTool, a sandboxed Scheme REPL) and a mutation tier (ActionTool, a validated batch of typed actions) derived from one McpEnvCapability.
 last-verified: 2026-06-18
 verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
@@ -18,18 +19,36 @@ code-anchors:
   - arrival/arrival-mcp/src/refs.ts:368                 # FieldSpec primitives
   - arrival/arrival-mcp/src/dispatch.ts:18              # serializeResult
   - arrival/arrival-mcp/src/sdk-adapter.ts:50           # registerTools
+  - arrival/arrival-mcp/src/ActionTool.ts:590           # stop-on-first-failure batch (description)
+  - arrival/arrival-mcp/src/ActionTool.ts:412           # wrapBatch invoked (true atomicity)
+  - arrival/arrival-mcp/src/errors.ts:41                # MCPError
+  - arrival/arrival-mcp/src/errors.ts:12                # MCPErrorKind
+  - arrival/arrival-mcp/src/errors.ts:69                # classifyError
+  - arrival/arrival-mcp/src/errors.ts:88                # withTimeout
+  - arrival/arrival-mcp/src/errors.ts:133               # checkSizeLimit
+  - arrival/arrival-mcp/src/errors.ts:118               # SizeLimits
+  - arrival/arrival-mcp/src/errors.ts:127               # DEFAULT_SIZE_LIMITS
+  - arrival/arrival-mcp/src/InMemorySessionStore.ts:3   # InMemorySessionStore (aliased InMemoryArrivalSessionStore)
+  - arrival/arrival-mcp/src/store.ts:43                 # ArrivalSessionStore
+  - arrival/arrival-mcp/src/store.ts:6                  # SessionRecord
+  - arrival/arrival-mcp/src/store.ts:24                 # InteractionRecord
+  - arrival/arrival-mcp/src/resources/index.ts:9        # ArrivalResourceContents
+  - arrival/arrival-mcp/src/resources/index.ts:11       # ResourceProvider
+  - arrival/arrival-mcp/src/resources/index.ts:19       # ARRIVAL_RESOURCE_MIME
+  - arrival/arrival-mcp/src/refs.ts:368                 # Primitive union
+  - arrival/arrival-mcp/src/refs.ts:392                 # optional
 ---
 
 # arrival-mcp
 
 ## Overview
 
-[[glossary#MCP|MCP]] tools-as-values, built on the official `@modelcontextprotocol/sdk`.
+[[glossary#mcp|MCP]] tools-as-values, built on the official `@modelcontextprotocol/sdk`.
 The package splits a tool surface into the two [[discovery-action-tiers|tiers]]: a
-read tier ([[glossary#DiscoveryTool|DiscoveryTool]] — a sandboxed Scheme REPL over a
-capability's symbols) and a mutation tier ([[glossary#ActionTool|ActionTool]] — a
+read tier ([[glossary#discoverytool|DiscoveryTool]] — a sandboxed Scheme REPL over a
+capability's symbols) and a mutation tier ([[glossary#actiontool|ActionTool]] — a
 validated batch of typed actions). Both derive from one
-[[glossary#McpEnvCapability|McpEnvCapability]] (the shared env of symbols/config/
+[[glossary#mcpenvcapability|McpEnvCapability]] (the shared env of symbols/config/
 resources). Tools are plain VALUES (`new DiscoveryTool(…)` / `new ActionTool(…)`), not
 subclasses; `registerTools` mounts them on an official `McpServer`. See
 [[discovery-action-separation]] (why explore ≠ mutate) and
@@ -55,6 +74,21 @@ Published `@here.build/arrival-mcp`.
 | `registerTools` | `(mcp, tools, resolveCtx?) => void` — mount on `McpServer` | sdk-adapter.ts:50 |
 | `serializeResult` | `(result) => Promise<CallToolResult>` — userland → MCP lowering | dispatch.ts:18 |
 | `McpTool` | `interface` — `describe()`/`call()` contract | sdk-adapter.ts:31 |
+| `MCPError` | `class extends Error` — typed error with discrete `kind`/`details` | errors.ts:41 |
+| `MCPErrorKind` | `type` union — `parse`/`validation`/`prepare`/`timeout`/`size-limit`/… | errors.ts:12 |
+| `classifyError` | `(e, fallbackKind?) => MCPError` — egress normalizer (preserves MCPError) | errors.ts:69 |
+| `withTimeout` | `(op, deadlineMs, phase, target?) => Promise<T>` — race against deadline | errors.ts:88 |
+| `checkSizeLimit` | `(current, max, label, target?) => void` — throws `size-limit` MCPError | errors.ts:133 |
+| `SizeLimits` | `interface` — `maxActions`/`maxPropsFields`/`maxStringFieldSize` | errors.ts:118 |
+| `DEFAULT_SIZE_LIMITS` | `Required<SizeLimits>` — `50`/`64`/`16384` defaults | errors.ts:127 |
+| `InMemoryArrivalSessionStore` | `class implements ArrivalSessionStore` (aliased from `InMemorySessionStore`) | InMemorySessionStore.ts:3 |
+| `ArrivalSessionStore` | `interface` — session lifecycle + interaction/phantom recording | store.ts:43 |
+| `SessionRecord` / `InteractionRecord` | `interface` — session + per-call records | store.ts:6,24 |
+| `ResourceProvider` | `interface { list, read }` — wired to MCP `resources/list`/`read` | resources/index.ts:11 |
+| `ArrivalResourceContents` | `type` — `TextResourceContents \| BlobResourceContents` | resources/index.ts:9 |
+| `ARRIVAL_RESOURCE_MIME` | `const string` — arrival entity resource MIME | resources/index.ts:19 |
+| `Primitive` | `type` union of `FieldSpec` primitives | refs.ts:368 |
+| `optional` | `<P extends Primitive>(spec) => P & { optional: true }` | refs.ts:392 |
 
 ## Key internals
 
@@ -83,9 +117,13 @@ Published `@here.build/arrival-mcp`.
   ONE context scope. Props are a NAMED object (not positional); a context field may be
   a `Ref` resolving a UUID/name/instance against the live ctx. One action NAME may
   dispatch by RECEIVER class (`on`/`receiverKey`, exact-class). The batch runs
-  sequentially with **rollback-report** on the first runtime failure (line ~379-412);
-  the signal cancels BETWEEN actions; an optional `wrapBatch` (line 136) makes the
-  whole burst atomic. The shared context is **validated/resolved ONCE per batch** (the
+  sequentially and is **stop-on-first-failure — a failing action halts the rest, and
+  prior actions PERSIST** (it returns a `{success:false, partial:true}` report with the
+  prior results + the failed action's index/name, not a rollback; ActionTool.ts:590
+  states this in the schema description). True atomicity happens ONLY when an optional
+  `wrapBatch` is supplied — `call` invokes it around the whole burst (ActionTool.ts:412),
+  so the host (e.g. a CRDT transaction) can make the actions commit-or-discard together.
+  The signal cancels BETWEEN actions; the shared context is **validated/resolved ONCE per batch** (the
   token saver + the [[batch-context-immutability|immutability]] constraint).
 - **`refs`** (`refs.ts`) — `defineRef` (line 59) builds ctx-aware resolution; `FieldSpec`
   (`str`/`num`/`bool`/`oneOf`/`scalar`/`stringRecord`/`rawList`, line 370-383) is used

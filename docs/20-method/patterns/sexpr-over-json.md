@@ -11,12 +11,12 @@ code-anchors:
   - arrival/arrival/src/values/Pair.ts:236           # cons cell (car/cdr) — the two-layer structure
   - arrival/arrival-serializer/src/serializer.ts:106 # toSExpr — JS value → s-expr
   - arrival/arrival-serializer/src/serializer.ts:312 # plain object → (dict :k v …), not flat KV
-  - arrival/arrival-sweet/src/sweet-read.ts:59       # sweet text → Node (readable surface)
+  - arrival/arrival-sweet/src/sweet-render.ts:59     # parseSexprs — sweet text → Node (readable surface)
 ---
 
 # S-expressions over JSON
 
-> Pattern (the *why*). Reference (the *what*): [[s-expressions-vs-json]]. Term: [[glossary#S-expression]].
+> Pattern (the *why*). Reference (the *what*): [[s-expressions-vs-json]]. Term: [[glossary#s-expression]].
 
 ## Problem
 
@@ -50,7 +50,7 @@ ergonomic without losing the structure.
 - JS values serialize to s-exprs — `arrival/arrival-serializer/src/serializer.ts:106` (`toSExpr`);
   a plain object becomes `(dict :k v …)` (operator `dict` + alternating operands, homoiconic
   round-trip) rather than a flat JSON map — `arrival/arrival-serializer/src/serializer.ts:312`.
-- The readable bidirectional surface — `arrival/arrival-sweet/src/sweet-read.ts:59`
+- The readable bidirectional surface — `arrival/arrival-sweet/src/sweet-render.ts:59`
   (`parseSexprs`), inverse in `sweet-render.ts`. See [[arrival-sweet]], [[arrival-serializer]].
 
 ## Why it counters drift

@@ -4,6 +4,7 @@ layer: reference
 status: verified
 tags: [package, arrival, provenance, cross-cutting]
 canonical-for: []
+summary: Read-only provenance analysis — capture an EvalTrace and derive forest/statechart/region/flow-graph/slice render-models; it reads append-only traces and never drives the evaluator.
 last-verified: 2026-06-18
 verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
@@ -20,17 +21,26 @@ code-anchors:
   - arrival/arrival-provenance/src/slice.ts:205          # buildSlice (reverse-chain uneval)
   - arrival/arrival-provenance/src/trace-snapshot.ts:1   # snapshotTrace (PlainTrace)
   - arrival/arrival-provenance/src/trace-artifact.ts:1   # serializeTrace / loadTraceArtifact
+  - arrival/arrival-provenance/src/trace-to-flow-graph.ts:59  # traceToFlowGraph
+  - arrival/arrival-provenance/src/trace-to-flow-graph.ts:55  # flowForwardCone / flowBackwardCone (re-export)
+  - arrival/arrival-provenance/src/trace-to-chain.ts:51  # traceToChain
+  - arrival/arrival-provenance/src/uneval.ts:61          # buildUneval
+  - arrival/arrival-provenance/src/mdl-collapse.ts:184   # collapseMDL
+  - arrival/arrival-provenance/src/extract-defines.ts:82 # extractDefines
+  - arrival/arrival-provenance/src/slice.ts:46           # writeForm
+  - arrival/arrival-provenance/src/slice.ts:141          # referencedSymbols
+  - arrival/arrival-chain/src/__tests__/trace-region-fold.test.ts  # region/fold parity (cross-package)
 ---
 
 # arrival-provenance
 
 ## Overview
 
-Read-only trace analysis. It captures an [[glossary#EvalTrace / Invocation|EvalTrace]]
+Read-only trace analysis. It captures an [[glossary#evaltrace-invocation|EvalTrace]]
 as a program evaluates (implementing arrival-scheme's `EvalTap`) and turns a
 *finished* trace into render-models: forest (call-tree), statechart (causal DAG),
 region tree (the studio blueprint), flow graph, and the reverse-chain
-[[glossary#reverse-chain slice|slicer]]. The package **never drives the evaluator** —
+[[glossary#reverse-chain-slice|slicer]]. The package **never drives the evaluator** —
 it reads append-only traces. Its forward-cone + statechart are reused by
 [[arrival-chain]]'s `invalidateForwardCone` for partial-invalidation replay. See
 [[provenance-model]] for the mechanics and [[provenance-as-first-class]] for why.
@@ -53,6 +63,14 @@ Published `@here.build/arrival-provenance`.
 | `traceToRegions` | `(trace) => RegionGraph` — blueprint region tree | trace-to-regions.ts:1184 |
 | `TraceRegionFold` | `class` — incremental region fold (parity with `traceToRegions`) | trace-region-fold.ts |
 | `buildSlice` | `(trace, outputNode) => Slice` — reverse-chain slice | slice.ts:205 |
+| `writeForm` | `(node) => string` — re-serialize a homoiconic form to re-parseable Scheme | slice.ts:46 |
+| `referencedSymbols` | `(form) => Set<string>` — symbols a form references (slice seed) | slice.ts:141 |
+| `traceToFlowGraph` | `(trace, opts?) => FlowGraph` — flow render model | trace-to-flow-graph.ts:59 |
+| `flowForwardCone` / `flowBackwardCone` | flow-graph cones (re-exported from `flow-graph.ts`) | trace-to-flow-graph.ts:55 |
+| `traceToChain` | `(trace) => ProvenanceChain` — Lamport-layered causal chain | trace-to-chain.ts:51 |
+| `buildUneval` | `(opts) => Uneval` — selector-driven reverse-slice builder | uneval.ts:61 |
+| `collapseMDL` | `(forest, params?) => CollapseResult` — MDL box-collapse over the forest | mdl-collapse.ts:184 |
+| `extractDefines` | `(source) => Promise<DefineInfo[]>` — top-level `(define …)` enumerator | extract-defines.ts:82 |
 | `snapshotTrace` | `(trace) => PlainTrace` — de-MobXed snapshot for hot traversals | trace-snapshot.ts |
 | `serializeTrace` / `loadTraceArtifact` | trace artifact persistence (versioned) | trace-artifact.ts |
 
@@ -80,8 +98,10 @@ Published `@here.build/arrival-provenance`.
   `TraceRegionFold` maintains the SAME graph **incrementally** over the append-only
   trace (`applyDelta` walks only new invocations; per-tick cost O(Δ), not O(N)). The
   contract is **parity** — `current()` must deep-equal `traceToRegions` on every state,
-  achieved by reusing the exact shared helpers rather than re-deriving region logic
-  (enforced by `__tests__/trace-region-fold.test.ts` in the chain suite).
+  achieved by reusing the exact shared helpers rather than re-deriving region logic.
+  The parity is enforced by a **cross-package** test that lives in the consuming chain
+  suite, not in this package: `arrival/arrival-chain/src/__tests__/trace-region-fold.test.ts`
+  (arrival-provenance's own `__tests__/` holds only `extract-defines` + `mdl-collapse`).
 - **statechart** (`statechart.ts:147`) — the causal DAG behind the flows view; renders
   `Invocation.provenance` (causality), not the call stack. Operates on a `PlainTrace`
   snapshot because its traversal is O(n²) (reads children/provenance many times).

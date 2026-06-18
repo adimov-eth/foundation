@@ -17,7 +17,7 @@ code-anchors:
 # Content-addressed effects
 
 > Pattern (the *why*). Reference (the *what*): [[determinism-and-effects]]. Terms:
-> [[glossary#content-keyed cache]], [[glossary#effect membrane / effect-log]].
+> [[glossary#content-keyed-cache]], [[glossary#effect-membrane-effect-log]].
 
 ## Problem
 

@@ -1,5 +1,6 @@
 ---
 title: common-lexical-namer
+summary: Priority-based, lexically-scope-aware name assignment that resolves prioritized candidate ladders into collision-free names across a scope tree or flat pool
 layer: reference
 status: verified
 tags: [package, common, naming]

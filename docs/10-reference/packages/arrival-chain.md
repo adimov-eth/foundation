@@ -4,6 +4,7 @@ layer: reference
 status: verified
 tags: [package, arrival, chain, cross-cutting]
 canonical-for: []
+summary: The content-addressed inference substrate — turns a project of .scm/data files into deterministic, replayable agentic runs via the Project model, run/runPipeline gateways, the module loader, and the effect-log key algebra.
 last-verified: 2026-06-18
 verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
@@ -25,11 +26,11 @@ code-anchors:
 
 ## Overview
 
-The content-addressed inference substrate. Sits on [[glossary#Plexus]] (the synced
+The content-addressed inference substrate. Sits on [[glossary#plexus]] (the synced
 document/CRDT layer) and the arrival-scheme evaluator, and turns a project of
-`.scm`/data files into deterministic, replayable [[glossary#agentic loop|agentic]]
+`.scm`/data files into deterministic, replayable [[glossary#agentic-loop|agentic]]
 runs. A run is a **pure function of the project's files** — every contact with the
-outside world (LLM, HTTP, SQL, MCP) crosses the [[glossary#effect membrane / effect-log|effect membrane]],
+outside world (LLM, HTTP, SQL, MCP) crosses the [[glossary#effect-membrane-effect-log|effect membrane]],
 which is what makes [[determinism-and-effects|replay and counterfactuals]] sound. The
 package owns the `Project` model, the `run`/`runPipeline` gateways, the module loader
 for `(require …)`, the effect-log key algebra, and the [[content-addressed-effects|content-addressed]]
@@ -81,8 +82,8 @@ Published `@here.build/arrival-chain` with a `./runner` subpath
   shaped identically (project.ts:427-439).
 - **infer-kernel** (`infer-kernel.ts`) — `inferIdentityKey` folds `tools` (ordered)
   and content `params` into the cacheKey so the `[model,prompt,schema,cacheKey]`
-  machinery distinguishes them with no new key dimension (line 308; **gated to byte-
-  identity** when neither present). `recordInfer`/`reviveInfer`/`freshInfer` (line
+  machinery distinguishes them with no new key dimension (infer-kernel.ts:308-319;
+  **gated to byte-identity** — returns `cacheKey` untouched when neither present). `recordInfer`/`reviveInfer`/`freshInfer` (line
   324-345) are the record/replay shapes: a tool-enabled turn carries `{value,toolCalls}`,
   a plain infer the bare value. Also home to `buildArrivalEnv` + `BuildArrivalEnvOpts`
   (the host-capability seam: `infer`/`loader`/`data`/`mcp`/`onExpose`/`resolveOverride`)
@@ -110,9 +111,10 @@ Published `@here.build/arrival-chain` with a `./runner` subpath
 - The inference plane is **never synced** — bind it per-host via `bindInfer`.
 - Effect keys are **kind-tagged**; `mcp` keys are **positional**, the other three
   content-keyed. A new effect kind must extend `EffectKind` + add a typed constructor.
-- `inferIdentityKey` is the SOLE place tools/params fold into the cache key —
-  `keyOf` (infer-store) whitelists only `[model,prompt,schema,cacheKey]`, so a param
-  not folded here would silently serve a stale completion.
+- `inferIdentityKey` is the SOLE place tools/params fold into the cache key
+  (`infer-kernel.ts:308-319`) — `keyOf` (`infer-store.ts:71-72`) whitelists only
+  `[model,prompt,schema,cacheKey]`, so a param not folded here would silently serve a
+  stale completion.
 - `(require …)` is statement-position + eager-sequential within a `.scm`; cycles throw.
 - See [[determinism-and-effects]] (mechanics) and [[content-addressed-effects]] (why).
 

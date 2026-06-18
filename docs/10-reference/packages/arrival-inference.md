@@ -4,6 +4,7 @@ layer: reference
 status: verified
 tags: [package, arrival, inference, cross-cutting]
 canonical-for: []
+summary: The shared inference plane — a ModelRouter, a content-keyed single-flight InferStore, lazy provider backends, the JS-side agentic tool-call loop, and cost projection.
 last-verified: 2026-06-18
 verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
@@ -22,17 +23,24 @@ code-anchors:
   - arrival/arrival-inference/src/agentic-loop.ts:105    # runAgenticLoop
   - arrival/arrival-inference/src/model.ts:170           # ModelBackend
   - arrival/arrival-inference/src/pricing.ts:42          # referenceCost
+  - arrival/arrival-inference/src/infer-store.ts:71      # keyOf cache key (whitelist)
+  - arrival/arrival-inference/src/infer-string.ts:29     # InferString
+  - arrival/arrival-inference/src/entity-middleware.ts:53  # DerivableEntity
+  - arrival/arrival-inference/src/entity-middleware.ts:23  # EntityMiddleware
+  - arrival/arrival-inference/src/entity-middleware.ts:102 # MCP_BREAK
+  - arrival/arrival-inference/src/entity-middleware.ts:105 # isMcpBreak
+  - arrival/arrival-inference/src/run-spend.ts:47        # RunSpend
 ---
 
 # arrival-inference
 
 ## Overview
 
-The "talk to LLMs" layer — the [[glossary#InferStore|inference plane]] every host
-shares. It owns the [[glossary#ModelRouter|ModelRouter]] (model id → backend), the
+The "talk to LLMs" layer — the [[glossary#inferstore|inference plane]] every host
+shares. It owns the [[glossary#modelrouter|ModelRouter]] (model id → backend), the
 content-keyed [[glossary#single-flight|single-flight]] `InferStore`, the provider
 [[glossary#backend|backends]] (anthropic/openai/openrouter/ollama/vercel as optional
-peer deps), the JS-side [[glossary#agentic loop|agentic tool-call loop]], and the
+peer deps), the JS-side [[glossary#agentic-loop|agentic tool-call loop]], and the
 cost/pricing projection. [[arrival-chain]] resolves every `(infer …)` through this
 package via `bindInfer`; the package itself has no Scheme, no project model, and no
 synced state — it's the injectable runtime plane. See [[determinism-and-effects]] for
@@ -63,6 +71,12 @@ Published `@here.build/arrival-inference`.
 | `DEFAULT_AGENTIC_MAX_ROUNDS` | `24` | agentic-loop.ts:30 |
 | `ModelBackend` / `ModelSpec` / `Completion` / `ToolCall` / `ToolDescriptor` | core types | model.ts:170,27,132,73,60 |
 | `referenceCost` / `priceFor` | cost projection from `TokenUsage` | pricing.ts:42,37 |
+| `InferString` | `class extends AString` — completion value carrying `__reasoning__`/`__chunks__`/tool calls | infer-string.ts:29 |
+| `DerivableEntity` | `class` — kind-agnostic `(mcp …)`/`(llm …)`/`derive`/`mcp/define` handle | entity-middleware.ts:53 |
+| `EntityMiddleware` | `interface { method, handler }` — `derive`'s interception unit | entity-middleware.ts:23 |
+| `MCP_BREAK` | `unique symbol` — middleware halt sentinel (cross-membrane `Symbol.for`) | entity-middleware.ts:102 |
+| `isMcpBreak` | `(v) => boolean` — is the value the `MCP_BREAK` sentinel | entity-middleware.ts:105 |
+| `RunSpend` | `class` — per-run fresh-inference USD/call accumulator (`(infer/spent)` readout) | run-spend.ts:47 |
 
 ## Key internals
 
@@ -79,7 +93,8 @@ Published `@here.build/arrival-inference`.
   cancels its slow call for free). Two content-keyed cache layers: the in-process
   `cells` map (single-flight + session) and an optional `InferCache` checked BEFORE
   the backend on first run (line 117) for **cross-restart replay**. `keyOf` whitelists
-  exactly `[model, prompt, schema, cacheKey]` (line 71). A failed/aborted cell evicts
+  exactly `[model, prompt, schema, cacheKey]` (infer-store.ts:71-72; the `InferStore`
+  class is at :215). A failed/aborted cell evicts
   the slot so a re-request retries fresh (line 230). `overlayInferStore` (line 301)
   routes per-model between a primary and fallback plane (e.g. user-local $0 models
   over the team plane) via a `deferredCell` façade.

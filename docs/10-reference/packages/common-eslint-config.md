@@ -1,5 +1,6 @@
 ---
 title: common-eslint-config
+summary: Shared ESLint flat configs for Here.build packages (nodejs, browser, shared, cloudflare, landing, reactConfig presets)
 layer: reference
 status: verified
 tags: [package, common, tooling, lint]

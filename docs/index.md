@@ -17,7 +17,7 @@ This vault has **two interlinked layers** plus support:
 
 ## Layer 1 — Reference (what exists)
 - [[architecture-overview]] — monorepo shape, build, dependency graph, the two flagships.
-- **Packages** → [[10-reference/packages/_moc|package index]] (18 notes).
+- **Packages** → [[10-reference/packages/_moc|package index]] (17 packages).
 - **Cross-cutting concepts** → [[10-reference/cross-cutting/_moc|cross-cutting index]]:
   [[crdt-state-model]] · [[membrane]] · [[determinism-and-effects]] · [[provenance-model]] ·
   [[s-expressions-vs-json]] · [[discovery-action-tiers]].

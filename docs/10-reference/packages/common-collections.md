@@ -1,5 +1,6 @@
 ---
 title: common-collections
+summary: Map/WeakMap utilities with default-value semantics (DefaultedMap, Counter, PathMap, multimaps) plus MobX-reactive computed variants
 layer: reference
 status: verified
 tags: [package, common, collections]

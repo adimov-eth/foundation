@@ -1,5 +1,6 @@
 ---
 title: arrival
+summary: A sandboxed Scheme interpreter (forked from LIPS) with a JS<->Scheme membrane, for agentic exploration without side effects.
 layer: reference
 status: in-review
 tags: [package, arrival, scheme, sandbox, membrane, provenance]

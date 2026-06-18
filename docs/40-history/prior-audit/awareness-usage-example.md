@@ -9,6 +9,8 @@ source-provenance:
   branch: origin/tmp-6164624
   retrieved: 2026-06-18
   authority: historical
+last-verified: 2026-06-18
+verified-against: origin/tmp-6164624
 ---
 
 > ⚠️ Frozen historical copy — possibly outdated; current truth in [[source-layers]].

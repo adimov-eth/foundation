@@ -1,5 +1,6 @@
 ---
 title: arrival-sweet
+summary: A bidirectional sweet-expression lens over Scheme source — a zero-dependency string-to-string round-trip pair.
 layer: reference
 status: in-review
 tags: [package, arrival, sweet-expression, scheme]
@@ -12,7 +13,9 @@ code-anchors:
   - arrival/arrival-sweet/src/sweet-read.ts:664      # readSweet
   - arrival/arrival-sweet/src/sweet-read.ts:461      # readSweetExpr
   - arrival/arrival-sweet/src/index.ts:15            # render primitives barrel
-  - arrival/arrival-sweet/src/sweet-render.ts:30     # accessor codec
+  - arrival/arrival-sweet/src/sweet-render.ts:353    # decodeAccessor
+  - arrival/arrival-sweet/src/sweet-render.ts:371    # encodeAccessor
+  - arrival/arrival-sweet/src/sweet-render.ts:381    # accessorStepLetters
 ---
 
 # arrival-sweet
@@ -40,7 +43,7 @@ the classic↔sweet round-trip property is the integration-test contract over th
 | `readSweetExpr` | `(src: string, opts?: ReadOpts) => Node` | `sweet-read.ts:461` |
 | `SweetOpts` / `ReadOpts` | option types | `sweet-render.ts` / `sweet-read.ts` |
 | render primitives | `inlineSweet`, `inlineScheme`, `formatSweet`, `collectKwargHeads`, `inflateKwargs`, `flattenKwargs`, `nodeEq`, `DEFAULT_OPTS` | `index.ts:15-24` |
-| accessor codec | `decodeAccessor`, `encodeAccessor`, `accessorStepLetters`, `PairStep` | `index.ts:30`; `sweet-render.ts:30` |
+| accessor codec | `decodeAccessor`, `encodeAccessor`, `accessorStepLetters`, `PairStep` | `sweet-render.ts:353` (`decodeAccessor`), `:371` (`encodeAccessor`), `:381` (`accessorStepLetters`) |
 | reader utils | `topFormSpans`, `splitFormsWithBase`, `R7RS_ACCESSOR_DEPTH` | `index.ts:34` |
 
 (`index.ts:11` `export * from "./sweet.js"` re-surfaces `schemeToSweet`/`sweetToScheme`/`readSweet`
@@ -52,7 +55,7 @@ via `sweet.ts:10,14`.)
 |---|---|
 | Render (Scheme → sweet) | `sweet-render.ts:894` `schemeToSweet`; inline vs block via `inlineSweet`/`formatSweet` |
 | Read (sweet → Scheme) | `sweet-read.ts:664` `readSweet`; single-expr `readSweetExpr:461`; fold-back `sweetToScheme:759` |
-| Pair-accessor codec | `sweet-render.ts:30` — single decomposition of a `c[ad]+r` word into its PULL/DROP chain, shared by renderer (→ subscripts), reader (← fusion), and chain-view (→ JS `[k]`/`.slice(k)`); one source of truth so the three faces cannot drift |
+| Pair-accessor codec | `sweet-render.ts:353` (`decodeAccessor`) — single decomposition of a `c[ad]+r` word into its PULL/DROP chain, shared by renderer (→ subscripts), reader (← fusion), and chain-view (→ JS `[k]`/`.slice(k)`); one source of truth so the three faces cannot drift |
 | Kwarg (de)sugaring | `collectKwargHeads`/`inflateKwargs`/`flattenKwargs` (`index.ts:15-24`) |
 
 ## Invariants
@@ -61,7 +64,7 @@ via `sweet.ts:10,14`.)
   (the corpus round-trip property; `sweetToScheme` takes `prevClassic` to anchor the fold).
 - Zero runtime dependencies — pure string↔string lens (`package.json` description; leaf).
 - The pair-accessor codec is the single source of truth across renderer/reader/chain-view
-  (`sweet-render.ts:30`).
+  (`sweet-render.ts:353`).
 
 ## Seams
 

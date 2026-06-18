@@ -1,5 +1,6 @@
 ---
 title: common-error-invariant
+summary: A side-effect import that installs a global Error.invariant(condition, message) assertion helper on Error and its subclasses
 layer: reference
 status: verified
 tags: [package, common, error-handling]

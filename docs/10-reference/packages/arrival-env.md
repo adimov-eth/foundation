@@ -1,5 +1,6 @@
 ---
 title: arrival-env
+summary: The lightweight type definitions and Symbol protocol for Arrival S-expression serialization, without the full LIPS runtime.
 layer: reference
 status: in-review
 tags: [package, arrival, serialization, s-expression, protocol]

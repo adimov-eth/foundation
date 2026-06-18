@@ -65,7 +65,7 @@ Every concept has **exactly one** canonical home; everything else links to it.
 - **The "why"** of a mechanic → canonical in `20-method/patterns/*`. Each cross-cutting note
   links to its pattern and back (Layer-1 ↔ Layer-2 spine: reference = *what*, method = *why*).
 - **Historical docs** (`40-history/`) are never edited to current truth. Living notes link
-  *down* to them ("superseded by [[…]]; original [[…archived]]").
+  *down* to them ("superseded by `[[living-note]]`; original `[[name.archived]]`").
 
 Enforcement: each concept appears in exactly one note's `canonical-for` front-matter field. The
 link-reconciliation pass asserts this.

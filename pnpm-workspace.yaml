@@ -1,8 +1,5 @@
 packages:
   - plexus
-  - device-frame
-  - css-viewport-transform
-  - ios-layout-solver
   - arrival/*
   - common/*
 

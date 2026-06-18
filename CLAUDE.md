@@ -25,12 +25,20 @@ is architecture-induced, and is countered by the patterns in [[pattern-catalogue
 is intended to be reused as a *framework for agentic work on future projects* — see
 [[operating-as-agentic-framework]].
 
-## ⚠️ Current repo state — read before running anything
+## Current repo state — read before running anything
 
-This is a **post-refactor half-state**. **`pnpm install` currently fails** (stale lockfile,
-ghost workspace packages). Do **not** assume a clean build. The full, evidence-bearing list of
-known breakages is the repair backlog: [[docs/90-backlog/_moc|repair backlog]]. None are fixed
-yet — this repo phase is **documentation/research only; build nothing**.
+The extraction repair has reconciled the workspace and lockfile: `corepack pnpm install
+--frozen-lockfile` now validates against the current `plexus`, `arrival/*`, and `common/*`
+workspace. The original evidence-bearing repair queue remains in [[docs/90-backlog/_moc|repair
+backlog]]; items marked `fixed` record the validating commands instead of being deleted.
+
+Bootstrap submodules before running the full local suite or tests that exercise vendored
+Scheme behavior:
+
+```bash
+git submodule update --init --recursive
+corepack pnpm install --frozen-lockfile
+```
 
 ## How to navigate the knowledge base
 
@@ -47,8 +55,8 @@ yet — this repo phase is **documentation/research only; build nothing**.
 
 ## Working rules in this repo
 
-- This phase **builds nothing** and **fixes nothing** — it only produces documentation under
-  `docs/` and this file. Do not modify source code.
+- Preserve reconciliation honesty: if a claim is historical, lost, inferred, or current-state,
+  label it that way.
 - When you state a fact about the code, anchor it with `path:line`. If you cannot verify it,
   mark it unverified.
 - Conventions for the vault live in [[conventions]]; note front-matter in [[front-matter-spec]].

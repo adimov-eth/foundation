@@ -22,9 +22,12 @@ to [[source-layers]].
 | Shared libs dir | `commons/` | `common/` |
 | Config packages | `configs/eslint`, `configs/tsconfig` (own `configs/*` glob) | folded into `common/`: `common/eslint-config`, `common/tsconfig` |
 | Scheme package dir/name | `arrival/arrival-scheme`, name `@here.build/arrival-scheme` | `arrival/arrival`, name `@here.build/arrival` |
-| Workspace globs | `configs/* , arrival/* , commons/* , plexus` | `plexus , device-frame , css-viewport-transform , ios-layout-solver , arrival/* , common/*` |
+| Workspace globs | `configs/* , arrival/* , commons/* , plexus` | `plexus , arrival/* , common/*` |
 
 Verified: `git show origin/tmp-6164624:tmp/Archive/pnpm-workspace.yaml` vs `pnpm-workspace.yaml`.
+The three extracted-repo ghost globs (`device-frame`, `css-viewport-transform`,
+`ios-layout-solver`) were removed in `repair/extraction-hygiene`; see
+[[items/02-p0-ghost-workspace-packages]].
 
 ## The arrival-scheme → arrival rename is incomplete
 
@@ -34,8 +37,8 @@ The package directory and `package.json` `name` were renamed to `@here.build/arr
 - `arrival/arrival/README.md:1` title is still `# @here.build/arrival-scheme`.
 - README example/install lines still use the old name:
   `arrival/arrival/README.md:33`, `:39`, `:51`, `:54`, `:71`.
-- `pnpm-lock.yaml` still lists the importer as `arrival/arrival-scheme` (stale — see
-  [[items/01-p0-install-frozen-lockfile]]).
+- Historical note: `pnpm-lock.yaml` also listed the importer as `arrival/arrival-scheme` before
+  lockfile regeneration; that part is fixed in [[items/01-p0-install-frozen-lockfile]].
 
 Tracked by [[items/05-p2-readme-rename-drift]].
 

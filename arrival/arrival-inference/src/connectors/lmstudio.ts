@@ -109,7 +109,8 @@ function normalizeCapabilities(raw: V0Model, kind: LocalModelInfo["kind"]): Mode
 function normalizeModel(raw: V0Model): LocalModelInfo[] {
   if (typeof raw.id !== "string" || raw.id.length === 0) return [];
   const kind = typeof raw.type === "string" && KINDS.has(raw.type) ? (raw.type as LocalModelInfo["kind"]) : "llm";
-  const ctx = typeof raw.max_context_length === "number" && raw.max_context_length > 0 ? raw.max_context_length : undefined;
+  const ctx =
+    typeof raw.max_context_length === "number" && raw.max_context_length > 0 ? raw.max_context_length : undefined;
   return [
     {
       id: raw.id,

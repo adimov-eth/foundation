@@ -2091,8 +2091,8 @@
     "symbol": "lazyLmStudioRouter",
     "kind": "function",
     "package": "@here.build/arrival-inference",
-    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:201 (via export *)",
-    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:201",
+    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:202 (via export *)",
+    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:202",
     "signature": "function lazyLmStudioRouter(base = LM_STUDIO_DEFAULT_BASE, fetchImpl?: typeof fetch): ModelRouter {",
     "note": "via export *"
   },
@@ -2100,8 +2100,8 @@
     "symbol": "lmStudioRouter",
     "kind": "function",
     "package": "@here.build/arrival-inference",
-    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:168 (via export *)",
-    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:168",
+    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:169 (via export *)",
+    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:169",
     "signature": "function lmStudioRouter(",
     "note": "via export *"
   },
@@ -2109,8 +2109,8 @@
     "symbol": "localEndpointsRouter",
     "kind": "function",
     "package": "@here.build/arrival-inference",
-    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:224 (via export *)",
-    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:224",
+    "exported_from": "arrival/arrival-inference/src/connectors/lmstudio.ts:225 (via export *)",
+    "declared_at": "arrival/arrival-inference/src/connectors/lmstudio.ts:225",
     "signature": "function localEndpointsRouter(",
     "note": "via export *"
   },
@@ -2451,8 +2451,8 @@
     "symbol": "AnnotatedSymbolDef",
     "kind": "type",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:69 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:69",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:64 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:64",
     "signature": "type AnnotatedSymbolDef = SymbolDef | (ObjectSymbolDef & Partial<McpAnnotation>);",
     "note": "via export *"
   },
@@ -2640,8 +2640,8 @@
     "symbol": "MCP_ANNOTATION_KEYS",
     "kind": "const",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:61 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:61",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:56 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:56",
     "signature": "const MCP_ANNOTATION_KEYS: readonly string[] = [\"description\", \"dynamicDescription\", \"inputSchema\", \"aliases\"];",
     "note": "via export *"
   },
@@ -2649,8 +2649,8 @@
     "symbol": "McpAnnotation",
     "kind": "interface",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:30 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:30",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:25 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:25",
     "signature": "interface McpAnnotation {",
     "note": "via export *"
   },
@@ -2658,8 +2658,8 @@
     "symbol": "McpCapabilitySpec",
     "kind": "interface",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:79 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:79",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:74 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:74",
     "signature": "interface McpCapabilitySpec<",
     "note": "via export *"
   },
@@ -2667,8 +2667,8 @@
     "symbol": "McpEnvCapability",
     "kind": "class",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:173 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:173",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:168 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:168",
     "signature": "class McpEnvCapability<",
     "note": "via export *"
   },
@@ -2676,8 +2676,8 @@
     "symbol": "McpSymbolsSpec",
     "kind": "type",
     "package": "@here.build/arrival-mcp",
-    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:72 (via export *)",
-    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:72",
+    "exported_from": "arrival/arrival-mcp/src/McpEnvCapability.ts:67 (via export *)",
+    "declared_at": "arrival/arrival-mcp/src/McpEnvCapability.ts:67",
     "signature": "type McpSymbolsSpec<C extends Record<string, z.ZodType>, R extends Record<string, Resource<unknown>>> =",
     "note": "via export *"
   },
@@ -3405,8 +3405,8 @@
     "symbol": "formatSExpr",
     "kind": "function",
     "package": "@here.build/arrival-serializer",
-    "exported_from": "arrival/arrival-serializer/src/serializer.ts:330 (via export *)",
-    "declared_at": "arrival/arrival-serializer/src/serializer.ts:330",
+    "exported_from": "arrival/arrival-serializer/src/serializer.ts:332 (via export *)",
+    "declared_at": "arrival/arrival-serializer/src/serializer.ts:332",
     "signature": "function formatSExpr(sexpr: SExpr, indent = 0): string {",
     "note": "via export *"
   },
@@ -3414,8 +3414,8 @@
     "symbol": "sexpr",
     "kind": "const",
     "package": "@here.build/arrival-serializer",
-    "exported_from": "arrival/arrival-serializer/src/serializer.ts:676 (via export *)",
-    "declared_at": "arrival/arrival-serializer/src/serializer.ts:676",
+    "exported_from": "arrival/arrival-serializer/src/serializer.ts:678 (via export *)",
+    "declared_at": "arrival/arrival-serializer/src/serializer.ts:678",
     "signature": "const sexpr = (tag: string, ...args: any[]): SExprDefinition => [SEXPR_TAG, tag, ...args];",
     "note": "via export *"
   },
@@ -3423,8 +3423,8 @@
     "symbol": "slist",
     "kind": "const",
     "package": "@here.build/arrival-serializer",
-    "exported_from": "arrival/arrival-serializer/src/serializer.ts:686 (via export *)",
-    "declared_at": "arrival/arrival-serializer/src/serializer.ts:686",
+    "exported_from": "arrival/arrival-serializer/src/serializer.ts:692 (via export *)",
+    "declared_at": "arrival/arrival-serializer/src/serializer.ts:692",
     "signature": "const slist = (...items: any[]): SExprDefinition => [SEXPR_TAG, \"list\", ...items];",
     "note": "via export *"
   },
@@ -3432,9 +3432,9 @@
     "symbol": "smap",
     "kind": "const",
     "package": "@here.build/arrival-serializer",
-    "exported_from": "arrival/arrival-serializer/src/serializer.ts:681 (via export *)",
-    "declared_at": "arrival/arrival-serializer/src/serializer.ts:681",
-    "signature": "const smap = (obj: Record<string, any>): SExprDefinition => [SEXPR_TAG, \"dict\", ...Object.entries(obj).flatMap(([k, v]) => [`:${k}`, v])];",
+    "exported_from": "arrival/arrival-serializer/src/serializer.ts:683 (via export *)",
+    "declared_at": "arrival/arrival-serializer/src/serializer.ts:683",
+    "signature": "const smap = (obj: Record<string, any>): SExprDefinition => [",
     "note": "via export *"
   },
   {
@@ -3450,8 +3450,8 @@
     "symbol": "toSExprString",
     "kind": "const",
     "package": "@here.build/arrival-serializer",
-    "exported_from": "arrival/arrival-serializer/src/serializer.ts:628 (via export *)",
-    "declared_at": "arrival/arrival-serializer/src/serializer.ts:628",
+    "exported_from": "arrival/arrival-serializer/src/serializer.ts:630 (via export *)",
+    "declared_at": "arrival/arrival-serializer/src/serializer.ts:630",
     "signature": "const toSExprString = (obj: any, optsOrIndent: number | SerializeOpts = 0): string => {",
     "note": "via export *"
   },
@@ -3480,6 +3480,24 @@
     "exported_from": "arrival/arrival-sweet/src/sweet.ts:21",
     "declared_at": "arrival/arrival-sweet/src/param-hints.ts:22",
     "signature": "interface ParamHint {",
+    "note": ""
+  },
+  {
+    "symbol": "R7RS_ACCESSOR_DEPTH",
+    "kind": "const",
+    "package": "@here.build/arrival-sweet",
+    "exported_from": "arrival/arrival-sweet/src/index.ts:34",
+    "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:189",
+    "signature": "const R7RS_ACCESSOR_DEPTH = 4;",
+    "note": ""
+  },
+  {
+    "symbol": "ReadOpts",
+    "kind": "type",
+    "package": "@here.build/arrival-sweet",
+    "exported_from": "arrival/arrival-sweet/src/index.ts:34",
+    "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:469",
+    "signature": "interface ReadOpts {",
     "note": ""
   },
   {
@@ -3514,7 +3532,7 @@
     "kind": "const",
     "package": "@here.build/arrival-sweet",
     "exported_from": "arrival/arrival-sweet/src/index.ts:30",
-    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:381",
+    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:382",
     "signature": "const accessorStepLetters = (s: PairStep): number => (\"pull\" in s ? s.pull + 1 : s.drop);",
     "note": ""
   },
@@ -3541,7 +3559,7 @@
     "kind": "function",
     "package": "@here.build/arrival-sweet",
     "exported_from": "arrival/arrival-sweet/src/index.ts:30",
-    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:371",
+    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:372",
     "signature": "function encodeAccessor(steps: PairStep[]): string {",
     "note": ""
   },
@@ -3577,7 +3595,7 @@
     "kind": "function",
     "package": "@here.build/arrival-sweet",
     "exported_from": "arrival/arrival-sweet/src/sweet.ts:13",
-    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:877",
+    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:922",
     "signature": "function printScheme(nd: Node, col = 0, width = DEFAULT_OPTS.width): string {",
     "note": ""
   },
@@ -3591,12 +3609,30 @@
     "note": ""
   },
   {
+    "symbol": "readSweetExpr",
+    "kind": "function",
+    "package": "@here.build/arrival-sweet",
+    "exported_from": "arrival/arrival-sweet/src/index.ts:34",
+    "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:461",
+    "signature": "function readSweetExpr(src: string, opts: ReadOpts = {}): Node {",
+    "note": ""
+  },
+  {
     "symbol": "schemeToSweet",
     "kind": "function",
     "package": "@here.build/arrival-sweet",
     "exported_from": "arrival/arrival-sweet/src/sweet.ts:10",
-    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:894",
+    "declared_at": "arrival/arrival-sweet/src/sweet-render.ts:939",
     "signature": "function schemeToSweet(src: string, opts: Partial<SweetOpts> = {}): string {",
+    "note": ""
+  },
+  {
+    "symbol": "splitFormsWithBase",
+    "kind": "function",
+    "package": "@here.build/arrival-sweet",
+    "exported_from": "arrival/arrival-sweet/src/index.ts:34",
+    "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:651",
+    "signature": "function splitFormsWithBase(text: string): { text: string; base: number }[] {",
     "note": ""
   },
   {
@@ -3606,6 +3642,15 @@
     "exported_from": "arrival/arrival-sweet/src/sweet.ts:14",
     "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:759",
     "signature": "function sweetToScheme(sweetText: string, prevClassic: string, opts: ReadOpts = {}): string {",
+    "note": ""
+  },
+  {
+    "symbol": "topFormSpans",
+    "kind": "function",
+    "package": "@here.build/arrival-sweet",
+    "exported_from": "arrival/arrival-sweet/src/index.ts:34",
+    "declared_at": "arrival/arrival-sweet/src/sweet-read.ts:694",
+    "signature": "function topFormSpans(src: string): Array<{ start: number; end: number }> {",
     "note": ""
   },
   {
@@ -3684,8 +3729,8 @@
     "symbol": "AssignNamesOptions",
     "kind": "interface",
     "package": "@here.build/common-lexical-namer",
-    "exported_from": "common/lexical-namer/src/index.ts:892",
-    "declared_at": "common/lexical-namer/src/index.ts:892",
+    "exported_from": "common/lexical-namer/src/index.ts:886",
+    "declared_at": "common/lexical-namer/src/index.ts:886",
     "signature": "interface AssignNamesOptions<E> {",
     "note": ""
   },
@@ -3693,8 +3738,8 @@
     "symbol": "AssignNamesResult",
     "kind": "interface",
     "package": "@here.build/common-lexical-namer",
-    "exported_from": "common/lexical-namer/src/index.ts:934",
-    "declared_at": "common/lexical-namer/src/index.ts:934",
+    "exported_from": "common/lexical-namer/src/index.ts:928",
+    "declared_at": "common/lexical-namer/src/index.ts:928",
     "signature": "interface AssignNamesResult<E> {",
     "note": ""
   },
@@ -3729,8 +3774,8 @@
     "symbol": "PrioritizedCandidate",
     "kind": "interface",
     "package": "@here.build/common-lexical-namer",
-    "exported_from": "common/lexical-namer/src/index.ts:885",
-    "declared_at": "common/lexical-namer/src/index.ts:885",
+    "exported_from": "common/lexical-namer/src/index.ts:879",
+    "declared_at": "common/lexical-namer/src/index.ts:879",
     "signature": "interface PrioritizedCandidate {",
     "note": ""
   },
@@ -3801,8 +3846,8 @@
     "symbol": "assignNames",
     "kind": "function",
     "package": "@here.build/common-lexical-namer",
-    "exported_from": "common/lexical-namer/src/index.ts:1008",
-    "declared_at": "common/lexical-namer/src/index.ts:1008",
+    "exported_from": "common/lexical-namer/src/index.ts:1002",
+    "declared_at": "common/lexical-namer/src/index.ts:1002",
     "signature": "function assignNames<E>(options: AssignNamesOptions<E>): AssignNamesResult<E> {",
     "note": ""
   },
@@ -3812,7 +3857,7 @@
     "package": "@here.build/common-lexical-namer",
     "exported_from": "common/lexical-namer/src/index.ts:384",
     "declared_at": "common/lexical-namer/src/index.ts:384",
-    "signature": "function resolveLexicalNames<E>(",
+    "signature": "function resolveLexicalNames<E>(root: ScopeSpec<E>, options: ResolveOptions<E>): ResolveResult<E> {",
     "note": ""
   },
   {

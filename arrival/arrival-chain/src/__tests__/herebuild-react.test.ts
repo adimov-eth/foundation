@@ -79,15 +79,23 @@ describe("herebuild-react.scm — N × M parallel reactions", () => {
   });
 
   it("12 tasks fan out concurrently — one wall-clock round", async () => {
-    const slow = () => ({
-      complete: vi.fn(async (_s: ModelSpec) => {
-        await new Promise((r) => setTimeout(r, 50));
-        return { value: { interpretation: "x", verdict: "click", concern: "" } };
-      }),
-    });
+    const slow = () => {
+      let active = 0;
+      let maxActive = 0;
+      const complete = vi.fn(async (_s: ModelSpec) => {
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        try {
+          await new Promise((r) => setTimeout(r, 50));
+          return { value: { interpretation: "x", verdict: "click", concern: "" } };
+        } finally {
+          active -= 1;
+        }
+      });
+      return { complete, maxActive: () => maxActive };
+    };
 
     const backend = slow();
-    const t0 = Date.now();
     await runPipeline({
       files: {
         ...DEPS,
@@ -103,9 +111,9 @@ describe("herebuild-react.scm — N × M parallel reactions", () => {
       entry: "main.scm",
       router: singletonRouter(backend),
     });
-    const elapsed = Date.now() - t0;
+
 
     expect(backend.complete).toHaveBeenCalledTimes(12);
-    expect(elapsed).toBeLessThan(300); // 12 × 50 = 600 sequential
+    expect(backend.maxActive()).toBe(12);
   });
 });

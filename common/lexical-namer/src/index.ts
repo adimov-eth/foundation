@@ -381,10 +381,7 @@ export interface EntityResolution<E> {
  * Pure function: same input produces same output. Entity processing is
  * sorted by `compareEntities` (default: lexical compare of `postfixFor`).
  */
-export function resolveLexicalNames<E>(
-  root: ScopeSpec<E>,
-  options: ResolveOptions<E>,
-): ResolveResult<E> {
+export function resolveLexicalNames<E>(root: ScopeSpec<E>, options: ResolveOptions<E>): ResolveResult<E> {
   const allResolutions = new Map<E, EntityResolution<E>>();
   const claimsByScope = new Map<string, ReadonlySet<string>>();
   const burnedByScope = new Map<string, ReadonlySet<string>>();
@@ -427,10 +424,7 @@ interface VisitContext<E> {
   burnedByScope: Map<string, ReadonlySet<string>>;
 }
 
-function computeSubtreeUserDecls<E>(
-  scope: ScopeSpec<E>,
-  out: WeakMap<ScopeSpec<E>, Set<string>>,
-): Set<string> {
+function computeSubtreeUserDecls<E>(scope: ScopeSpec<E>, out: WeakMap<ScopeSpec<E>, Set<string>>): Set<string> {
   const set = new Set<string>(scope.userDeclarations ?? []);
   for (const child of scope.children ?? []) {
     const childDecls = computeSubtreeUserDecls(child, out);

@@ -1,7 +1,9 @@
 ---
 title: P0 — frozen-lockfile install fails (stale lockfile)
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: ["corepack pnpm install --frozen-lockfile"]
 tags: [backlog, p0, packaging, lockfile]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 01 · P0 · `pnpm install --frozen-lockfile` fails
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). Regenerated the lockfile after removing the ghost globs; `pnpm install --frozen-lockfile` now exits 0 ("Lockfile is up to date").
 
 **Symptom.** A clean `pnpm install --frozen-lockfile` (exactly what CI runs,
 `.github/workflows/ci.yml:25`) cannot satisfy the lockfile against the current tree, so install,

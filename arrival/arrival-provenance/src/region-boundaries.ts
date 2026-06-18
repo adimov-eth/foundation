@@ -1,6 +1,6 @@
 /**
  * Region boundaries — the region-model's first-class boundary
- * (docs/working-proposals/provenance-region-model-plan-2026-06-02.md).
+ * (lost: docs/30-reconciliation/dangling-doc-map.md).
  *
  * Derives, for each control-operator REGION, the producers that cross its
  * boundary: `entrance` (external producers feeding its internals — the "dive-in")

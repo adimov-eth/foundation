@@ -1,7 +1,9 @@
 ---
 title: P2 — serializer console.error leaks object on circular ref
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: ["corepack pnpm --filter @here.build/arrival-serializer test"]
 tags: [backlog, p2, serializer, security]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 06 · P2 · Serializer logs the offending object on circular reference
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). Removed the object dump (kept the throw); pinned by a regression test.
 
 **Symptom.** When the serializer detects an unhandled circular reference, it `console.error`s
 the **entire offending object** before throwing. That dumps potentially sensitive runtime data

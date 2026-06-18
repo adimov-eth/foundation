@@ -1,6 +1,6 @@
 /**
  * The application supplies a `ResourceProvider`; the framework wires it to the `resources/list`
- * and `resources/read` MCP requests. Design rationale: docs/proposals/in-flight/arrival-resources.md
+ * and `resources/read` MCP requests. Design rationale: lost: docs/30-reconciliation/dangling-doc-map.md
  */
 
 import type { Resource, TextResourceContents, BlobResourceContents } from "@modelcontextprotocol/sdk/types.js";

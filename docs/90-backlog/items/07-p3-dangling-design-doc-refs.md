@@ -1,7 +1,9 @@
 ---
 title: P3 — dangling design-doc references in code
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: ["grep -rnE docs/(spec|foundations|plan-|working-proposals|proposals|audit-|CONSTRAINT) arrival plexus"]
 tags: [backlog, p3, docs, dangling-docs]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 07 · P3 · Dangling design-doc references
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). The 2 recoverable refs repointed to `docs/40-history/*.archived.md`; the 16 lost refs repointed to `docs/30-reconciliation/dangling-doc-map.md`.
 
 **Symptom.** Source comments and the arrival README point at **18 design docs under `docs/…`**
 that do not exist at those paths. Readers ("read it before changing") are sent to dead ends.

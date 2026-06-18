@@ -12,7 +12,7 @@
  *    - Bidirectional type converters at the boundary
  *    - Type-safe FFI between Scheme and JavaScript
  *
- * See docs/membrane-design.md for full design rationale.
+ * See docs/40-history/membrane-design.archived.md for full design rationale.
  */
 
 import invariant from "tiny-invariant";

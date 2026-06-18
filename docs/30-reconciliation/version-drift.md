@@ -10,6 +10,11 @@ verified-against: claude/vibrant-meitner-ask7xn
 
 # Version drift
 
+> ✅ The *operational* drift below (ghost workspace packages, stale lockfile, `arrival-scheme`→
+> `arrival` rename in README/lockfile) was **resolved** in the repair pass (branch
+> `claude/repair-workspace`); see [[90-backlog/_moc|backlog]] items 01/02/05. This note remains as
+> the record of what drifted.
+
 Structural diff from the `tmp/Archive` snapshot (branch `origin/tmp-6164624`) to the current
 working tree. Archive side verified via `git show origin/tmp-6164624:tmp/Archive/…`; current
 side verified against the checked-out tree. This is the "what changed in the layout" companion

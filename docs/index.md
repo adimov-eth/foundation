@@ -42,5 +42,6 @@ This vault has **two interlinked layers** plus support:
 [[conventions]] · [[front-matter-spec]] · [[agent-consumption-guide]] · [[glossary]] ·
 [[tag-taxonomy]].
 
-> **Repo state:** post-refactor half-state; `pnpm install` currently fails. This phase is
-> **research/documentation only — nothing is built or fixed.**
+> **Repo state:** install/build/typecheck are green (repaired 2026-06-18). Open & documented in
+> [[90-backlog/_moc|the backlog]]: `pnpm test` (2 pre-existing failures) and `pnpm lint`
+> (ESLint 9 flat-config migration). See [[version-drift]] for the extraction drift that's resolved.

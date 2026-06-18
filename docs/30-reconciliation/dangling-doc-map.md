@@ -10,10 +10,14 @@ verified-against: claude/vibrant-meitner-ask7xn
 
 # Dangling doc map
 
-The current source tree references **18 design docs** that no longer ship in the tree. Each
-reference is an in-code comment pointing at a `docs/…` path that does not exist at that path.
-Every referencing `path:line` below was verified by `grep` against the working tree on
-2026-06-18. Backlog item [[90-backlog/items/07-p3-dangling-design-doc-refs]] tracks the cleanup.
+The source tree referenced **19 distinct design docs** that no longer ship in the tree (2
+recoverable, 17 lost), from **~40 in-code comment sites**. The original audit listed 18 at
+representative sites; the repair pass (branch `claude/repair-workspace`) found additional
+reference sites for the same docs **and one untracked doc** (`require-as-capability-and-
+prompt-support`, in `loader-extensions.ts`), and **repointed every source site**: recoverable →
+the `40-history/` archived copy, lost → this ledger. So no source comment now points at a dead
+path (verified by grep, 2026-06-18). Backlog item
+[[90-backlog/items/07-p3-dangling-design-doc-refs]] tracks this (status: fixed).
 
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been
@@ -28,9 +32,10 @@ Status legend:
 | `docs/membrane-design.md` | `arrival/arrival/src/membrane.ts:15` | [[40-history/membrane-design.archived\|membrane-design.archived]] |
 | `docs/sandbox-security-model.md` | `arrival/arrival/src/interop-access.ts:14` | [[40-history/sandbox-security-model.archived\|sandbox-security-model.archived]] |
 
-## LOST EVERYWHERE (16)
+## LOST EVERYWHERE (17)
 
-All 16 survive only as inline comments. Referencing `path:line` verified by grep on 2026-06-18.
+Survive only as inline comments (the listed `path:line` is representative — several are
+referenced from additional sites too; the repair repointed all of them to this ledger).
 
 | Referenced doc | Referencing code (verified) |
 |---|---|
@@ -49,6 +54,7 @@ All 16 survive only as inline comments. Referencing `path:line` verified by grep
 | `docs/proposals/in-flight/ref-wiring-via-componentdataquery.md` | `plexus/src/__tests__/2-entity-lifecycle/entity-keyed-map-references.test.ts:3` |
 | `docs/audit-2026-06-09-workplan-dag.md` | `arrival/arrival/src/oracle/scanner.ts:12` |
 | `docs/working-proposals/todo/require-import-loader.md` | `arrival/arrival-chain/src/loader.ts:9` |
+| `docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md` | `arrival/arrival-chain/src/loader-extensions.ts:7` (found during repair; not in the original audit) |
 | `docs/CONSTRAINT-KERNEL-SPEC.md` (cited as `sift/docs/…`) | `arrival/arrival/src/oracle/index.ts:4` |
 
 ## Why so many are lost

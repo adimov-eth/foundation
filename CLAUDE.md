@@ -25,12 +25,28 @@ is architecture-induced, and is countered by the patterns in [[pattern-catalogue
 is intended to be reused as a *framework for agentic work on future projects* — see
 [[operating-as-agentic-framework]].
 
-## ⚠️ Current repo state — read before running anything
+## Current repo state — read before running anything
 
-This is a **post-refactor half-state**. **`pnpm install` currently fails** (stale lockfile,
-ghost workspace packages). Do **not** assume a clean build. The full, evidence-bearing list of
-known breakages is the repair backlog: [[docs/90-backlog/_moc|repair backlog]]. None are fixed
-yet — this repo phase is **documentation/research only; build nothing**.
+The workspace **installs, builds, and typechecks** (verified):
+`corepack pnpm install --frozen-lockfile` → ok; `pnpm build` → 15/15; `pnpm typecheck` → 27/27.
+
+Bootstrap (the chibi-scheme submodule is only needed for the R7RS conformance suite; tests skip
+it gracefully when absent):
+
+```sh
+git submodule update --init --recursive   # optional: enables chibi-r7rs
+corepack pnpm install --frozen-lockfile
+corepack pnpm build
+```
+
+Known-open, **documented not fixed** (see [[docs/90-backlog/_moc|repair backlog]]):
+`pnpm test` has 2 pre-existing failures (a test depending on the non-extracted `arrival-type-lens`;
+an unhandled `AbortError` in arrival-chain's abort path) and `pnpm lint` is repo-wide red (the
+packages were never migrated to ESLint 9 flat config). These were *uncovered* by fixing the
+install — not introduced by it.
+
+> Historical context (no longer the operating rule): earlier phases were strictly
+> documentation-only ("build nothing / fix nothing"). That constraint has been lifted.
 
 ## How to navigate the knowledge base
 
@@ -47,8 +63,8 @@ yet — this repo phase is **documentation/research only; build nothing**.
 
 ## Working rules in this repo
 
-- This phase **builds nothing** and **fixes nothing** — it only produces documentation under
-  `docs/` and this file. Do not modify source code.
 - When you state a fact about the code, anchor it with `path:line`. If you cannot verify it,
-  mark it unverified.
+  mark it unverified. Prove "green" with pasted command output, not confidence language.
+- Fix only what's in scope; if a change uncovers unrelated source/config debt, file it in
+  [[docs/90-backlog/_moc|the backlog]] rather than silently expanding scope.
 - Conventions for the vault live in [[conventions]]; note front-matter in [[front-matter-spec]].

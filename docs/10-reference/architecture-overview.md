@@ -64,10 +64,11 @@ Verified: `arrival/` holds exactly 11 dirs; `common/` holds exactly 5. Package d
 | `pnpm typecheck` | `turbo typecheck` |
 | `pnpm lint` | `turbo lint` |
 
-**Install currently fails.** `pnpm install --frozen-lockfile` errors
-`ERR_PNPM_OUTDATED_LOCKFILE` — `pnpm-lock.yaml` is out of date with
-`common/error-invariant/package.json` (verified 2026-06-18). Until fixed, the repo cannot be
-built or run; see [[docs/90-backlog/_moc|backlog]].
+**Install/build/typecheck are green** (repaired 2026-06-18): `pnpm install --frozen-lockfile` →
+ok, `pnpm build` → 15/15, `pnpm typecheck` → 27/27. Still open and documented in
+[[docs/90-backlog/_moc|backlog]]: `pnpm test` (2 pre-existing failures) and `pnpm lint`
+(repo-wide — ESLint 9 flat-config migration never done). Bootstrap the chibi-scheme submodule
+(`git submodule update --init --recursive`) only for the R7RS suite; it skips gracefully when absent.
 
 ## License
 

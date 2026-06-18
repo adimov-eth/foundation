@@ -1,7 +1,9 @@
 ---
 title: P1 — ci.yml checkout missing submodules:recursive
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: [".github/workflows/ci.yml"]
 tags: [backlog, p1, ci, submodules]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 03 · P1 · CI checkout does not fetch submodules
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). Added `submodules: recursive` to the `actions/checkout` step in `ci.yml`.
 
 **Symptom.** The `CI` workflow checks out the repo without submodules, so the
 `arrival/arrival/vendor/chibi-scheme` submodule (see

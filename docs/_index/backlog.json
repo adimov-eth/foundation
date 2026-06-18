@@ -54,5 +54,29 @@
     "slug": "dangling-design-doc-refs",
     "title": "P3 — dangling design-doc references in code",
     "note": "docs/90-backlog/items/07-p3-dangling-design-doc-refs.md"
+  },
+  {
+    "id": "08-p2-arrival-type-lens-test-dep",
+    "order": 8,
+    "priority": "P2",
+    "slug": "arrival-type-lens-test-dep",
+    "title": "P2 — arrival-chain-view test depends on non-extracted arrival-type-lens",
+    "note": "docs/90-backlog/items/08-p2-arrival-type-lens-test-dep.md"
+  },
+  {
+    "id": "09-p2-arrival-chain-abort-unhandled-rejection",
+    "order": 9,
+    "priority": "P2",
+    "slug": "arrival-chain-abort-unhandled-rejection",
+    "title": "P2 — arrival-chain abort path leaves an unhandled promise rejection",
+    "note": "docs/90-backlog/items/09-p2-arrival-chain-abort-unhandled-rejection.md"
+  },
+  {
+    "id": "10-p1-eslint9-flat-config-migration",
+    "order": 10,
+    "priority": "P1",
+    "slug": "eslint9-flat-config-migration",
+    "title": "P1 — ESLint 9 flat-config migration never done (lint repo-wide red)",
+    "note": "docs/90-backlog/items/10-p1-eslint9-flat-config-migration.md"
   }
 ]

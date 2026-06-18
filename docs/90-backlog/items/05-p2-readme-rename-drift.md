@@ -1,7 +1,9 @@
 ---
 title: P2 — arrival README still names arrival-scheme
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: ["grep -rn @here.build/arrival-scheme arrival/*/README.md"]
 tags: [backlog, p2, docs, drift]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 05 · P2 · README rename drift (`arrival-scheme` → `arrival`)
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). Retitled the arrival README to `@here.build/arrival` and fixed the serializer README plus its ramda relative link.
 
 **Symptom.** The package was renamed to `@here.build/arrival` but its README still presents the
 old `@here.build/arrival-scheme` name in the title and in every install/import example, so

@@ -1,7 +1,9 @@
 ---
 title: P1 — chibi-scheme submodule uninitialized
 layer: backlog
-status: verified
+status: partial
+fixed-in: claude/repair-workspace
+validated-by: [".github/workflows/ci.yml", "CLAUDE.md"]
 tags: [backlog, p1, submodules, vendor]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 04 · P1 · chibi-scheme submodule is uninitialized
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). CI now inits it (`ci.yml` + `test.yml` `submodules: recursive`) and CLAUDE.md documents the local bootstrap; the gitlink itself is unchanged (init is a checkout, not a commit) — hence `partial`.
 
 **Symptom.** The vendored `chibi-scheme` submodule is registered but not checked out. Its
 working-tree directory exists but is empty, so anything depending on the vendored Scheme

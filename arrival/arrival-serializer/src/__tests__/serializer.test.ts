@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { sexpr, slist, smap, toSExpr, toSExprString } from "../serializer";
 
 describe("S-Expression Serializer", () => {
@@ -269,6 +269,20 @@ describe("S-Expression Serializer", () => {
 
       // Should detect circular reference and throw meaningful error
       expect(() => toSExpr(obj)).toThrow();
+    });
+
+    it("does not log the offending object when rejecting an unhandled circular reference", () => {
+      // Regression guard (backlog 06): the throw carries the signal; never dump the
+      // (potentially sensitive) object to the console.
+      const obj: any = { secret: "do-not-log" };
+      obj.self = obj;
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        expect(() => toSExpr(obj)).toThrow("Circular reference detected");
+        expect(spy).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     it("a value reused across sibling branches is NOT a false cycle (DAG, not a loop)", () => {

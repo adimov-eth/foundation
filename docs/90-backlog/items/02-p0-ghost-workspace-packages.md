@@ -1,7 +1,9 @@
 ---
 title: P0 — ghost packages in pnpm-workspace.yaml
 layer: backlog
-status: verified
+status: fixed
+fixed-in: claude/repair-workspace
+validated-by: ["grep pnpm-workspace.yaml", "corepack pnpm install --frozen-lockfile"]
 tags: [backlog, p0, packaging, workspace]
 canonical-for: []
 last-verified: 2026-06-18
@@ -9,6 +11,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 ---
 
 # 02 · P0 · Ghost workspace packages
+
+> ✅ Resolved in this repair pass (branch claude/repair-workspace). Removed the `device-frame`, `css-viewport-transform`, and `ios-layout-solver` globs from `pnpm-workspace.yaml`.
 
 **Symptom.** `pnpm-workspace.yaml` enumerates three top-level packages that do not exist
 anywhere in the tree. pnpm warns/errors on unresolved workspace members and the entries serve

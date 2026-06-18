@@ -1,4 +1,4 @@
-// The purity pass (docs/plan-2026-06-11-purity-pass.md): arrival is pure
+// The purity pass (docs/30-reconciliation/dangling-doc-map.md): arrival is pure
 // dataflow — DYNAMICS and WRITING METHODS are omitted by design, each replaced
 // with a teaching `errors-as-doors` throw (PurityError) rather than a bare
 // "Unbound variable" / "Not callable". These tests pin the doors: the feature

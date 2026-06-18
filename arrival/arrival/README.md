@@ -1,4 +1,4 @@
-# @here.build/arrival-scheme
+# @here.build/arrival
 
 **Sandboxed Scheme interpreter for AI agent exploration**
 
@@ -17,7 +17,7 @@ Scheme without triggering state changes or side effects.
 
 The language stance — an R7RS-small sandboxed base, a forgiving superset layered *under* strict
 (never beside it), and the reserved-zone rule that keeps it non-conflicting with any SRFI — is the
-charter in [`docs/language-design-foundations.md`](../../../docs/foundations/arrival-scheme/language-design-foundations.md). Read it
+charter in the language-design-foundations charter (not extracted — see [`docs/30-reconciliation/dangling-doc-map.md`](../../docs/30-reconciliation/dangling-doc-map.md)). Read it
 before adding a reader macro, literal, or dialect borrowing.
 
 ## Why Scheme for AI Agents?
@@ -30,13 +30,13 @@ Sandboxing prevents exploration from accidentally executing actions.
 ## Quick Start
 
 ```bash
-npm install @here.build/arrival-scheme
+npm install @here.build/arrival
 ```
 
 ### Basic Execution
 
 ```typescript
-import { exec, sandboxedEnv, schemeToJs } from '@here.build/arrival-scheme';
+import { exec, sandboxedEnv, schemeToJs } from '@here.build/arrival';
 
 const results = await exec(`
   (filter (lambda (x) (> x 5))
@@ -48,10 +48,10 @@ console.log(schemeToJs(results[0], {})); // [7, 9]
 
 ### Register Custom Functions
 
-`@here.build/arrival-scheme` provides scheme-js interoperability layer capable of entities translation between runtimes.
+`@here.build/arrival` provides scheme-js interoperability layer capable of entities translation between runtimes.
 
 ```typescript
-import { exec, sandboxedEnv, schemeToJs } from '@here.build/arrival-scheme';
+import { exec, sandboxedEnv, schemeToJs } from '@here.build/arrival';
 
 // Rosetta: automatic JS ↔ Scheme conversion
 sandboxedEnv.defineRosetta('double-all', {
@@ -68,7 +68,7 @@ console.log(schemeToJs(results[0], {})); // [2, 4, 6, 8, 10]
 ### Complex Data
 
 ```typescript
-import { exec, sandboxedEnv, schemeToJs, jsToScheme } from '@here.build/arrival-scheme';
+import { exec, sandboxedEnv, schemeToJs, jsToScheme } from '@here.build/arrival';
 
 // Register function filtering objects
 sandboxedEnv.defineRosetta('high-priority-users', {
@@ -136,7 +136,7 @@ exceptionally useful for complex structures like trees.
 
 ### 4. Polyglot runtime
 
-Some features from other Lisp dialects were added as expression means — e.g. the `(dict :key value …)` map constructor (the canonical dict surface; the serializer prints it, and arrival-chain-view transpiles it to `{ }`) and its `(:key d)` accessor. See [`docs/language-design-foundations.md`](../../../docs/foundations/arrival-scheme/language-design-foundations.md).
+Some features from other Lisp dialects were added as expression means — e.g. the `(dict :key value …)` map constructor (the canonical dict surface; the serializer prints it, and arrival-chain-view transpiles it to `{ }`) and its `(:key d)` accessor. See the language-design-foundations charter (not extracted — see [`docs/30-reconciliation/dangling-doc-map.md`](../../docs/30-reconciliation/dangling-doc-map.md)).
 
 ## Sandbox Architecture
 

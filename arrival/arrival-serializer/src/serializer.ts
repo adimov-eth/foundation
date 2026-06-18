@@ -118,7 +118,8 @@ export function toSExpr(obj: any, visited: Set<any> = new Set()): SExpr {
       if (typeof obj[Symbol.SExpr] === "function" && "uuid" in obj) {
         return ["circular-reference-to", [obj[Symbol.SExpr], toSExpr(obj.uuid)]];
       } else {
-        console.error("circular reference found while serializing", obj);
+        // Do NOT log `obj` here — it may carry sensitive data. The thrown error is the
+        // signal; the offending value stays out of logs. (backlog 06 regression-tested)
         throw new Error("Circular reference detected");
       }
     }

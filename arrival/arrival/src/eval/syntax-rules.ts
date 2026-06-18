@@ -233,7 +233,7 @@ export function extract_patterns(
         return !ref || ref === define || ref === globalEnv;
       }
     }
-    // KNOWN LIMITATION (boxing track S9, deferred — docs/plan-2026-06-10-boxing-track.md
+    // KNOWN LIMITATION (boxing track S9, deferred — docs/30-reconciliation/dangling-doc-map.md
     // R8): vector PATTERNS in syntax-rules reach this array branch. Since the
     // boxing track, a `#(...)` literal parses to a boxed SchemeVector, NOT a raw
     // array — so `Array.isArray` is false for it and a vector-pattern macro fails

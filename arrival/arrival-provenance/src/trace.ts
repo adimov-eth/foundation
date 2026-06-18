@@ -22,7 +22,7 @@
  * The provenance taxonomy invariant this file implements (mint-only-at-boundaries;
  * pure ops union/forward; branch is an edge-role NOT a node; field-points are a node
  * kind) is documented at
- * `docs/foundations/arrival-scheme/reference/provenance-model.md` — read it before changing
+ * lost: `docs/30-reconciliation/dangling-doc-map.md` — read it before changing
  * `computeProvenance`, the authoritative-set forwarding, or `fieldPoint`.
  */
 import { AValue, EMPTY_PROVENANCE, type EvalTap, type Pair, type SchemeSymbol } from "@here.build/arrival";
@@ -70,7 +70,7 @@ function accessorField(node: Pair): string | null {
 }
 
 /**
- * Provenance computation per `docs/spec/arrival-chain.md` §5.
+ * Provenance computation per `docs/30-reconciliation/dangling-doc-map.md` §5.
  *
  * Provenance-marked invocations emit `{ self.id }`. Otherwise the rule
  * counts DISTINCT non-empty provenance sets (by reference) across
@@ -162,7 +162,7 @@ export class Invocation {
   /**
    * Dataflow provenance: the set of provenance-point invocation ids whose
    * outputs flowed into this call's inputs. Computed on exit per the
-   * algebra in `docs/spec/arrival-chain.md` §5:
+   * algebra in `docs/30-reconciliation/dangling-doc-map.md` §5:
    *
    *   - Provenance-flagged rosetta call → { self.id }
    *   - Else: union of child invocations' provenance sets, deduped by
@@ -347,7 +347,7 @@ export class EvalTrace implements EvalTap {
    *  accumulation it compounds to the O(n²) field-point blow-up that froze the
    *  chart (80k field-points from ~1.8k invocations). Absorbing it caps the
    *  registry at base-points × keys and restores the semiring's free loop bound.
-   *  See docs/working-proposals/trace-provenance-idempotence-fix-2026-06-04.md. */
+   *  See lost: docs/30-reconciliation/dangling-doc-map.md. */
   fieldPoint(origin: number, key: string): number {
     if (this.fieldPointMeta.has(origin)) return origin;
     const memo = `${origin}:${key}`;

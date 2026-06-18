@@ -38,7 +38,7 @@ export const CORE_SCM = `
 ;; provenance engine to be true. Each is a DOOR (errors-as-doors): it names the
 ;; omission, the reason, and the supported alternative. The host primitive
 ;; %purity-door throws the typed PurityError (telemetry); the LIST lives here.
-;; See docs/plan-2026-06-11-purity-pass.md.
+;; See lost: docs/30-reconciliation/dangling-doc-map.md.
 
 ;; -- Writing methods: every entity is frozen by design ------------------------
 (define-macro (set-car! . _)

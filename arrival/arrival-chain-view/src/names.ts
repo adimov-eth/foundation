@@ -1,6 +1,6 @@
 /**
  * Identifier naming. v1 is the `cleanName` base of the ladder defined in
- * `docs/proposals/in-flight/lexical-js-naming.md` — kebab→camel, drop predicate
+ * lost: `docs/30-reconciliation/dangling-doc-map.md` — kebab→camel, drop predicate
  * `?` / mutate `!`, lower `->`, escape reserved words. It is a PURE function of
  * the scheme name, position-independent, so for a collision-free program (every
  * example chain so far) it is exactly the name the full namer would assign at
@@ -92,7 +92,7 @@ export function cleanName(scheme: string): string {
 /**
  * The friendly-name LADDER for a scheme identifier — preference-ordered JS-name
  * candidates a collision resolver tries in turn before falling to a `_2` postfix
- * (the `is<Symbol>` rung of the ladder in `docs/proposals/in-flight/lexical-js-naming.md`).
+ * (the `is<Symbol>` rung of the ladder in lost: `docs/30-reconciliation/dangling-doc-map.md`).
  *
  * Tier 1 is always `cleanName`. A predicate `foo?` gets a 2nd tier `isFoo` — the JS
  * boolean convention — so when `foo` is already taken (a loop var shadows the

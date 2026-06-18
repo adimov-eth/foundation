@@ -1089,7 +1089,7 @@ export const global_env = new Environment(
     // core.ts as a manifesto of `define-macro` doors that all call this.
     // It throws the typed PurityError (feature/owner code → follow-rate
     // telemetry, errors-as-doors Rule 3/5); the language owns the LIST, the host
-    // owns the typed throw. See docs/plan-2026-06-11-purity-pass.md.
+    // owns the typed throw. See lost: docs/30-reconciliation/dangling-doc-map.md.
     "%purity-door": doc(null, function (feature: unknown, reason: unknown, alternative: unknown) {
       const s = (v: unknown) => String((v as { valueOf?: () => unknown })?.valueOf?.() ?? v);
       purityDoor(s(feature), s(reason), s(alternative));

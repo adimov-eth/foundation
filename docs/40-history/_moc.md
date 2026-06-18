@@ -42,3 +42,14 @@ rather than pasting it).
 | [[prior-audit/awareness-usage-example]] | `tmp/awareness.ts` (narrated, not pasted) | [[source-layers]] |
 
 All entries above are dated 2026-06-18 and frozen at branch `origin/tmp-6164624`.
+
+## Reconstructed design docs (derived)
+
+A distinct category from the frozen copies above: **17 code-grounded reconstructions** of docs that
+are *lost everywhere* (not in the tree, not in the Archive). They carry **`authority: derived`** —
+reverse-engineered from the code each doc governed, not reproduced from surviving text. See
+[[reconstructed/_moc]] for the full map (original doc → reconstruction → fidelity → living note) and
+[[dangling-doc-map]] for the referencing ledger.
+
+> ⚠️ Reconstructions record what a doc *must have specified* given the implementation — not its
+> original wording. Where code and a reconstruction disagree, the code wins.

@@ -359,5 +359,4 @@ export const STDLIB: Record<string, Emitter> = {
 };
 
 /** Is `name` a stdlib builtin (so it is emitted as an operator, never imported as a free identifier)? */
-export const isBuiltin = (name: string): boolean =>
-  name in STDLIB || name in BINOP || name in UNOP || isAccessor(name);
+export const isBuiltin = (name: string): boolean => name in STDLIB || name in BINOP || name in UNOP || isAccessor(name);

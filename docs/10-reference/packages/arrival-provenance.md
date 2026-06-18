@@ -12,9 +12,9 @@ code-anchors:
   - arrival/arrival-provenance/src/trace.ts:88           # computeProvenance (spec §5)
   - arrival/arrival-provenance/src/trace.ts:394          # bindTask
   - arrival/arrival-provenance/src/trace.ts:549          # markProvenancePoint
-  - arrival/arrival-provenance/src/trace-to-regions.ts:67 # Region / traceToRegions
+  - arrival/arrival-provenance/src/trace-to-regions.ts:1184 # traceToRegions
   - arrival/arrival-provenance/src/trace-region-fold.ts:1 # TraceRegionFold (incremental parity)
-  - arrival/arrival-provenance/src/trace-to-forest.ts:25 # traceToForest
+  - arrival/arrival-provenance/src/trace-to-forest.ts:193 # traceToForest
   - arrival/arrival-provenance/src/statechart.ts:147     # traceToStatechart
   - arrival/arrival-provenance/src/statechart.ts:285     # forwardCone
   - arrival/arrival-provenance/src/slice.ts:205          # buildSlice (reverse-chain uneval)
@@ -47,10 +47,10 @@ Published `@here.build/arrival-provenance`.
 | `EvalTrace.bindTask` | `(task, invocation) => void` — bind an effect to its invocation(s) | trace.ts:394 |
 | `EvalTrace.markProvenancePoint` | `(invocation) => void` — mint a boundary point | trace.ts:549 |
 | `EvalTrace.fieldPoint` | `(origin, key) => number` — field-projection point | trace.ts:351 |
-| `traceToForest` | `(trace, opts?) => Forest` — call-tree render model | trace-to-forest.ts:25 |
+| `traceToForest` | `(trace, opts?) => CandidateBox[]` — call-tree render model | trace-to-forest.ts:193 |
 | `traceToStatechart` | `(trace) => Statechart` — causal DAG | statechart.ts:147 |
 | `forwardCone` / `backwardCone` | `(chart, id) => Set<number>` | statechart.ts:285,288 |
-| `traceToRegions` | `(trace) => RegionGraph` — blueprint region tree | trace-to-regions.ts:67 |
+| `traceToRegions` | `(trace) => RegionGraph` — blueprint region tree | trace-to-regions.ts:1184 |
 | `TraceRegionFold` | `class` — incremental region fold (parity with `traceToRegions`) | trace-region-fold.ts |
 | `buildSlice` | `(trace, outputNode) => Slice` — reverse-chain slice | slice.ts:205 |
 | `snapshotTrace` | `(trace) => PlainTrace` — de-MobXed snapshot for hot traversals | trace-snapshot.ts |

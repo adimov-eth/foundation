@@ -9,8 +9,8 @@ verified-against: claude/vibrant-meitner-ask7xn
 code-anchors:
   - arrival/arrival-chain/src/project.ts:1010        # Project.runTraced
   - arrival/arrival-provenance/src/trace.ts:268        # EvalTrace
-  - arrival/arrival-provenance/src/trace-to-forest.ts:25 # traceToForest
-  - arrival/arrival-provenance/src/trace-to-regions.ts:67 # traceToRegions
+  - arrival/arrival-provenance/src/trace-to-forest.ts:193 # traceToForest
+  - arrival/arrival-provenance/src/trace-to-regions.ts:1184 # traceToRegions
   - arrival/arrival-provenance/src/slice.ts:205         # buildSlice
 ---
 
@@ -35,7 +35,7 @@ See [[provenance-model]] (mechanics) and [[provenance-as-first-class]] (why).
    user-program forms.) The trace builds an observable `Map<Pair, NodeRecord>` keyed by
    AST-node Pair identity; each `(infer …)`/effect is bound via `bindTask`.
 
-2. **Forest** (call tree) — `traceToForest(trace)` (`trace-to-forest.ts:25`):
+2. **Forest** (call tree) — `traceToForest(trace)` (`trace-to-forest.ts:193`):
    `Invocation.ancestors()` — how the interpreter got here.
 
 3. **Statechart** (causality) — `traceToStatechart(trace)` (`statechart.ts:147`):
@@ -44,7 +44,7 @@ See [[provenance-model]] (mechanics) and [[provenance-as-first-class]] (why).
    [[arrival-chain]]'s `invalidateForwardCone` subtracts for partial-invalidation replay.
 
 4. **Region tree** (studio blueprint) — `traceToRegions(trace)`
-   (`trace-to-regions.ts:67`), or `TraceRegionFold` for the incremental, per-frame
+   (`trace-to-regions.ts:1184`), or `TraceRegionFold` for the incremental, per-frame
    streaming variant (parity-tested against `traceToRegions`).
 
 5. **Slice** (sound, re-runnable) — `buildSlice(trace, outputNode)` (`slice.ts:205`):

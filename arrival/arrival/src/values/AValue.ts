@@ -5,7 +5,7 @@
  * remember to re-stamp. On-value means a builtin can only forget to *propagate*
  * (visible: empty result-set), never to *carry*.
  *
- * Propagation algebra: `docs/spec/arrival-chain.md` §5.
+ * Propagation algebra: `docs/30-reconciliation/dangling-doc-map.md` §5.
  *
  * Boxer registry rather than a switch in `fromJs`: a switch would import every
  * subtype, but subtypes already import this file for `extends AValue` — cycle.
@@ -92,7 +92,7 @@ function resolveTypeofTag(v: unknown): string {
   }
 }
 
-/** Per `docs/spec/arrival-chain.md` §5.1: distinct-by-reference, forward singleton, union ≥2. */
+/** Per `docs/30-reconciliation/dangling-doc-map.md` §5.1: distinct-by-reference, forward singleton, union ≥2. */
 export function unionProvenance(args: readonly AValue[]): ReadonlySet<number> {
   const distinct = new Set<ReadonlySet<number>>();
   for (const arg of args) {

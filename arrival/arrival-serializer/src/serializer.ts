@@ -118,7 +118,6 @@ export function toSExpr(obj: any, visited: Set<any> = new Set()): SExpr {
       if (typeof obj[Symbol.SExpr] === "function" && "uuid" in obj) {
         return ["circular-reference-to", [obj[Symbol.SExpr], toSExpr(obj.uuid)]];
       } else {
-        console.error("circular reference found while serializing", obj);
         throw new Error("Circular reference detected");
       }
     }

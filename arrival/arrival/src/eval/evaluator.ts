@@ -236,7 +236,7 @@ export interface EvalContext {
   tail?: boolean;
   /**
    * Speculative-evaluation flag (Tier 2 — see
-   * `docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md`).
+   * `docs/30-reconciliation/dangling-doc-map.md`).
    * When false/absent (the default) the evaluator is byte-identical to today:
    * collection operators resolve their promise fans eagerly to a `Pair`. When
    * true, `filter`/`map`/`list` may return a `HalfBaked` lazy carrier so that
@@ -332,7 +332,7 @@ let _canBounce = false;
  * variadic / HOF / value uses of the producers see it without a wrapper that
  * would break their arity. Saved/restored around each apply, mirroring
  * `_canBounce`. Off by default → eager, byte-identical path. See
- * docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md.
+ * docs/30-reconciliation/dangling-doc-map.md.
  */
 let _speculate = false;
 

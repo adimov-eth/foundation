@@ -20,10 +20,12 @@ are not deleted.
 | 02 | **P0** | fixed | [[items/02-p0-ghost-workspace-packages]] | workspace listed 3 packages absent from tree | S | low |
 | 03 | **P1** | fixed | [[items/03-p1-ci-submodules-recursive]] | `ci.yml` checkout missed `submodules: recursive` | S | low |
 | 04 | **P1** | fixed | [[items/04-p1-chibi-scheme-submodule-uninit]] | chibi-scheme submodule needed recursive checkout/bootstrap | S | low |
-| 05 | **P2** | open | [[items/05-p2-readme-rename-drift]] | arrival README still says `arrival-scheme` | S | low |
-| 06 | **P2** | open | [[items/06-p2-serializer-console-error-leak]] | serializer `console.error` leaks object on circular ref | S | low |
-| 07 | **P3** | open | [[items/07-p3-dangling-design-doc-refs]] | 18 dangling design-doc references in code | M | low |
+| 05 | **P2** | fixed | [[items/05-p2-readme-rename-drift]] | arrival README still says `arrival-scheme` | S | low |
+| 06 | **P2** | fixed | [[items/06-p2-serializer-console-error-leak]] | serializer `console.error` leaks object on circular ref | S | low |
+| 07 | **P3** | fixed | [[items/07-p3-dangling-design-doc-refs]] | dangling design-doc references in code | M | low |
 | 08 | **P1** | open | [[items/08-p1-lint-debt-after-install-repair]] | `turbo lint` exposes serializer/config lint debt after install repair | M | med |
+| 09 | **P1** | fixed | [[items/09-p1-arrival-chain-view-type-lens-test]] | restored minimal type-lens fixture for `arrival-chain-view` bite tests | M | med |
+| 10 | **P1** | open | [[items/10-p1-timing-sensitive-tests-under-load]] | full-suite load exposes wall-clock timing threshold flakes | M | med |
 
 ## Legend
 

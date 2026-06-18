@@ -1,6 +1,6 @@
 /**
  * HalfBaked — a still-resolving value carrier for speculative (early-collapse)
- * evaluation. See `docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md`.
+ * evaluation. See `docs/30-reconciliation/dangling-doc-map.md`.
  *
  * The motivating program:
  *

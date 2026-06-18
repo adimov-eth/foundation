@@ -1,11 +1,16 @@
-function getOrCreateValue<K, V>(map: Map<K, V> | WeakMap<K & object, V>, key: K, factory: (key: K) => V): V {
-  const typedMap = map as Map<K, V>;
-  const existing = typedMap.get(key);
-  if (existing !== undefined || typedMap.has(key)) return existing as V;
-
-  const created = factory(key);
-  typedMap.set(key, created);
-  return created;
+function getOrCreateValue<K, V>(
+  key: K,
+  has: (key: K) => boolean,
+  read: (key: K) => V | undefined,
+  write: (key: K, value: V) => void,
+  factory: (key: K) => V,
+): V {
+  if (!has(key)) {
+    const value = factory(key);
+    write(key, value);
+    return value;
+  }
+  return read(key)!;
 }
 
 export class DefaultedMap<K, V> extends Map<K, V> {
@@ -14,7 +19,15 @@ export class DefaultedMap<K, V> extends Map<K, V> {
   }
 
   get(key: K): V {
-    return getOrCreateValue(this, key, this.factory);
+    return getOrCreateValue(
+      key,
+      (k) => super.has(k),
+      (k) => super.get(k),
+      (k, value) => {
+        super.set(k, value);
+      },
+      this.factory,
+    );
   }
 }
 
@@ -24,6 +37,7 @@ export class DefaultedWeakMap<K extends object, V> extends WeakMap<K, V> {
   }
 
   get(key: K): V {
-    return getOrCreateValue(this, key, this.factory);
+    if (!super.has(key)) super.set(key, this.factory(key));
+    return super.get(key)!;
   }
 }

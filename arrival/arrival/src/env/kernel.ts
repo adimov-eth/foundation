@@ -4,7 +4,7 @@
 // assembled by C3-linearizing the pack DAG and applying each pack once. The dep edge IS the
 // capability grant; the DAG is the authoring form, the assembled env is the flat runtime form.
 //
-// Design: docs/working-proposals/env-pack-capability-dag-2026-06-13.md
+// Design: docs/30-reconciliation/dangling-doc-map.md
 //
 // P0 scope: the env-agnostic core — closure + cycle detection, identity dedup, C3 linearization
 // (Python MRO, cited not invented), and the apply loop with LIFO disposal + per-pack apply timeout.

@@ -6,7 +6,7 @@
  * project VFS by default, or a real/virtual FS, or disabled), reads the file,
  * turns its bytes into a value/forms via an extension resolver, and either spills
  * the module's defines into the run env (`.scm` — `load` semantics) or returns a
- * value (data / template). See docs/working-proposals/todo/require-import-loader.md.
+ * value (data / template). See docs/30-reconciliation/dangling-doc-map.md.
  *
  * Design:
  *   - `require` is STATEMENT-POSITION within a `.scm`: that file's forms are

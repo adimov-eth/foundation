@@ -1,6 +1,6 @@
 # @here.build/arrival-scheme-env-ramda
 
-An opt-in [arrival-scheme](../arrival-scheme/README.md) palette pack that wires [Ramda](https://ramdajs.com/)'s accessor, path, collection, logic, and string verbs into the env.
+An opt-in [Arrival](../arrival/README.md) palette pack that wires [Ramda](https://ramdajs.com/)'s accessor, path, collection, logic, and string verbs into the env.
 
 These verbs were evicted from the base sandbox to keep the external `ramda` dependency out of the core. This pack re-enters them — each offered under every name a user might reach for (it's a vocabulary, not a narrow API).
 

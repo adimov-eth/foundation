@@ -18,7 +18,7 @@ the historical snapshot and current code.
   current code wins, history is intent not truth.
 - [[source-ledger]] — per-note provenance table (origin path · branch · retrieved · authority);
   auto-derivable from front-matter.
-- [[dangling-doc-map]] — 18 in-code design-doc references: 2 recoverable, 16 lost everywhere.
+- [[dangling-doc-map]] — 19 in-code design-doc references: 2 recoverable, 17 lost everywhere.
 - [[version-drift]] — Archive → current structural diff (renames, toolchain, +6 packages).
 
 Back to [[index]].

@@ -128,7 +128,7 @@ export class PathMap<K extends PathMapKey, V> implements Map<K, V> {
     if (resolved === undefined) {
       let canonicalKey: K;
       if (key instanceof Set) {
-        canonicalKey = new Set([...key].sort(localSort)) as K;
+        canonicalKey = new Set([...key].toSorted(localSort)) as K;
       } else if (Array.isArray(key)) {
         canonicalKey = Object.freeze([...key]) as K & ReadonlyArray<K[keyof K]>;
       } else {
@@ -152,7 +152,7 @@ export class PathMap<K extends PathMapKey, V> implements Map<K, V> {
       this._size++;
       let canonicalKey: K;
       if (key instanceof Set) {
-        canonicalKey = new Set([...key].sort(localSort)) as K;
+        canonicalKey = new Set([...key].toSorted(localSort)) as K;
       } else if (Array.isArray(key)) {
         canonicalKey = Object.freeze([...key]) as K & ReadonlyArray<K[keyof K]>;
       } else {
@@ -280,7 +280,7 @@ export class PathMap<K extends PathMapKey, V> implements Map<K, V> {
    */
   private keyToPath(key: K): PathMapKeyElement[] {
     if (key instanceof Set) {
-      const elements = [...key].sort(localSort);
+      const elements = [...key].toSorted(localSort);
       for (const el of elements) validateKeyElement(el);
       return elements;
     }

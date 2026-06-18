@@ -1,6 +1,21 @@
 import type * as mobx from "mobx";
 import { computed, type IComputedValueOptions } from "mobx";
 
+function getOrCreateComputed<K, V>(
+  key: K,
+  read: () => mobx.IComputedValue<V> | undefined,
+  write: (value: mobx.IComputedValue<V>) => void,
+  generator: (key: K) => V,
+  options?: IComputedValueOptions<V>,
+): V {
+  const existing = read();
+  if (existing !== undefined) return existing.get();
+
+  const newValue = computed(() => generator(key), options);
+  write(newValue);
+  return newValue.get();
+}
+
 export class ComputedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakMap<K, V> {
   constructor(
     public readonly generator: (key: K) => V,
@@ -10,13 +25,11 @@ export class ComputedWeakMap<K extends WeakKey = WeakKey, V = any> extends WeakM
   }
 
   get(key: K): V {
-    if (super.has(key)) {
-      // @ts-expect-error - stored value is IComputedValue<V>, not V
-      return super.get(key)!.get();
-    }
+    const existing = super.get(key) as unknown as mobx.IComputedValue<V> | undefined;
+    if (existing !== undefined) return existing.get();
+
     const newValue = computed(() => this.generator(key), this.options);
-    // @ts-expect-error - storing IComputedValue<V> as V
-    super.set(key, newValue);
+    super.set(key, newValue as unknown as V);
     return newValue.get();
   }
 }
@@ -30,14 +43,13 @@ export class ComputedMap<K, V = any> extends Map<K, V> {
   }
 
   get(key: K): V {
-    if (super.has(key)) {
-      // @ts-expect-error - stored value is IComputedValue<V>, not V
-      return super.get(key)!.get();
-    }
-    const newValue = computed(() => this.generator(key), this.options);
-    // @ts-expect-error - storing IComputedValue<V> as V
-    super.set(key, newValue);
-    return newValue.get();
+    return getOrCreateComputed(
+      key,
+      () => super.get(key) as unknown as mobx.IComputedValue<V> | undefined,
+      (value) => super.set(key, value as unknown as V),
+      this.generator,
+      this.options,
+    );
   }
 }
 

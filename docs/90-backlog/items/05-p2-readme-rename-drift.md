@@ -1,31 +1,50 @@
 ---
 title: P2 — arrival README still names arrival-scheme
 layer: backlog
-status: verified
+status: fixed
+fixed-in: pending-pr
+validated-by:
+  - "README stale-ref check: no stale arrival-scheme runtime README references"
 tags: [backlog, p2, docs, drift]
 canonical-for: []
 last-verified: 2026-06-18
-verified-against: claude/vibrant-meitner-ask7xn
+verified-against: repair/extraction-hygiene
 ---
 
 # 05 · P2 · README rename drift (`arrival-scheme` → `arrival`)
 
-**Symptom.** The package was renamed to `@here.build/arrival` but its README still presents the
-old `@here.build/arrival-scheme` name in the title and in every install/import example, so
-copy-pasting the docs installs/imports a package that no longer exists under that name.
+**Status.** Fixed in `pending-pr`.
 
-**Evidence (verified 2026-06-18).**
+**Original symptom.** The package was renamed to `@here.build/arrival` but its README still
+presented the old `@here.build/arrival-scheme` name in the title and install/import examples,
+so copy-pasting the docs installed/imported a package that no longer exists under that name.
+
+**Original evidence.**
+
 - `arrival/arrival/package.json:2` — `"name": "@here.build/arrival"` (current truth).
-- `arrival/arrival/README.md:1` — title `# @here.build/arrival-scheme` (stale).
-- Stale example lines: `arrival/arrival/README.md:33` (`npm install @here.build/arrival-scheme`),
-  `:39`, `:54`, `:71` (each `import { … } from '@here.build/arrival-scheme'`); also `:51`.
-- `pnpm-lock.yaml:476` still keys the importer as `arrival/arrival-scheme`.
+- `arrival/arrival/README.md:1` — stale title `# @here.build/arrival-scheme`.
+- stale example lines used `@here.build/arrival-scheme`.
+- `arrival/arrival-serializer/README.md` also named `@here.build/arrival-scheme` as the Scheme
+  runtime dependency.
+- `arrival/arrival-scheme-env-ramda/README.md` and
+  `arrival/arrival-scheme-env-infer/README.md` linked to the missing
+  `../arrival-scheme/README.md` path.
 
-**Root cause.** Incomplete rename — see [[version-drift]]. The dir and `package.json` were
-updated; README and lockfile were not.
+**Root cause.** Incomplete rename — see [[version-drift]]. The package directory and
+`package.json` were updated before the READMEs and lockfile were reconciled.
 
-**Proposed fix (not executed).** Update README title + all example imports to
-`@here.build/arrival`, and regenerate the lockfile (the lock half is covered by
-[[items/01-p0-install-frozen-lockfile]]).
+**Fix applied.**
+
+- Updated `arrival/arrival/README.md` title and install/import examples to `@here.build/arrival`.
+- Updated `arrival/arrival-serializer/README.md` runtime dependency references to
+  `@here.build/arrival`.
+- Repointed scheme-env README links to `../arrival/README.md`.
+- The lockfile half was fixed in [[items/01-p0-install-frozen-lockfile]].
+
+**Validation.** The README grep check reports:
+
+```text
+no stale arrival-scheme runtime README references
+```
 
 **Effort.** S · **Risk.** low.

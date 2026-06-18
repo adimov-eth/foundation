@@ -22,11 +22,9 @@ runtime stack ([[arrival]] + `arrival-*`), plus shared `common-*` infra. Agent-f
 
 - Tooling: **pnpm** workspaces + **turbo** task graph (`package.json:6` scripts delegate to
   `turbo build|test|typecheck|lint`; `pnpm@10.3.0`, Node `>=22` — `package.json:1`).
-- Workspace globs (`pnpm-workspace.yaml:1`): `plexus`, `arrival/*`, `common/*`, plus
-  `device-frame`, `css-viewport-transform`, `ios-layout-solver` **(unverified — listed in the
-  workspace file but no matching top-level dirs present in the working tree)**.
+- Workspace globs (`pnpm-workspace.yaml:1`): `plexus`, `arrival/*`, `common/*`.
 - Supply-chain guard: `minimumReleaseAge: 10080` (7 days) refuses freshly-published deps
-  (`pnpm-workspace.yaml:12`).
+  (`pnpm-workspace.yaml:9`).
 
 | Group | Count | Packages |
 |---|---|---|
@@ -64,10 +62,11 @@ Verified: `arrival/` holds exactly 11 dirs; `common/` holds exactly 5. Package d
 | `pnpm typecheck` | `turbo typecheck` |
 | `pnpm lint` | `turbo lint` |
 
-**Install currently fails.** `pnpm install --frozen-lockfile` errors
-`ERR_PNPM_OUTDATED_LOCKFILE` — `pnpm-lock.yaml` is out of date with
-`common/error-invariant/package.json` (verified 2026-06-18). Until fixed, the repo cannot be
-built or run; see [[docs/90-backlog/_moc|backlog]].
+**Install is repaired.** `corepack pnpm install --frozen-lockfile` validates after regenerating
+`pnpm-lock.yaml` from the current workspace and removing the three ghost workspace globs
+(verified 2026-06-18). The original failure and fix evidence are preserved in
+[[docs/90-backlog/items/01-p0-install-frozen-lockfile|backlog 01]] and
+[[docs/90-backlog/items/02-p0-ghost-workspace-packages|backlog 02]].
 
 ## License
 

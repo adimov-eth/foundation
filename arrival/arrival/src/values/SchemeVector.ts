@@ -10,7 +10,7 @@
  * Being its own class leaves the `Array.isArray` sites unaffected — NEVER widen
  * them to accept it.
  *
- * Boxing track: docs/plan-2026-06-10-boxing-track.md (S5).
+ * Boxing track: docs/30-reconciliation/dangling-doc-map.md (S5).
  */
 import { AValue, EMPTY_PROVENANCE } from "./AValue.js";
 import { markInteropBoundary } from "../interop-access.js";

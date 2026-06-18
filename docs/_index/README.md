@@ -25,7 +25,7 @@ python3 docs/_index/build_index.py && python3 docs/_index/check.py
 | `concepts.json` | `{concept: note}` | canonical owner of each concept (`canonical-for`) |
 | `glossary.json` | `{slug, term, definition, see}` | term lookups; `slug` is the `[[glossary#slug]]` anchor |
 | `backlog.json` | `{id, order, priority, slug, title, note}` | repair items (documented, not executed) |
-| `dangling-docs.json` | `{ref, status, referenced_by, recovered_as}` | 18 in-code doc refs (2 recoverable, 16 lost) |
+| `dangling-docs.json` | `{ref, status, referenced_by, recovered_as}` | 19 in-code doc refs (2 recoverable, 17 lost) |
 
 `symbols.json` is derived from each package's `src/index.ts` (explicit re-exports, `export *`
 expansion, direct declares, aliases, type-only); multiline signatures are truncated with a

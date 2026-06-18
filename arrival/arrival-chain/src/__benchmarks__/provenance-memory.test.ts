@@ -40,7 +40,7 @@
  * regression gate (on distinct-set membership) belongs in __tests__/, against the
  * post-fix baseline.
  *
- * See docs/working-proposals/trace-provenance-idempotence-fix-2026-06-04.md and the
+ * See docs/30-reconciliation/dangling-doc-map.md and the
  * heap-dump diagnosis (2026-06-08).
  */
 import type { ModelSpec } from "@here.build/arrival-inference";

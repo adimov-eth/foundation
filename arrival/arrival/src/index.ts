@@ -22,7 +22,7 @@ export {
   type RosettaFunction,
 } from "./rosetta.js";
 
-// Runtime value hierarchy. Provenance algebra: docs/spec/arrival-chain.md §5.
+// Runtime value hierarchy. Provenance algebra: docs/30-reconciliation/dangling-doc-map.md §5.
 export {
   type AKind,
   AValue,

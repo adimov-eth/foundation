@@ -11,7 +11,7 @@
  * `@arrival.private` so `(@ a-string :__string__)` cannot reach their internals.
  *
  * "Boundary" here is the membrane sense — the prototype where the member walk STOPS —
- * not a sandbox. See docs/sandbox-security-model.md for the original design rationale.
+ * not a sandbox. See docs/40-history/sandbox-security-model.archived.md for the original design rationale.
  */
 
 // Installs the global `Error.invariant` / `TypeError.invariant` assertion helper used

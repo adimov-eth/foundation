@@ -53,6 +53,11 @@ export interface ExecOptions {
    */
   budgetMs?: number;
   /**
+   * Observability hook fired at the trampoline's abort/budget checkpoint.
+   * Useful for deterministic tests of abort reachability without wall-clock assertions.
+   */
+  onTrampolineCheckpoint?: () => void;
+  /**
    * Per-run ALLOCATION budget — the memory analogue of `budgetMs`. Caps the cumulative number of list
    * cells materialized through `to_array` (the choke point every collection op funnels through). The
    * wall-clock budget is checked at trampoline TICKs, which a single native list pass (`filter`/
@@ -66,7 +71,7 @@ export interface ExecOptions {
    * When true, producers (filter/map) may emit a lazy `HalfBaked` carrier so
    * control-flow over a still-filling promise fan can collapse early. With the
    * flag off, evaluation is byte-identical to the eager path. See
-   * docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md.
+   * docs/30-reconciliation/dangling-doc-map.md.
    */
   speculate?: boolean;
 }
@@ -93,7 +98,18 @@ export interface ExecOptions {
  */
 export async function exec(
   code: string | SchemeValue,
-  { env, dynamic_env, use_dynamic, tap, nodeFilter, signal, budgetMs, heapBudget, speculate }: ExecOptions = {},
+  {
+    env,
+    dynamic_env,
+    use_dynamic,
+    tap,
+    nodeFilter,
+    signal,
+    budgetMs,
+    onTrampolineCheckpoint,
+    heapBudget,
+    speculate,
+  }: ExecOptions = {},
 ): Promise<SchemeValue[]> {
   const lips = await getLips();
 
@@ -106,8 +122,7 @@ export async function exec(
   // promise — the pack assembly is async, so the started-flag alone would let a racing
   // exec observe a half-assembled env. Bootstrap's own prelude evals use stdlib's
   // gate-free `exec`, so this await is never re-entrant (no deadlock).
-  if (!actualEnv.initialized) await actualEnv.init();
-  else await (whenBootstrapComplete() ?? actualEnv.init());
+  await (actualEnv.initialized ? (whenBootstrapComplete() ?? actualEnv.init()) : actualEnv.init());
 
   // Parse if string, otherwise wrap single value in array
   let parsed: SchemeValue[];
@@ -136,8 +151,7 @@ export async function exec(
   const start = budgetMs === undefined ? 0 : performance.now();
   try {
     for (const expr of parsed) {
-      const remaining =
-        budgetMs === undefined ? undefined : budgetMs - (performance.now() - start);
+      const remaining = budgetMs === undefined ? undefined : budgetMs - (performance.now() - start);
       const result = await run(
         evaluate(expr, {
           env: actualEnv,
@@ -148,7 +162,7 @@ export async function exec(
           signal,
           speculate,
         }),
-        { signal, budgetMs: remaining },
+        { signal, budgetMs: remaining, onTrampolineCheckpoint },
       );
       results.push(result);
     }
@@ -176,14 +190,23 @@ export async function parse(code: string, env?: Environment, source?: string): P
  */
 export async function execExpr(
   expr: SchemeValue,
-  { env, dynamic_env, use_dynamic, tap, nodeFilter, signal, budgetMs, speculate }: ExecOptions = {},
+  {
+    env,
+    dynamic_env,
+    use_dynamic,
+    tap,
+    nodeFilter,
+    signal,
+    budgetMs,
+    onTrampolineCheckpoint,
+    speculate,
+  }: ExecOptions = {},
 ): Promise<SchemeValue> {
   const lips = await getLips();
   const actualEnv = env ?? lips.env;
 
   // See exec() above: await bootstrap COMPLETION, not just the started-flag.
-  if (!actualEnv.initialized) await actualEnv.init();
-  else await (whenBootstrapComplete() ?? actualEnv.init());
+  await (actualEnv.initialized ? (whenBootstrapComplete() ?? actualEnv.init()) : actualEnv.init());
 
   return run(
     evaluate(expr, {
@@ -195,6 +218,6 @@ export async function execExpr(
       signal,
       speculate,
     }),
-    { signal, budgetMs },
+    { signal, budgetMs, onTrampolineCheckpoint },
   );
 }

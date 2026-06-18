@@ -10,14 +10,15 @@ verified-against: claude/vibrant-meitner-ask7xn
 
 # Dangling doc map
 
-The current source tree references **18 design docs** that no longer ship in the tree. Each
-reference is an in-code comment pointing at a `docs/…` path that does not exist at that path.
+The pre-repair source tree referenced **19 design docs** that no longer shipped in the tree. Each
+reference was an in-code comment pointing at a `docs/…` path that did not exist at that path.
 Every referencing `path:line` below was verified by `grep` against the working tree on
-2026-06-18. Backlog item [[90-backlog/items/07-p3-dangling-design-doc-refs]] tracks the cleanup.
+2026-06-18, then fixed in [[90-backlog/items/07-p3-dangling-design-doc-refs]]. This note is the
+historical reconciliation ledger, not a list of currently dangling refs.
 
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been
-  re-vendored into `40-history/`. The in-code ref should be repointed at the archived copy.
+  re-vendored into `40-history/`. The in-code refs now point at the archived copies.
 - **LOST EVERYWHERE** — not in the tree and not in the Archive; the snapshot predates it
   (see [[source-layers]]). It survives only as the inline comment that names it.
 
@@ -28,9 +29,10 @@ Status legend:
 | `docs/membrane-design.md` | `arrival/arrival/src/membrane.ts:15` | [[40-history/membrane-design.archived\|membrane-design.archived]] |
 | `docs/sandbox-security-model.md` | `arrival/arrival/src/interop-access.ts:14` | [[40-history/sandbox-security-model.archived\|sandbox-security-model.archived]] |
 
-## LOST EVERYWHERE (16)
+## LOST EVERYWHERE (17)
 
-All 16 survive only as inline comments. Referencing `path:line` verified by grep on 2026-06-18.
+The 17 lost docs survived only as inline comments. Pre-repair referencing `path:line` anchors were
+verified by grep on 2026-06-18 before the comments were repointed to this ledger.
 
 | Referenced doc | Referencing code (verified) |
 |---|---|
@@ -49,11 +51,12 @@ All 16 survive only as inline comments. Referencing `path:line` verified by grep
 | `docs/proposals/in-flight/ref-wiring-via-componentdataquery.md` | `plexus/src/__tests__/2-entity-lifecycle/entity-keyed-map-references.test.ts:3` |
 | `docs/audit-2026-06-09-workplan-dag.md` | `arrival/arrival/src/oracle/scanner.ts:12` |
 | `docs/working-proposals/todo/require-import-loader.md` | `arrival/arrival-chain/src/loader.ts:9` |
+| `docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md` | `arrival/arrival-chain/src/loader-extensions.ts:7` |
 | `docs/CONSTRAINT-KERNEL-SPEC.md` (cited as `sift/docs/…`) | `arrival/arrival/src/oracle/index.ts:4` |
 
 ## Why so many are lost
 
-The 16 lost docs cluster in `arrival-chain`, `arrival-provenance`, `arrival-sweet`,
+The 17 lost docs cluster in `arrival-chain`, `arrival-provenance`, `arrival-sweet`,
 `arrival-chain-view`, `arrival-mcp/resources`, and the `oracle`/`env` subsystems of `arrival` —
 all of which postdate the `origin/tmp-6164624` snapshot. The Archive is a smaller, earlier
 universe and simply never contained them. See [[source-layers]] input #2.

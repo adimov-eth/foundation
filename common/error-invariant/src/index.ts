@@ -22,17 +22,18 @@
 
 const isProduction: boolean = process.env.NODE_ENV === "production";
 const prefix: string = "Invariant failed";
+type InvariantMessage = string | (() => string);
 
 declare global {
   interface ErrorConstructor {
-    invariant(this: ErrorConstructor, condition: any, message?: string | (() => string)): asserts condition;
+    invariant(this: ErrorConstructor, condition: any, message?: InvariantMessage): asserts condition;
   }
 }
 
 Error.invariant = function invariant(
   this: ErrorConstructor,
   condition: any,
-  message?: string | (() => string),
+  message?: InvariantMessage,
 ): asserts condition {
   if (condition) {
     return;
@@ -48,4 +49,4 @@ Error.invariant = function invariant(
   throw new Ctor(value);
 };
 
-export {};
+export type { InvariantMessage };

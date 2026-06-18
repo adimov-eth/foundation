@@ -1,6 +1,6 @@
 # @here.build/arrival-scheme-env-infer
 
-An [arrival-scheme](../arrival-scheme/README.md) palette pack: the inference verbs (`infer` / `infer/chat`) plus the dependent MCP-agentic capability, built on [@here.build/arrival-inference](../arrival-inference/README.md).
+An [Arrival](../arrival/README.md) palette pack: the inference verbs (`infer` / `infer/chat`) plus the dependent MCP-agentic capability, built on [@here.build/arrival-inference](../arrival-inference/README.md).
 
 It lives as a separate package so the inference dependency stays out of arrival-scheme's core — the edge runs `chain → here`, never back.
 

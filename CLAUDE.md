@@ -27,18 +27,19 @@ is intended to be reused as a *framework for agentic work on future projects* �
 
 ## Current repo state — read before running anything
 
-The extraction repair has reconciled the workspace and lockfile: `corepack pnpm install
---frozen-lockfile` now validates against the current `plexus`, `arrival/*`, and `common/*`
-workspace. `build`, `typecheck`, and docs-index validation are expected to pass on the repair branch.
-The original evidence-bearing repair queue remains in [[docs/90-backlog/_moc|repair backlog]];
-items marked `fixed` record the validating commands instead of being deleted.
+This repo is the extraction-repaired workspace: `corepack pnpm install --frozen-lockfile`
+installs against the current `plexus`, `arrival/*`, and `common/*` packages.
 
-Known non-green checks are deliberately tracked, not hidden:
+Don't trust a hardcoded green/red status in this file — it drifts. Derive the live state, and read
+the deliberately-tracked known issues in the backlog rather than re-discovering them:
 
-- `corepack pnpm lint` remains red on `arrival-serializer` strict/config lint debt — see
-  [[docs/90-backlog/items/08-p1-lint-debt-after-install-repair]].
-- `corepack pnpm test` currently reaches timing-sensitive runtime tests and can fail under
-  full-suite load while focused tests pass — see [[docs/90-backlog/items/10-p1-timing-sensitive-tests-under-load]].
+- Verify locally — run the workspace scripts (`build`, `typecheck`, `lint`, `test`) and
+  `python3 docs/_index/check.py`; the live pass/fail is whatever they report, not what prose claims.
+  Per-package fallback when the turbo entrypoint can't resolve a standalone `pnpm`:
+  `node_modules/.bin/vitest run` / `tsc` inside the package dir.
+- Tracked non-green checks live in the backlog, not here — start at
+  [[docs/90-backlog/_moc|repair backlog]] (currently e.g. `arrival-serializer` lint debt and
+  timing-sensitive tests under load; items marked `fixed` record the validating commands).
 
 Bootstrap submodules before running the full local suite or tests that exercise vendored
 Scheme behavior:
@@ -59,6 +60,7 @@ corepack pnpm install --frozen-lockfile
 | Why the design works / transferable patterns | `docs/20-method/` |
 | A step recipe for a concrete task | `docs/50-playbooks/` |
 | What's broken / missing / drifted | `docs/30-reconciliation/`, `docs/90-backlog/` |
+| The current verified architecture — what's built vs aspirational, with an evidence ledger | [docs/95-research/foundation-architecture-deep-dive.md](./docs/95-research/foundation-architecture-deep-dive.md) — derived, adversarially verified |
 | Term definitions | [[glossary]] |
 
 ## Working rules in this repo

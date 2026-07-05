@@ -86,7 +86,9 @@ describe("cross-fertilization — N×(N-1) critique matrix", () => {
     const elapsed = Date.now() - t0;
 
     expect(backend.complete).toHaveBeenCalledTimes(12);
-    expect(elapsed).toBeLessThan(300); // not 12 × 60 = 720
+    // Concurrency proof: sequential is ≥ 12 × 60 = 720ms of pure delay; bound sits
+    // below that floor but above CI scheduler noise (342ms observed, 2026-07-05).
+    expect(elapsed).toBeLessThan(500);
   });
 
   it("adding a persona only invalidates 2N new cells, not (N+1)²", async () => {

@@ -60,9 +60,14 @@ describe("AbortSignal execution budget", () => {
       exec("(do () (#f))", { signal: ctrl.signal }),
     ).rejects.toThrow(/abort/i);
     // Generous upper bound: the trampoline only checks at the 5ms / 1000-iter
-    // cadence, so abort propagates within ~one tick of the 50ms timer.
-    expect(Date.now() - start).toBeLessThan(2000);
-  });
+    // cadence, so abort propagates within ~one tick of the 50ms timer — on an
+    // IDLE machine. The load-bearing assertions are termination + /abort/i
+    // (nothing else can stop this loop: it has no budget); the wall-clock bound
+    // only guards order-of-magnitude regressions. 2026-07-05: 3958ms observed
+    // on a 2-core CI runner with the full turbo test fan-out contending for the
+    // event loop, so the bound sits well above scheduler starvation noise.
+    expect(Date.now() - start).toBeLessThan(10_000);
+  }, 20_000);
 
   it("throws immediately when signal is already aborted at start", async () => {
     const ctrl = new AbortController();
@@ -74,8 +79,10 @@ describe("AbortSignal execution budget", () => {
     // Pre-abort fast path: no trampoline state allocated, throw on entry.
     // This should be effectively instantaneous (sub-millisecond), but we
     // give a wide margin to allow for parse/import overhead from the lazy
-    // lips bootstrap on first invocation in the suite.
-    expect(Date.now() - start).toBeLessThan(500);
+    // lips bootstrap on first invocation in the suite — and for CI scheduler
+    // starvation under the parallel turbo fan-out (same class as the 10s
+    // bound above; 2026-07-05).
+    expect(Date.now() - start).toBeLessThan(2000);
   });
 
   it("preserves signal.reason through the throw", async () => {

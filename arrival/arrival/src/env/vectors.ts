@@ -151,15 +151,20 @@ export const VECTOR_OPS = {
     invariant(vectors.length > 0, "vector-for-each: expected at least one vector argument");
     const arrays = vectors.map((v) => asVector(v, "vector-for-each"));
     const minLen = Math.min(...arrays.map((a) => a.length));
-    const pending: unknown[] = [];
+    // R7RS applies for-each's proc IN ORDER — same ordering bug class as
+    // string-for-each (see strings.ts): the old fan-out+Promise.all let an async
+    // proc's side effects land in completion order. Await each application before
+    // the next; sync procs never leave the allocation-free loop.
+    const applyAt = (i: number): unknown => proc(...arrays.map((a) => a[i]));
     for (let i = 0; i < minLen; i++) {
-      const elements = arrays.map((a) => a[i]);
-      const ret = proc(...elements);
-      if (is_promise(ret)) pending.push(ret);
+      const ret = applyAt(i);
+      if (is_promise(ret)) {
+        return (async () => {
+          await ret;
+          for (let j = i + 1; j < minLen; j++) await applyAt(j);
+        })();
+      }
     }
-    // Await any async side effects before returning, so for-each does not complete
-    // while promises are still outstanding.
-    if (pending.length > 0) return (promise_all(pending) as Promise<unknown[]>).then(() => undefined);
   },
 };
 

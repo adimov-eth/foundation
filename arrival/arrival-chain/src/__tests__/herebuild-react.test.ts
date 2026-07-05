@@ -106,6 +106,8 @@ describe("herebuild-react.scm — N × M parallel reactions", () => {
     const elapsed = Date.now() - t0;
 
     expect(backend.complete).toHaveBeenCalledTimes(12);
-    expect(elapsed).toBeLessThan(300); // 12 × 50 = 600 sequential
+    // Concurrency proof: sequential is ≥ 12 × 50 = 600ms of pure delay; bound sits
+    // below that floor but above CI scheduler noise (376ms observed, 2026-07-05).
+    expect(elapsed).toBeLessThan(500);
   });
 });

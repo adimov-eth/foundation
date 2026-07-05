@@ -82,7 +82,8 @@ export function lazyBackend(loader: () => Promise<ModelBackend>): ModelBackend {
   return {
     async complete(spec: ModelSpec): Promise<Completion> {
       cached ??= loader();
-      return (await cached).complete(spec);
+      const backend = await cached;
+      return backend.complete(spec);
     },
     async stream(
       spec: ModelSpec,
@@ -123,6 +124,80 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     }, ms);
     signal?.addEventListener("abort", onAbort, { once: true });
   });
+}
+
+// ── Stream watchdogs (shared across backends) ─────────────────────────
+
+/** The armed guard for one streamed inference — see {@link streamGuard}. */
+export interface StreamGuard {
+  /** Combined signal (caller's + watchdogs). Pass it INTO the provider request. */
+  signal: AbortSignal;
+  /** Re-arm the idle window. Call on EVERY stream event — deltas, reasoning,
+   *  keep-alives — so an actively-thinking model is never false-aborted. */
+  armIdle(): void;
+  /** Race a stream step against abort, so a provider (or fake) that ignores
+   *  `signal` still can't wedge the read loop on a never-settling promise. */
+  race<T>(step: Promise<T>): Promise<T>;
+  /** Release timers and the abort listener. MUST run in the caller's `finally`:
+   *  the listener otherwise pins this guard (and every raced reaction) to the
+   *  caller's long-lived signal after a clean finish. */
+  done(): void;
+}
+
+/**
+ * Idle + total watchdogs for a streamed inference, combined with the caller's
+ * abort signal. A provider SDK's request timeout typically clears when response
+ * HEADERS arrive and never guards body reads, so a mid-generation stall is
+ * otherwise an infinite await — the silent 0%-CPU wedge — and a pathologically
+ * slow but never-quite-idle stream would run unbounded. One implementation of
+ * the war story, shared: the per-backend read loops differ (typed parts, raw
+ * SSE, NDJSON), but the timing machinery must not be copy-pasted per backend.
+ *
+ * Env knobs: ARRIVAL_INFER_IDLE_MS (default 180s), ARRIVAL_INFER_TOTAL_MS
+ * (default 15 min). `label` prefixes the abort reasons.
+ */
+export function streamGuard(label: string, callerSignal?: AbortSignal): StreamGuard {
+  const idleMs = Number(process.env.ARRIVAL_INFER_IDLE_MS) || 180_000;
+  const totalMs = Number(process.env.ARRIVAL_INFER_TOTAL_MS) || 900_000;
+  const watchdog = new AbortController();
+  const signal = callerSignal ? AbortSignal.any([callerSignal, watchdog.signal]) : watchdog.signal;
+
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  const armIdle = (): void => {
+    // refresh() re-arms the existing timer in place — no per-event allocation
+    // (this runs once per delta; thousands of times on a long completion).
+    if (idleTimer) idleTimer.refresh();
+    else
+      idleTimer = setTimeout(
+        () => watchdog.abort(new Error(`${label} idle ${idleMs}ms — stream stalled (aborted)`)),
+        idleMs,
+      );
+  };
+  const totalTimer = setTimeout(
+    () => watchdog.abort(new Error(`${label} total ${totalMs}ms exceeded (aborted)`)),
+    totalMs,
+  );
+
+  // Reject the moment `signal` fires. Pre-registered once (not per race) and
+  // given a no-op catch so an abort AFTER a clean finish can't surface as an
+  // unhandled rejection.
+  const { promise: aborted, reject } = Promise.withResolvers<never>();
+  const raise = (): void =>
+    reject(signal.reason instanceof Error ? signal.reason : new DOMException("aborted", "AbortError"));
+  if (signal.aborted) raise();
+  else signal.addEventListener("abort", raise, { once: true });
+  aborted.catch(() => {});
+
+  return {
+    signal,
+    armIdle,
+    race: (step) => Promise.race([step, aborted]),
+    done: (): void => {
+      clearTimeout(idleTimer);
+      clearTimeout(totalTimer);
+      signal.removeEventListener("abort", raise);
+    },
+  };
 }
 
 export interface RetryOptions {

@@ -273,7 +273,10 @@ describe("large input performance", () => {
     const { assignments } = run(entities);
     const elapsed = Date.now() - start;
     expect(assignments.size).toBe(1000);
-    expect(elapsed).toBeLessThan(500); // generous ceiling
+    // Quadratic-blowup canary: linear behavior is tens of ms even on a starved CI
+    // runner; a quadratic regression lands in seconds (2026-07-05: bounds widened
+    // past CI scheduler noise — the discrimination gap is orders of magnitude).
+    expect(elapsed).toBeLessThan(2000);
   });
 
   it("1000 entities all tied at same name → all postfixed, no quadratic blowup", () => {
@@ -283,6 +286,6 @@ describe("large input performance", () => {
     const elapsed = Date.now() - start;
     expect(assignments.size).toBe(1000);
     expect(burned.has("shared")).toBe(true);
-    expect(elapsed).toBeLessThan(1000);
+    expect(elapsed).toBeLessThan(3000); // same canary logic as above
   });
 });

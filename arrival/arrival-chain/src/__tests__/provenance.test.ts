@@ -526,18 +526,24 @@ describe("provenance × comparison-as-predicate", () => {
 
 describe("provenance × spec §5.3 (car/cdr element-only)", () => {
   // Spec §5.3 (docs/spec/arrival-chain.md:218): `(car (list a b)) → a, with
-  // provenance P<A>`. Current impl in lips.ts:2067-2070 routes through
-  // `withInputProvenance([list], list.car)` which unions the CONTAINER's
-  // provenance (P<A,B>) onto the element. Result: `(car (list a b))` carries
-  // P<A,B> not P<A> — phantom contributor `b` shows up in `a`'s lineage.
+  // provenance P<A>`. Phantom contributor `b` must NOT show up in `a`'s lineage.
   //
-  // Marked .fails (vitest's inverted-assertion modifier) because the audit
-  // identified the bug but the fix is not yet landed. When the fix lands
-  // (route `withInputProvenance([list.car], list.car)` or carry the on-value
-  // provenance through unchanged), this test will flip from green-because-it-
-  // -fails to red — drop the `.fails` modifier then.
+  // TWO provenance mechanisms exist and the fix landed in only ONE (verified
+  // 2026-07-05):
+  //   - ON-VALUE path — `stdlib.ts` `car`/`cdr` now route
+  //     `withInputProvenance([list.car], list.car)` (element-only). FIXED.
+  //   - TRACE path — arrival-provenance `computeProvenance` walks the invocation
+  //     tree independently and STILL unions children onto the car invocation.
+  //     This test drives `sandboxRunTraced` (the TRACE path), so it still sees
+  //     P<A,B>. NOT fixed there.
+  //
+  // Kept `.fails` DELIBERATELY: it is honest — it documents that the trace-path
+  // fix is not yet landed (the on-value fix does not reach the trace engine). When
+  // the trace path is fixed (car/cdr must be element-only in `computeProvenance`
+  // too — an accessorField-style projection, not a child-union), this flips to red;
+  // drop `.fails` then. Do NOT drop it now: that would hide a real divergence.
   it.fails(
-    "(car (list a b)) carries only a's provenance, not b's",
+    "(car (list a b)) carries only a's provenance, not b's [TRACE path — still unions; on-value path is fixed]",
     async () => {
       const { project, cache } = fresh();
       const { stop, done } = workerOver(project, cache);

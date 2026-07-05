@@ -227,7 +227,9 @@ describe("CRITICAL: resource exhaustion (DoS vectors)", () => {
     }
     const elapsed = Date.now() - start;
     expect(caught).toBe(true);
-    expect(elapsed).toBeLessThan(500);
+    // O(1) cap vs ~200MB allocation: the failure mode is seconds, not ms — bound
+    // sits above CI scheduler noise, far below the allocation stall (2026-07-05).
+    expect(elapsed).toBeLessThan(3000);
   });
 
   /**
@@ -250,7 +252,7 @@ describe("CRITICAL: resource exhaustion (DoS vectors)", () => {
     }
     const elapsed = Date.now() - start;
     expect(caught).toBe(true);
-    expect(elapsed).toBeLessThan(500);
+    expect(elapsed).toBeLessThan(3000); // same cap-vs-allocation gap as make-string above
   }, 15000);
 
   /**
@@ -285,8 +287,10 @@ describe("CRITICAL: resource exhaustion (DoS vectors)", () => {
     await expect(
       gexec("(let loop () (loop))", { env: sandboxedEnv, budgetMs: 150 }),
     ).rejects.toThrow(/budget/i);
-    // Bounded to ~one yield cadence past the 150ms deadline.
-    expect(Date.now() - start).toBeLessThan(2000);
+    // Bounded to ~one yield cadence past the 150ms deadline on an idle machine;
+    // widened past CI scheduler noise (2026-07-05) — the un-budgeted alternative
+    // hangs to the 10s test timeout, so the gap holds.
+    expect(Date.now() - start).toBeLessThan(5000);
   }, 10000);
 
   /**

@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 importers:
-
   .:
     devDependencies:
       turbo:
@@ -17,12 +16,27 @@ importers:
       '@here.build/arrival-env':
         specifier: workspace:^
         version: link:../arrival-env
-      '@here.build/arrival-scheme':
+      '@here.build/error-invariant':
         specifier: workspace:^
-        version: link:../arrival-scheme
-      '@here.build/arrival-serializer':
-        specifier: workspace:^
-        version: link:../arrival-serializer
+        version: link:../../common/error-invariant
+      fantasy-land:
+        specifier: 5.0.1
+        version: 5.0.1
+      fold-case:
+        specifier: 1.0.0
+        version: 1.0.0
+      tiny-invariant:
+        specifier: 1.3.3
+        version: 1.3.3
+      tslib:
+        specifier: 2.8.1
+        version: 2.8.1
+      unicode-properties:
+        specifier: 1.4.1
+        version: 1.4.1
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
     devDependencies:
       '@here.build/eslint-configs':
         specifier: workspace:^
@@ -33,12 +47,12 @@ importers:
       '@types/node':
         specifier: 24.0.0
         version: 24.0.0
-      '@types/ramda':
-        specifier: 0.31.1
-        version: 0.31.1
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
+      fast-check:
+        specifier: 4.8.0
+        version: 4.8.0
       globals:
         specifier: 17.3.0
         version: 17.3.0
@@ -50,7 +64,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-chain:
     dependencies:
@@ -60,15 +74,18 @@ importers:
       '@ai-sdk/openai-compatible':
         specifier: ^2.0.48
         version: 2.0.48(zod@4.3.6)
+      '@here.build/arrival':
+        specifier: workspace:^
+        version: link:../arrival
       '@here.build/arrival-inference':
         specifier: workspace:^
         version: link:../arrival-inference
       '@here.build/arrival-provenance':
         specifier: workspace:^
         version: link:../arrival-provenance
-      '@here.build/arrival-scheme':
+      '@here.build/arrival-scheme-env-infer':
         specifier: workspace:^
-        version: link:../arrival-scheme
+        version: link:../arrival-scheme-env-infer
       '@here.build/arrival-sweet':
         specifier: workspace:^
         version: link:../arrival-sweet
@@ -141,7 +158,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
       ws:
         specifier: 8.18.3
         version: 8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -199,7 +216,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-codemirror:
     dependencies:
@@ -291,9 +308,9 @@ importers:
       '@ai-sdk/openai-compatible':
         specifier: ^2.0.48
         version: 2.0.48(zod@4.3.6)
-      '@here.build/arrival-scheme':
+      '@here.build/arrival':
         specifier: workspace:^
-        version: link:../arrival-scheme
+        version: link:../arrival
       ai:
         specifier: ^6.0.201
         version: 6.0.201(zod@4.3.6)
@@ -336,13 +353,16 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-mcp:
     dependencies:
       '@here.build/arrival':
         specifier: workspace:^
         version: link:../arrival
+      '@here.build/arrival-serializer':
+        specifier: workspace:^
+        version: link:../arrival-serializer
       '@modelcontextprotocol/sdk':
         specifier: 1.26.0
         version: 1.26.0(zod@4.3.6)
@@ -388,13 +408,13 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-provenance:
     dependencies:
-      '@here.build/arrival-scheme':
+      '@here.build/arrival':
         specifier: workspace:^
-        version: link:../arrival-scheme
+        version: link:../arrival
       '@here.build/arrival-sweet':
         specifier: workspace:^
         version: link:../arrival-sweet
@@ -431,7 +451,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-sampler:
     dependencies:
@@ -528,15 +548,68 @@ importers:
         specifier: 4.1.0
         version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
+  arrival/arrival-scheme-env-infer:
+    dependencies:
+      '@here.build/arrival':
+        specifier: workspace:^
+        version: link:../arrival
+      '@here.build/arrival-inference':
+        specifier: workspace:^
+        version: link:../arrival-inference
+      tiny-invariant:
+        specifier: 1.3.3
+        version: 1.3.3
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@here.build/tsconfig':
+        specifier: workspace:^
+        version: link:../../common/tsconfig
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: 4.1.0
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+
+  arrival/arrival-scheme-env-ramda:
+    dependencies:
+      '@here.build/arrival':
+        specifier: workspace:^
+        version: link:../arrival
+      ramda:
+        specifier: 0.31.3
+        version: 0.31.3
+    devDependencies:
+      '@here.build/tsconfig':
+        specifier: workspace:^
+        version: link:../../common/tsconfig
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      '@types/ramda':
+        specifier: 0.31.1
+        version: 0.31.1
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: 4.1.0
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+
   arrival/arrival-serializer:
     dependencies:
       '@here.build/arrival-env':
         specifier: workspace:^
         version: link:../arrival-env
     devDependencies:
-      '@here.build/arrival-scheme':
+      '@here.build/arrival':
         specifier: workspace:^
-        version: link:../arrival-scheme
+        version: link:../arrival
       '@here.build/eslint-configs':
         specifier: workspace:^
         version: link:../../common/eslint-config
@@ -560,10 +633,16 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-sweet:
     dependencies:
+      '@here.build/lexical-namer':
+        specifier: workspace:^
+        version: link:../../common/lexical-namer
+      pluralize:
+        specifier: 8.0.0
+        version: 8.0.0
       tiny-invariant:
         specifier: 1.3.3
         version: 1.3.3
@@ -577,6 +656,9 @@ importers:
       '@types/node':
         specifier: 24.0.0
         version: 24.0.0
+      '@types/pluralize':
+        specifier: 0.0.33
+        version: 0.0.33
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
@@ -591,7 +673,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   arrival/arrival-type-lens:
     dependencies:
@@ -647,6 +729,24 @@ importers:
       mobx:
         specifier: 6.15.0
         version: 6.15.0
+      typescript:
+        specifier: 6.0.2
+        version: 6.0.2
+
+  common/error-invariant:
+    devDependencies:
+      '@here.build/eslint-configs':
+        specifier: workspace:^
+        version: link:../eslint-config
+      '@here.build/tsconfig':
+        specifier: workspace:^
+        version: link:../tsconfig
+      '@types/node':
+        specifier: 24.0.0
+        version: 24.0.0
+      eslint:
+        specifier: 9.39.2
+        version: 9.39.2(jiti@2.6.1)
       typescript:
         specifier: 6.0.2
         version: 6.0.2
@@ -741,7 +841,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
 
   common/tsconfig:
     devDependencies:
@@ -998,7 +1098,7 @@ importers:
         version: 6.0.2
       vitest:
         specifier: 4.1.0
-        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(@vitest/browser-playwright@4.1.1)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
       ws:
         specifier: 8.18.3
         version: 8.18.3(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -1053,7 +1153,6 @@ importers:
         version: 13.6.30
 
 packages:
-
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
@@ -6007,7 +6106,6 @@ packages:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
-
   '@adobe/css-tools@4.4.4': {}
 
   '@ai-sdk/anthropic@3.0.82(zod@4.3.6)':
@@ -7652,7 +7750,8 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  ansi-regex@5.0.1: {}
+  ansi-regex@5.0.1:
+    optional: true
 
   ansi-styles@4.3.0:
     dependencies:
@@ -7817,6 +7916,7 @@ snapshots:
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
+    optional: true
 
   browserslist@4.28.1:
     dependencies:
@@ -7943,6 +8043,7 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
+    optional: true
 
   codemirror@6.0.2:
     dependencies:
@@ -8189,7 +8290,8 @@ snapshots:
   detect-libc@1.0.3:
     optional: true
 
-  detect-libc@2.1.2: {}
+  detect-libc@2.1.2:
+    optional: true
 
   detect-node@2.1.0: {}
 
@@ -8233,7 +8335,8 @@ snapshots:
 
   electron-to-chromium@1.5.286: {}
 
-  emoji-regex@8.0.0: {}
+  emoji-regex@8.0.0:
+    optional: true
 
   empathic@2.0.0: {}
 
@@ -8425,6 +8528,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.27.4
       '@esbuild/win32-ia32': 0.27.4
       '@esbuild/win32-x64': 0.27.4
+    optional: true
 
   escalade@3.2.0: {}
 
@@ -8833,6 +8937,7 @@ snapshots:
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
+    optional: true
 
   finalhandler@2.1.0:
     dependencies:
@@ -8903,7 +9008,8 @@ snapshots:
 
   gensync@1.0.0-beta.2: {}
 
-  get-caller-file@2.0.5: {}
+  get-caller-file@2.0.5:
+    optional: true
 
   get-intrinsic@1.3.0:
     dependencies:
@@ -9174,7 +9280,8 @@ snapshots:
     dependencies:
       call-bound: 1.0.4
 
-  is-fullwidth-code-point@3.0.0: {}
+  is-fullwidth-code-point@3.0.0:
+    optional: true
 
   is-generator-function@1.1.0:
     dependencies:
@@ -9203,7 +9310,8 @@ snapshots:
       call-bound: 1.0.4
       has-tostringtag: 1.0.2
 
-  is-number@7.0.0: {}
+  is-number@7.0.0:
+    optional: true
 
   is-potential-custom-element-name@1.0.1:
     optional: true
@@ -9495,6 +9603,7 @@ snapshots:
     dependencies:
       braces: 3.0.3
       picomatch: 2.3.1
+    optional: true
 
   mime-db@1.52.0:
     optional: true
@@ -9801,7 +9910,8 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@2.3.1: {}
+  picomatch@2.3.1:
+    optional: true
 
   picomatch@4.0.4: {}
 
@@ -10248,7 +10358,8 @@ snapshots:
     dependencies:
       jsesc: 3.1.0
 
-  require-directory@2.1.1: {}
+  require-directory@2.1.1:
+    optional: true
 
   require-from-string@2.0.2: {}
 
@@ -10261,6 +10372,7 @@ snapshots:
       is-core-module: 2.16.1
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
+    optional: true
 
   resolve@2.0.0-next.5:
     dependencies:
@@ -10690,6 +10802,7 @@ snapshots:
       emoji-regex: 8.0.0
       is-fullwidth-code-point: 3.0.0
       strip-ansi: 6.0.1
+    optional: true
 
   string.prototype.matchall@4.0.12:
     dependencies:
@@ -10743,8 +10856,10 @@ snapshots:
   strip-ansi@6.0.1:
     dependencies:
       ansi-regex: 5.0.1
+    optional: true
 
-  strip-bom@3.0.0: {}
+  strip-bom@3.0.0:
+    optional: true
 
   strip-indent@3.0.0:
     dependencies:
@@ -10883,6 +10998,7 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+    optional: true
 
   toidentifier@1.0.1: {}
 
@@ -11121,7 +11237,8 @@ snapshots:
       node-gyp-build: 4.8.4
     optional: true
 
-  util-deprecate@1.0.2: {}
+  util-deprecate@1.0.2:
+    optional: true
 
   varint@6.0.0:
     optional: true
@@ -11192,6 +11309,35 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       '@types/node': 24.0.0
       '@vitest/browser-playwright': 4.1.1(bufferutil@4.1.0)(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(playwright@1.59.1)(utf-8-validate@5.0.10)(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))(vitest@4.1.0)
+      jsdom: 26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.0(@opentelemetry/api@1.9.0)(@types/node@24.0.0)(jsdom@26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10))(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0)):
+    dependencies:
+      '@vitest/expect': 4.1.0
+      '@vitest/mocker': 4.1.0(msw@2.12.12(@types/node@24.0.0)(typescript@6.0.2))(vite@7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0))
+      '@vitest/pretty-format': 4.1.0
+      '@vitest/runner': 4.1.0
+      '@vitest/snapshot': 4.1.0
+      '@vitest/spy': 4.1.0
+      '@vitest/utils': 4.1.0
+      es-module-lexer: 2.0.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      std-env: 4.0.0
+      tinybench: 2.9.0
+      tinyexec: 1.0.2
+      tinyglobby: 0.2.15
+      tinyrainbow: 3.1.0
+      vite: 7.2.7(@types/node@24.0.0)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.21.0)(yaml@2.9.0)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.0
+      '@types/node': 24.0.0
       jsdom: 26.1.0(bufferutil@4.1.0)(canvas@3.2.0)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - msw
@@ -11375,6 +11521,7 @@ snapshots:
       ansi-styles: 4.3.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
+    optional: true
 
   wrappy@1.0.2: {}
 
@@ -11387,6 +11534,7 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.1.0
       utf-8-validate: 5.0.10
+    optional: true
 
   wsl-utils@0.1.0:
     dependencies:
@@ -11409,7 +11557,8 @@ snapshots:
       y-protocols: 1.0.6(yjs@13.6.30)
       yjs: 13.6.30
 
-  y18n@5.0.8: {}
+  y18n@5.0.8:
+    optional: true
 
   yallist@3.1.1: {}
 
@@ -11418,7 +11567,8 @@ snapshots:
 
   yaml@2.9.0: {}
 
-  yargs-parser@21.1.1: {}
+  yargs-parser@21.1.1:
+    optional: true
 
   yargs@17.7.2:
     dependencies:
@@ -11429,6 +11579,7 @@ snapshots:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 21.1.1
+    optional: true
 
   yjs@13.6.30:
     dependencies:

@@ -11,6 +11,10 @@
  * plus the SSE assembly, schema-blind JSON coercion, per-run credential refresh,
  * and usage mapping. No network: the client + credential seams are injected.
  */
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -18,11 +22,11 @@ import {
   clientHeaders,
   codexBackend,
   completeVia,
-  stripFence,
   CODEX_MODEL,
   type CodexCredential,
   type ResponsesClient,
 } from "../backends/codex.js";
+import { resolveCodexCredential } from "../backends/codex-auth.js";
 import type { ModelSpec } from "../model.js";
 
 const spec = (over: Partial<ModelSpec> = {}): ModelSpec => ({
@@ -66,25 +70,25 @@ const textEvents = (text: string, usage?: { input_tokens: number; output_tokens:
 
 describe("buildBody — the verified Codex wire contract", () => {
   it("falls back to the default model when the program named a NON-Codex token", () => {
-    const { body } = buildBody(spec({ model: "gpt-4o" }));
+    const body = buildBody(spec({ model: "gpt-4o" }));
     expect(body.model).toBe(CODEX_MODEL); // gpt-4o isn't accepted → default (cheap spark tier)
   });
 
   it("HONORS spec.model when it names an accepted Codex model (gpt-5.5 / spark)", () => {
-    expect(buildBody(spec({ model: "gpt-5.5" })).body.model).toBe("gpt-5.5");
-    expect(buildBody(spec({ model: "gpt-5.3-codex-spark" })).body.model).toBe("gpt-5.3-codex-spark");
+    expect(buildBody(spec({ model: "gpt-5.5" })).model).toBe("gpt-5.5");
+    expect(buildBody(spec({ model: "gpt-5.3-codex-spark" })).model).toBe("gpt-5.3-codex-spark");
   });
 
   it("respects an explicit defaultModel override", () => {
-    expect(buildBody(spec({ model: "unknown" }), "gpt-5.5").body.model).toBe("gpt-5.5");
+    expect(buildBody(spec({ model: "unknown" }), "gpt-5.5").model).toBe("gpt-5.5");
   });
 
   it("sets stream:true (the backend 400s 'Stream must be set to true' otherwise)", () => {
-    expect(buildBody(spec()).body.stream).toBe(true);
+    expect(buildBody(spec()).stream).toBe(true);
   });
 
   it("wraps input as a typed input_text list (a bare string 400s 'Input must be a list')", () => {
-    const { body } = buildBody(spec({ prompt: "hi there" }));
+    const body = buildBody(spec({ prompt: "hi there" }));
     expect(body.input).toEqual([{ role: "user", content: [{ type: "input_text", text: "hi there" }] }]);
   });
 
@@ -93,27 +97,67 @@ describe("buildBody — the verified Codex wire contract", () => {
       { role: "system", content: "be terse" },
       { role: "user", content: "ping" },
     ]);
-    const { body } = buildBody(spec({ prompt }));
+    const body = buildBody(spec({ prompt }));
     expect(body.instructions).toBe("be terse");
     expect(body.input).toEqual([{ role: "user", content: [{ type: "input_text", text: "ping" }] }]);
   });
 
-  it("appends a schema preamble to instructions and flags structured, when a schema is present", () => {
+  it("appends a schema preamble to instructions when a schema is present", () => {
     const schema = JSON.stringify(["object", ["name", "string"]]);
-    const { body, structured } = buildBody(spec({ schema }));
-    expect(structured).toBe(true);
+    const body = buildBody(spec({ schema }));
     expect(String(body.instructions)).toContain("Return ONLY a JSON object");
     expect(String(body.instructions)).toContain('"name"');
   });
 
-  it("is not structured and carries no instructions for a plain, schema-less prompt", () => {
-    const { body, structured } = buildBody(spec());
-    expect(structured).toBe(false);
-    expect(body.instructions).toBeUndefined();
+  it("carries no instructions for a plain, schema-less prompt", () => {
+    expect(buildBody(spec()).instructions).toBeUndefined();
   });
 
   it("sets store:false (stateless — the whole context rides each call, replay-safe)", () => {
-    expect(buildBody(spec()).body.store).toBe(false);
+    expect(buildBody(spec()).store).toBe(false);
+  });
+
+  it("merges spec.system (the persona) into instructions, in persona · call · format order", () => {
+    // The hand-rolled system filter this pins against silently DROPPED the
+    // `(llm/with … :system …)` persona — model-bound AND content-keyed, so losing
+    // it changes what the inference MEANS, not just how it runs.
+    const prompt = JSON.stringify([
+      { role: "system", content: "call-level instruction" },
+      { role: "user", content: "ping" },
+    ]);
+    const schema = JSON.stringify(["object", ["ok", "boolean"]]);
+    const body = buildBody(spec({ prompt, system: "persona text", schema }));
+    const instructions = String(body.instructions);
+    const iPersona = instructions.indexOf("persona text");
+    const iCall = instructions.indexOf("call-level instruction");
+    const iFormat = instructions.indexOf("Return ONLY a JSON object");
+    expect(iPersona).toBeGreaterThanOrEqual(0);
+    expect(iCall).toBeGreaterThan(iPersona);
+    expect(iFormat).toBeGreaterThan(iCall);
+  });
+
+  it("carries a persona-only spec (no system turns in the prompt) as instructions", () => {
+    const body = buildBody(spec({ system: "be a pirate" }));
+    expect(body.instructions).toBe("be a pirate");
+  });
+
+  // ── EXCLUSION TRIPWIRES — flip these only after a LIVE probe ────────────────────
+  // max_output_tokens/temperature are standard *platform* Responses fields that have
+  // never been probed against the chatgpt.com/backend-api/codex gate (the contract
+  // that 400s on unaccepted models, non-stream, bare-string input). A rejected field
+  // would 400 EVERY call that sets it — the inference plane sets maxTokens routinely,
+  // so shipping unprobed bricks the backend. These pin the deliberate exclusion; see
+  // the KNOWN LIMITATION note on buildBody for the lift procedure.
+
+  it("TRIPWIRE: spec.maxTokens is deliberately NOT sent (unprobed against the live gate)", () => {
+    const body = buildBody(spec({ maxTokens: 512 }));
+    expect(body).not.toHaveProperty("max_output_tokens");
+    expect(body).not.toHaveProperty("max_tokens");
+  });
+
+  it("TRIPWIRE: spec.temperature is deliberately NOT sent (unprobed against the live gate)", () => {
+    const body = buildBody(spec({ temperature: 0 }));
+    expect(body).not.toHaveProperty("temperature");
   });
 });
 
@@ -128,21 +172,9 @@ describe("clientHeaders", () => {
   });
 });
 
-// ── stripFence: schema-blind JSON recovery ────────────────────────────────────────
-
-describe("stripFence", () => {
-  it("unwraps a ```json fence", () => {
-    expect(stripFence('```json\n{"a":1}\n```')).toBe('{"a":1}');
-  });
-  it("unwraps a bare ``` fence", () => {
-    expect(stripFence('```\n{"a":1}\n```')).toBe('{"a":1}');
-  });
-  it("passes through unfenced text (trimmed)", () => {
-    expect(stripFence('  {"a":1}  ')).toBe('{"a":1}');
-  });
-});
-
 // ── completeVia: SSE assembly + parse + usage ─────────────────────────────────────
+// (Fence-stripping is owned by the shared coercion ladder — pinned by the
+//  "recovers a fenced structured response" test below, not a local helper.)
 
 describe("completeVia — stream assembly", () => {
   it("assembles text from output_text deltas and maps usage", async () => {
@@ -178,6 +210,122 @@ describe("completeVia — stream assembly", () => {
     ]);
     const out = await completeVia(client, spec());
     expect(out.usage).toEqual({ inputTokens: 0, outputTokens: 0 });
+  });
+});
+
+// ── abort + stall watchdogs (the vercel.ts war-story class, on the codex path) ────
+//
+// The openai SDK's request timeout is CLEARED once response headers arrive — it
+// never guards body reads — so a stalled Codex SSE stream was an infinite await.
+// And the caller's AbortSignal (infer-store's subscriber-refcount controller) was
+// dropped entirely: last-subscriber release left a live BILLED stream. These pin
+// both: the signal reaches the request, and idle/total watchdogs cover the read
+// loop even against a stream that IGNORES the signal.
+
+describe("completeVia — caller abort + idle/total watchdogs", () => {
+  it("rejects on CALLER abort mid-stream, even when the stream ignores the signal", async () => {
+    // One delta arrives, then next() never settles AND the signal is ignored — the
+    // worst case. The read loop must still unwind via its abort race.
+    let first = true;
+    const client: ResponsesClient = {
+      responses: {
+        create: async () => ({
+          [Symbol.asyncIterator]: () => ({
+            next: () =>
+              first
+                ? ((first = false),
+                  Promise.resolve({ done: false as const, value: { type: "response.output_text.delta", delta: "a" } }))
+                : new Promise<never>(() => {}),
+          }),
+        }),
+      },
+    };
+    const ac = new AbortController();
+    const p = completeVia(client, spec(), () => ac.abort(new Error("last subscriber released")), undefined, ac.signal);
+    await expect(p).rejects.toThrow(/last subscriber released/);
+  });
+
+  it("threads the caller's signal into the SDK request options (codexBackend.stream)", async () => {
+    let seen: AbortSignal | undefined;
+    const client: ResponsesClient = {
+      responses: {
+        create: async (_body, opts) => {
+          seen = opts?.signal;
+          return (async function* () {
+            yield { type: "response.output_text.delta", delta: "ok" } as never;
+            yield { type: "response.completed", response: { usage: { input_tokens: 1, output_tokens: 1 } } } as never;
+          })();
+        },
+      },
+    };
+    const backend = codexBackend({}, { resolveCredential: async () => cred, makeClient: () => client });
+    const ac = new AbortController();
+    await backend.stream!(spec(), () => {}, ac.signal);
+    expect(seen).toBeInstanceOf(AbortSignal);
+    // The request signal is the COMBINED one — it must follow the caller's abort.
+    ac.abort();
+    expect(seen!.aborted).toBe(true);
+  });
+
+  it("aborts a STALLED stream at the idle window (silent 0%-CPU wedge)", async () => {
+    process.env.ARRIVAL_INFER_IDLE_MS = "40";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () => ({
+            [Symbol.asyncIterator]: () => ({ next: () => new Promise<never>(() => {}) }),
+          }),
+        },
+      };
+      await expect(completeVia(client, spec())).rejects.toThrow(/idle 40ms/);
+    } finally {
+      delete process.env.ARRIVAL_INFER_IDLE_MS;
+    }
+  });
+
+  it("aborts a never-idle but unbounded stream at the TOTAL deadline", async () => {
+    process.env.ARRIVAL_INFER_TOTAL_MS = "60";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () =>
+            (async function* () {
+              // Emits forever, fast enough to never trip the idle window.
+              while (true) {
+                await new Promise((r) => setTimeout(r, 5));
+                yield { type: "response.output_text.delta", delta: "x" } as never;
+              }
+            })(),
+        },
+      };
+      await expect(completeVia(client, spec())).rejects.toThrow(/total 60ms/);
+    } finally {
+      delete process.env.ARRIVAL_INFER_TOTAL_MS;
+    }
+  });
+
+  it("a slow but ACTIVE stream survives — the idle window re-arms on every event", async () => {
+    process.env.ARRIVAL_INFER_IDLE_MS = "120";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () =>
+            (async function* () {
+              for (const d of ["a", "b", "c", "d"]) {
+                // Each gap (40ms) is under the window; the TOTAL run (160ms) is over
+                // it — only a re-armed watchdog passes this while a fixed one fails.
+                await new Promise((r) => setTimeout(r, 40));
+                yield { type: "response.output_text.delta", delta: d } as never;
+              }
+              yield { type: "response.completed", response: { usage: { input_tokens: 1, output_tokens: 4 } } } as never;
+            })(),
+        },
+      };
+      const out = await completeVia(client, spec());
+      expect(out.value).toBe("abcd");
+    } finally {
+      delete process.env.ARRIVAL_INFER_IDLE_MS;
+    }
   });
 });
 
@@ -287,56 +435,105 @@ describe("completeVia — server failure + malformed output are surfaced, not sw
   });
 });
 
-// ── single-flight refresh (the CONFIRMED HIGH race) ──────────────────────────────
+// ── refresh path against the REAL codex-auth module (temp CODEX_HOME, stubbed fetch;
+//    never touches a real credential) ───────────────────────────────────────────────
 
-describe("resolveCodexCredential — concurrent refresh is single-flight", () => {
-  it("collapses N concurrent expiring-token resolves onto ONE refresh POST", async () => {
-    // This exercises the real codex-auth module against a stubbed fetch + a fake
-    // ~/.codex/auth.json, proving two parallel resolves don't both POST the single-use
-    // refresh_token. Uses a temp CODEX_HOME so it never touches the real credential.
-    const os = await import("node:os");
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
+/** A decodable fake JWT carrying `exp` and the chatgpt account claim. */
+const codexJwt = (exp: number): string =>
+  `x.${Buffer.from(JSON.stringify({ exp, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
 
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
-    const prevHome = process.env.CODEX_HOME;
-    process.env.CODEX_HOME = dir;
-    // An EXPIRED access token (exp in the past) so both resolves take the refresh path.
-    const expiredJwt = `x.${Buffer.from(JSON.stringify({ exp: 1, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    fs.writeFileSync(
-      path.join(dir, "auth.json"),
-      JSON.stringify({ tokens: { access_token: expiredJwt, refresh_token: "rt-1", account_id: "acct-1" } }),
+const FRESH_JWT = codexJwt(9_999_999_999);
+
+/** Run `fn` with a temp CODEX_HOME holding `accessToken` + rt-1, and a stubbed
+ *  refresh endpoint answering `refreshJson`. Owns the save/restore of CODEX_HOME
+ *  and global fetch (a divergent restore leaks into every later test) and hands
+ *  back the auth-file path plus a live count of refresh POSTs. */
+async function withCodexAuth(
+  opts: { accessToken: string; mode?: number; refreshJson: Record<string, unknown> },
+  fn: (ctx: { authFile: string; posts: () => number }) => Promise<void>,
+): Promise<void> {
+  const dir = mkdtempSync(path.join(tmpdir(), "codex-auth-test-"));
+  const prevHome = process.env.CODEX_HOME;
+  process.env.CODEX_HOME = dir;
+  const authFile = path.join(dir, "auth.json");
+  writeFileSync(
+    authFile,
+    JSON.stringify({ tokens: { access_token: opts.accessToken, refresh_token: "rt-1", account_id: "acct-1" } }),
+    opts.mode === undefined ? {} : { mode: opts.mode },
+  );
+  let posts = 0;
+  const realFetch = globalThis.fetch;
+  // @ts-expect-error test stub
+  globalThis.fetch = async () => {
+    posts += 1;
+    return { ok: true, status: 200, json: async () => opts.refreshJson } as Response;
+  };
+  try {
+    await fn({ authFile, posts: () => posts });
+  } finally {
+    globalThis.fetch = realFetch;
+    if (prevHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = prevHome;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+describe("resolveCodexCredential — the refresh path", () => {
+  it("collapses N concurrent expiring-token resolves onto ONE refresh POST (single-flight)", async () => {
+    // The refresh_token is SINGLE-USE: two parallel resolves must not both POST it.
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2" } },
+      async ({ posts }) => {
+        const [a, b, c] = await Promise.all([
+          resolveCodexCredential({}),
+          resolveCodexCredential({}),
+          resolveCodexCredential({}),
+        ]);
+        expect(posts()).toBe(1);
+        for (const cred of [a, b, c]) expect(cred.accessToken).toBe(FRESH_JWT);
+      },
     );
+  });
 
-    let posts = 0;
-    const realFetch = globalThis.fetch;
-    // @ts-expect-error test stub
-    globalThis.fetch = async () => {
-      posts += 1;
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({ access_token: freshJwt, refresh_token: "rt-2" }),
-      } as Response;
-    };
-    try {
-      const [a, b, c] = await Promise.all([
-        resolveCodexCredential({}),
-        resolveCodexCredential({}),
-        resolveCodexCredential({}),
-      ]);
-      // The single-use refresh_token was POSTed exactly once despite three callers.
-      expect(posts).toBe(1);
-      expect(a.accessToken).toBe(freshJwt);
-      expect(b.accessToken).toBe(freshJwt);
-      expect(c.accessToken).toBe(freshJwt);
-    } finally {
-      globalThis.fetch = realFetch;
-      if (prevHome === undefined) delete process.env.CODEX_HOME;
-      else process.env.CODEX_HOME = prevHome;
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+  it("treats a token with NO readable exp as expiring — refresh recovers it", async () => {
+    // A malformed/exp-less access token used to read as "fresh forever": never
+    // refreshed, every call 401'd at the backend, no recovery short of a manual
+    // `codex login`. It must take the refresh path instead.
+    await withCodexAuth(
+      { accessToken: "not-a-jwt", refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2" } },
+      async ({ posts }) => {
+        const out = await resolveCodexCredential({});
+        expect(posts()).toBe(1); // the broken token took the refresh path…
+        expect(out.accessToken).toBe(FRESH_JWT); // …and the caller got a LIVE credential
+      },
+    );
+  });
+
+  it("persists the ROTATED token set to disk at mode 0600 (write-through contract)", async () => {
+    // Two properties of the same write, asserted against the REAL file:
+    //  • write-through — if the rotated set only lives in memory, the next process
+    //    reads the burned single-use rt and bricks the session until `codex login`;
+    //  • mode 0600 — `codex login` creates auth.json owner-only, and the atomic
+    //    temp+rename REPLACES the inode, so an unmoded temp file would silently
+    //    publish a live OAuth credential to local users on the first refresh.
+    await withCodexAuth(
+      {
+        accessToken: codexJwt(1),
+        mode: 0o600, // as `codex login` leaves it — the refresh must not loosen it
+        refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2", id_token: "id-2" },
+      },
+      async ({ authFile }) => {
+        await resolveCodexCredential({});
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { access_token: string; refresh_token: string; id_token?: string };
+          last_refresh?: string;
+        };
+        expect(onDisk.tokens.access_token).toBe(FRESH_JWT);
+        expect(onDisk.tokens.refresh_token).toBe("rt-2");
+        expect(onDisk.tokens.id_token).toBe("id-2");
+        expect(onDisk.last_refresh).toBeTruthy();
+        expect(statSync(authFile).mode & 0o777).toBe(0o600);
+      },
+    );
   });
 });

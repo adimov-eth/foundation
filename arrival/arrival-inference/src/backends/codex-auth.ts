@@ -16,7 +16,7 @@
 
 import { readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import path from "node:path";
 
 /** The ChatGPT-account Codex inference base URL (Hermes `DEFAULT_CODEX_BASE_URL`). */
 export const CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex";
@@ -39,16 +39,15 @@ export interface CodexCredential {
   baseURL: string;
 }
 
-const authPath = (): string =>
-  join(process.env.CODEX_HOME?.trim() || join(homedir(), ".codex"), "auth.json");
+const authPath = (): string => path.join(process.env.CODEX_HOME?.trim() || path.join(homedir(), ".codex"), "auth.json");
 
 /** Decode a JWT's base64url payload (no signature check — we read our OWN token,
  *  exactly as the Codex CLI does; this is not an auth boundary). */
 function jwtClaims(token: string | undefined): Record<string, unknown> {
   if (typeof token !== "string" || token.split(".").length < 2) return {};
   try {
-    const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    const pad = "=".repeat((-b64.length % 4 + 4) % 4);
+    const b64 = token.split(".")[1].replaceAll("-", "+").replaceAll("_", "/");
+    const pad = "=".repeat(((-b64.length % 4) + 4) % 4);
     return JSON.parse(Buffer.from(b64 + pad, "base64").toString()) as Record<string, unknown>;
   } catch {
     return {};
@@ -57,7 +56,11 @@ function jwtClaims(token: string | undefined): Record<string, unknown> {
 
 function isExpiring(token: string, skew = REFRESH_SKEW_SECONDS): boolean {
   const exp = jwtClaims(token).exp;
-  return typeof exp === "number" ? exp <= Date.now() / 1000 + skew : false;
+  // No readable `exp` (malformed/truncated token, missing claim) counts as EXPIRING:
+  // a refresh recovers a proper token, whereas trusting the broken one pins it
+  // forever — every call 401s at the backend with no path back short of a manual
+  // `codex login`.
+  return typeof exp === "number" ? exp <= Date.now() / 1000 + skew : true;
 }
 
 /** The chatgpt account id the backend requires as a header. auth.json carries it;
@@ -76,7 +79,7 @@ function readTokens(): CodexTokens {
   if (!existsSync(p)) throw new Error(`Codex auth not found at ${p} — run \`codex login\`.`);
   const payload = JSON.parse(readFileSync(p, "utf8")) as { tokens?: CodexTokens };
   const tokens = payload.tokens;
-  if (!tokens?.access_token || !tokens?.refresh_token) {
+  if (!tokens?.access_token || !tokens.refresh_token) {
     throw new Error(`Codex auth at ${p} is missing access_token/refresh_token — run \`codex login\`.`);
   }
   return tokens;
@@ -98,7 +101,10 @@ async function refresh(tokens: CodexTokens): Promise<CodexTokens> {
   // A 429 here is quota exhaustion, NOT an auth failure — the token is still valid
   // (Hermes classifies this distinctly so it doesn't prompt a pointless re-login).
   if (res.status === 429) throw new Error("Codex quota exhausted (429) — credentials valid, retry later.");
-  if (!res.ok) throw new Error(`Codex token refresh failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Codex token refresh failed (${res.status}): ${detail.slice(0, 200)}`);
+  }
   const j = (await res.json()) as { access_token?: string; refresh_token?: string; id_token?: string };
   if (!j.access_token) throw new Error("Codex refresh response missing access_token.");
   const next: CodexTokens = {
@@ -115,8 +121,13 @@ async function refresh(tokens: CodexTokens): Promise<CodexTokens> {
   // sibling temp then rename — rename is atomic on POSIX, so a reader sees either the
   // old file or the new one, never a partial. (Single-flight below prevents the racing
   // writers in-process; this guards crashes and cross-process interleave.)
+  //
+  // mode 0o600: `codex login` creates auth.json owner-only, and rename REPLACES the
+  // inode — a default-umask temp file would silently downgrade a live OAuth credential
+  // to world-readable on the first refresh. The mode rides the temp file so the
+  // credential is never on disk more open than 0600, even pre-rename.
   const tmp = `${p}.${process.pid}.tmp`;
-  writeFileSync(tmp, body);
+  writeFileSync(tmp, body, { mode: 0o600 });
   renameSync(tmp, p);
   return next;
 }

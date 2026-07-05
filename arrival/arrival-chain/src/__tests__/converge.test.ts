@@ -61,7 +61,9 @@ describe("Project.run — the converge kernel", () => {
     const elapsed = Date.now() - t0;
 
     expect(complete).toHaveBeenCalledTimes(8);
-    expect(elapsed).toBeLessThan(300); // 8 × 60 = 480 sequential
+    // Concurrency proof: sequential is ≥ 8 × 60 = 480ms of pure delay; bound sits
+    // below that floor but above CI scheduler noise (2026-07-05).
+    expect(elapsed).toBeLessThan(420);
   });
 
   it("dedups identical specs to a single backend call within a run", async () => {

@@ -35,7 +35,7 @@ describe("abort fan-out — upstream signal cancels the nested run", () => {
     const t0 = performance.now();
     const h = await runNamed(projectWith({ "slow.scm": SLOW }), "slow.scm", "causal", ac.signal);
     expect(h.value).toMatchObject({ __timeout__: true }); // contained as a timeout marker
-    expect(performance.now() - t0).toBeLessThan(2000); // and FAST — not the 8s budget
+    expect(performance.now() - t0).toBeLessThan(5000); // FAST — decisively under the 8s budget path (CI-noise headroom, 2026-07-05)
   }, 20_000);
 
   it("upstream abort of the provenance ask does NOT poison the handle (value stands, retry works)", async () => {

@@ -38,6 +38,10 @@
       "types": "./dist/backends/openrouter.d.ts",
       "import": "./dist/backends/openrouter.js"
     },
+    "./backends/codex": {
+      "types": "./dist/backends/codex.d.ts",
+      "import": "./dist/backends/codex.js"
+    },
     "./backends/ollama": {
       "types": "./dist/backends/ollama.d.ts",
       "import": "./dist/backends/ollama.js"

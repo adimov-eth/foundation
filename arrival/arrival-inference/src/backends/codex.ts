@@ -25,7 +25,7 @@
 // single-model hard gate; that was over-generalized from an incomplete probe set.)
 
 import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
-import { parseChatPrompt, parseModelValue, renderSchema } from "./_shared.js";
+import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema } from "./_shared.js";
 import { resolveCodexCredential, CODEX_BASE_URL, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
@@ -33,9 +33,10 @@ import { resolveCodexCredential, CODEX_BASE_URL, type CodexCredential } from "./
 export const CODEX_MODELS = ["gpt-5.5", "gpt-5.3-codex-spark"] as const;
 /** Default when `spec.model` is not one of {@link CODEX_MODELS}. The cheap tier. */
 export const CODEX_MODEL = "gpt-5.3-codex-spark";
-/** Resolve the model to send: honor `spec.model` if the backend accepts it, else default. */
-export const codexModelFor = (specModel: string): string =>
-  (CODEX_MODELS as readonly string[]).includes(specModel) ? specModel : CODEX_MODEL;
+/** Resolve the model to send: honor `spec.model` if the backend accepts it, else
+ *  `defaultModel` (the backend's configured fallback; {@link CODEX_MODEL} when unset). */
+export const codexModelFor = (specModel: string, defaultModel: string = CODEX_MODEL): string =>
+  (CODEX_MODELS as readonly string[]).includes(specModel) ? specModel : defaultModel;
 
 export interface CodexOptions {
   /** Route the OAuth refresh ourselves (default). `false` requires a CLI-fresh
@@ -56,31 +57,47 @@ export function stripFence(text: string): string {
 /** Lower a ModelSpec into the Codex Responses request body (the verified shape).
  *  Exported so the test can assert the hard constraints (accepted model / stream /
  *  typed input) without a live backend. `defaultModel` is the fallback when
- *  `spec.model` is not a {@link CODEX_MODELS} id. */
+ *  `spec.model` is not a {@link CODEX_MODELS} id.
+ *
+ *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are deliberately NOT
+ *  sent. The wire contract of chatgpt.com/backend-api/codex is documented nowhere
+ *  and was established one 400 at a time; `max_output_tokens`/`temperature` are
+ *  standard *platform* Responses fields but have never been probed against THIS
+ *  gate, and a rejected field would 400 every call — bricking the backend is worse
+ *  than an unenforced cap. So the spend ceiling is NOT honored on this path (the
+ *  plan-billed plane has no per-token spend anyway) and sampling runs at the
+ *  endpoint default. To lift: probe each field live with a `codex login`
+ *  credential, then thread it here and flip the exclusion tripwires in
+ *  codex-backend.test.ts. */
 export function buildBody(
   spec: ModelSpec,
   defaultModel: string = CODEX_MODEL,
 ): { body: Record<string, unknown>; structured: boolean } {
   const messages = parseChatPrompt(spec.prompt) ?? [{ role: "user" as const, content: spec.prompt }];
-  const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
-  const input = messages
-    .filter((m) => m.role !== "system")
-    .map((m) => ({ role: m.role, content: [{ type: "input_text", text: m.content }] }));
 
   const schema = renderSchema(spec.schema);
   const schemaPreamble = schema
-    ? `\n\nReturn ONLY a JSON object matching this schema, no prose:\n${JSON.stringify(schema)}`
-    : "";
-  const instructions = (system + schemaPreamble).trim();
-
-  // Honor spec.model when the backend accepts it; else the default (see codexModelFor).
-  const model = (CODEX_MODELS as readonly string[]).includes(spec.model) ? spec.model : defaultModel;
+    ? `Return ONLY a JSON object matching this schema, no prose:\n${JSON.stringify(schema)}`
+    : undefined;
+  // ONE system instruction in the canonical persona · call · format order —
+  // `spec.system` (the `(llm/with … :system …)` persona) rides `instructions`, a
+  // field the verified contract already uses. The hand-rolled filter this replaces
+  // silently DROPPED the persona.
+  const { systemText, messagesWithoutSystem } = mergeSystem({
+    messages,
+    persona: spec.system,
+    schemaPreamble,
+  });
+  const input = messagesWithoutSystem.map((m) => ({
+    role: m.role,
+    content: [{ type: "input_text", text: m.content }],
+  }));
 
   return {
     body: {
-      model,
+      model: codexModelFor(spec.model, defaultModel),
       input,
-      ...(instructions ? { instructions } : {}),
+      ...(systemText ? { instructions: systemText } : {}),
       store: false, // stateless: the whole context rides each call (replay-safe)
       stream: true, // MANDATORY on this backend
     },

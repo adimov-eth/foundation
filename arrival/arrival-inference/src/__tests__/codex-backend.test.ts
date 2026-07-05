@@ -115,6 +115,49 @@ describe("buildBody — the verified Codex wire contract", () => {
   it("sets store:false (stateless — the whole context rides each call, replay-safe)", () => {
     expect(buildBody(spec()).body.store).toBe(false);
   });
+
+  it("merges spec.system (the persona) into instructions, in persona · call · format order", () => {
+    // The hand-rolled system filter this pins against silently DROPPED the
+    // `(llm/with … :system …)` persona — model-bound AND content-keyed, so losing
+    // it changes what the inference MEANS, not just how it runs.
+    const prompt = JSON.stringify([
+      { role: "system", content: "call-level instruction" },
+      { role: "user", content: "ping" },
+    ]);
+    const schema = JSON.stringify(["object", ["ok", "boolean"]]);
+    const { body } = buildBody(spec({ prompt, system: "persona text", schema }));
+    const instructions = String(body.instructions);
+    const iPersona = instructions.indexOf("persona text");
+    const iCall = instructions.indexOf("call-level instruction");
+    const iFormat = instructions.indexOf("Return ONLY a JSON object");
+    expect(iPersona).toBeGreaterThanOrEqual(0);
+    expect(iCall).toBeGreaterThan(iPersona);
+    expect(iFormat).toBeGreaterThan(iCall);
+  });
+
+  it("carries a persona-only spec (no system turns in the prompt) as instructions", () => {
+    const { body } = buildBody(spec({ system: "be a pirate" }));
+    expect(body.instructions).toBe("be a pirate");
+  });
+
+  // ── EXCLUSION TRIPWIRES — flip these only after a LIVE probe ────────────────────
+  // max_output_tokens/temperature are standard *platform* Responses fields that have
+  // never been probed against the chatgpt.com/backend-api/codex gate (the contract
+  // that 400s on unaccepted models, non-stream, bare-string input). A rejected field
+  // would 400 EVERY call that sets it — the inference plane sets maxTokens routinely,
+  // so shipping unprobed bricks the backend. These pin the deliberate exclusion; see
+  // the KNOWN LIMITATION note on buildBody for the lift procedure.
+
+  it("TRIPWIRE: spec.maxTokens is deliberately NOT sent (unprobed against the live gate)", () => {
+    const { body } = buildBody(spec({ maxTokens: 512 }));
+    expect(body).not.toHaveProperty("max_output_tokens");
+    expect(body).not.toHaveProperty("max_tokens");
+  });
+
+  it("TRIPWIRE: spec.temperature is deliberately NOT sent (unprobed against the live gate)", () => {
+    const { body } = buildBody(spec({ temperature: 0 }));
+    expect(body).not.toHaveProperty("temperature");
+  });
 });
 
 // ── clientHeaders: the identity headers the backend gates on ──────────────────────

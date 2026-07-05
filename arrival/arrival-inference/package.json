@@ -112,7 +112,7 @@
   },
   "browserslist": {
     "node": [
-      "node >= 20"
+      "node >= 22"
     ]
   }
 }

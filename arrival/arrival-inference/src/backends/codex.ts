@@ -25,7 +25,7 @@
 // single-model hard gate; that was over-generalized from an incomplete probe set.)
 
 import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
-import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema } from "./_shared.js";
+import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema, streamGuard } from "./_shared.js";
 import { resolveCodexCredential, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
@@ -45,21 +45,6 @@ export interface CodexOptions {
   /** Override the fallback model (default {@link CODEX_MODEL}). Must be a
    *  {@link CODEX_MODELS} id or the backend will 400. */
   defaultModel?: string;
-}
-
-/** Strip a ```json … ``` fence if the model wrapped its JSON output. Exported for
- *  the unit test — the coercion is small but load-bearing on this schema-blind path.
- *  (String surgery, not a regex: the fence-matching pattern tripped the house
- *  super-linear-backtracking lint, and model output is attacker-adjacent input.) */
-export function stripFence(text: string): string {
-  const t = text.trim();
-  const nl = t.indexOf("\n");
-  if (nl === -1 || !t.endsWith("```")) return t;
-  const opener = t.slice(0, nl).trimEnd();
-  if (opener !== "```" && opener !== "```json") return t;
-  const body = t.slice(nl + 1, -3); // between the opener line and the closing fence
-  if (!body.endsWith("\n")) return t; // the closer must sit on its own line
-  return body.slice(0, -1);
 }
 
 /** Lower a ModelSpec into the Codex Responses request body (the verified shape).
@@ -114,97 +99,56 @@ export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): 
  *  exact bug class Hermes documents sidestepping).
  *
  *  `signal` is the CALLER's abort (infer-store releases the last subscriber →
- *  the billed Codex request must die, not run to completion). On top of it ride
- *  the same two watchdogs vercel.ts paid a war story for: an IDLE window re-armed
- *  on every event (a mid-generation stall is otherwise an infinite await — the
- *  openai SDK's timeout is cleared once response HEADERS arrive and never guards
- *  body reads) and a TOTAL deadline (a never-quite-idle stream would run
- *  unbounded). Same env knobs as vercel: ARRIVAL_INFER_IDLE_MS (default 180s),
- *  ARRIVAL_INFER_TOTAL_MS (default 15 min).
- *
- *  The combined signal goes INTO the SDK request, but the read loop also RACES
- *  every event against abort — an SDK (or fake) that ignores the signal still
- *  can't wedge us awaiting a `next()` that never settles. */
+ *  the billed Codex request must die, not run to completion). The shared
+ *  {@link streamGuard} rides on top of it: idle window re-armed on every event
+ *  (the openai SDK's timeout is cleared once response HEADERS arrive and never
+ *  guards body reads) + total deadline, and every stream step is RACED against
+ *  abort so an SDK (or fake) that ignores the signal still can't wedge us. */
 async function streamText(
   client: ResponsesClient,
   body: Record<string, unknown>,
   onDelta?: DeltaSink,
   signal?: AbortSignal,
 ): Promise<{ text: string; usage: CodexUsage | null; finish: string | null }> {
-  const idleMs = Number(process.env.ARRIVAL_INFER_IDLE_MS) || 180_000;
-  const totalMs = Number(process.env.ARRIVAL_INFER_TOTAL_MS) || 900_000;
-  const watchdog = new AbortController();
-  const combined = signal ? AbortSignal.any([signal, watchdog.signal]) : watchdog.signal;
-  let idleTimer: ReturnType<typeof setTimeout> | undefined;
-  const armIdle = (): void => {
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(
-      () => watchdog.abort(new Error(`codex idle ${idleMs}ms — stream stalled (aborted)`)),
-      idleMs,
-    );
-  };
-  const totalTimer = setTimeout(
-    () => watchdog.abort(new Error(`codex total ${totalMs}ms exceeded (aborted)`)),
-    totalMs,
-  );
-  // Reject the moment `combined` fires; the loop races this against each event so
-  // an abort can't be stranded behind a never-settling next(). Pre-registered once
-  // (not per-event) and given a no-op catch so an abort AFTER a clean finish (or
-  // between events) can't surface as an unhandled rejection.
-  const aborted = new Promise<never>((_resolve, reject) => {
-    const raise = (): void =>
-      reject(combined.reason instanceof Error ? combined.reason : new DOMException("aborted", "AbortError"));
-    if (combined.aborted) raise();
-    else combined.addEventListener("abort", raise, { once: true });
-  });
-  aborted.catch(() => {});
-
+  const guard = streamGuard("codex", signal);
   let text = "";
   let usage: CodexUsage | null = null;
   let finish: string | null = null;
   try {
-    const events = await Promise.race([
-      client.responses.create({ ...body, stream: true }, { signal: combined }),
-      aborted,
-    ]);
-    armIdle(); // first-event deadline
+    const events = await guard.race(client.responses.create(body, { signal: guard.signal }));
+    guard.armIdle(); // first-event deadline
     const it = events[Symbol.asyncIterator]();
     for (;;) {
-      const r = await Promise.race([it.next(), aborted]);
+      const r = await guard.race(it.next());
       if (r.done) break;
       const ev = r.value;
-      armIdle(); // ANY event counts as liveness — deltas, reasoning, keep-alives
-      handle(ev);
+      guard.armIdle(); // ANY event counts as liveness — deltas, reasoning, keep-alives
+      if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") {
+        text += ev.delta;
+        onDelta?.(ev.delta);
+      } else if (ev.type === "response.completed" && ev.response?.usage) {
+        usage = ev.response.usage;
+      } else if (ev.type === "response.incomplete") {
+        // A completed-but-truncated stream. NORMALIZE a length/token-cap cutoff to the
+        // sentinel "length" — that's the ONLY value `coerceModelJson` treats as "do NOT
+        // jsonrepair" (_shared.ts:62); the repair path would otherwise splice a truncated
+        // JSON into garbage-that-parses instead of surfacing the truncation. (An adversarial
+        // test caught this: without the normalization, a length-cut stream was silently
+        // "recovered" into a wrong value rather than raising "raise max tokens".)
+        const reason = ev.response?.incomplete_details?.reason ?? "incomplete";
+        finish = /token|length|max/i.test(reason) ? "length" : reason;
+      } else if (ev.type === "response.failed" || ev.type === "response.error") {
+        // A server FAILURE event (policy/quota/backend) — the old loop dropped these,
+        // so a blocked call became an empty-string "success". Surface the upstream cause.
+        const err = ev.response?.error ?? ev.error;
+        const msg = err?.message ?? err?.code ?? "unknown error";
+        throw new Error(`Codex Responses stream failed: ${msg}`);
+      }
     }
   } finally {
-    if (idleTimer) clearTimeout(idleTimer);
-    clearTimeout(totalTimer);
+    guard.done();
   }
   return { text, usage, finish };
-
-  function handle(ev: CodexEvent): void {
-    if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") {
-      text += ev.delta;
-      onDelta?.(ev.delta);
-    } else if (ev.type === "response.completed" && ev.response?.usage) {
-      usage = ev.response.usage;
-    } else if (ev.type === "response.incomplete") {
-      // A completed-but-truncated stream. NORMALIZE a length/token-cap cutoff to the
-      // sentinel "length" — that's the ONLY value `coerceModelJson` treats as "do NOT
-      // jsonrepair" (_shared.ts:62); the repair path would otherwise splice a truncated
-      // JSON into garbage-that-parses instead of surfacing the truncation. (An adversarial
-      // test caught this: without the normalization, a length-cut stream was silently
-      // "recovered" into a wrong value rather than raising "raise max tokens".)
-      const reason = ev.response?.incomplete_details?.reason ?? "incomplete";
-      finish = /token|length|max/i.test(reason) ? "length" : reason;
-    } else if (ev.type === "response.failed" || ev.type === "response.error") {
-      // A server FAILURE event (policy/quota/backend) — the old loop dropped these,
-      // so a blocked call became an empty-string "success". Surface the upstream cause.
-      const err = ev.response?.error ?? ev.error;
-      const msg = err?.message ?? err?.code ?? "unknown error";
-      throw new Error(`Codex Responses stream failed: ${msg}`);
-    }
-  }
 }
 
 interface CodexUsage {
@@ -274,34 +218,26 @@ export interface CodexDeps {
   makeClient?: (cred: CodexCredential) => ResponsesClient;
 }
 
-/** The production makeClient: lazily import the openai SDK once (the loader promise
- *  is cached per backend instance), arm it with the credential's token + identity
- *  headers, and adapt it to the sync {@link ResponsesClient} surface. */
-function sdkClientFactory(): (cred: CodexCredential) => ResponsesClient {
-  let OpenAICtor: Promise<new (o: unknown) => unknown> | null = null;
-  return (cred: CodexCredential): ResponsesClient => {
-    // A tiny thunk that defers to the loaded SDK; the outer closure caches the loader.
-    const client = (async () => {
-      OpenAICtor ??= import("openai").then((m) => m.default as unknown as new (o: unknown) => unknown);
-      const OpenAI = await OpenAICtor;
-      return new OpenAI({
+/** The production makeClient: lazily import the openai SDK (the ES module registry
+ *  caches the load), arm it with the credential's token + identity headers, and adapt
+ *  it to the {@link ResponsesClient} surface. `reqOpts` must pass through — it
+ *  carries the abort signal (caller + watchdogs). */
+const makeSdkClient = (cred: CodexCredential): ResponsesClient => ({
+  responses: {
+    create: async (body, reqOpts) => {
+      const { default: OpenAI } = (await import("openai")) as unknown as {
+        default: new (o: unknown) => ResponsesClient;
+      };
+      const armed = new OpenAI({
         apiKey: cred.accessToken,
         baseURL: cred.baseURL,
         defaultHeaders: clientHeaders(cred),
         maxRetries: 0, // the inference plane owns retry
-      }) as ResponsesClient;
-    })();
-    // `reqOpts` must pass through — it carries the abort signal (caller + watchdogs).
-    return {
-      responses: {
-        create: async (body, reqOpts) => {
-          const armed = await client;
-          return armed.responses.create(body, reqOpts);
-        },
-      },
-    };
-  };
-}
+      });
+      return armed.responses.create(body, reqOpts);
+    },
+  },
+});
 
 /**
  * A backend over the ChatGPT-subscription Codex Responses API. Requires a Codex
@@ -315,7 +251,7 @@ function sdkClientFactory(): (cred: CodexCredential) => ResponsesClient {
  */
 export function codexBackend(opts: CodexOptions = {}, deps: CodexDeps = {}): ModelBackend {
   const resolveCredential = deps.resolveCredential ?? resolveCodexCredential;
-  const makeClient = deps.makeClient ?? sdkClientFactory();
+  const makeClient = deps.makeClient ?? makeSdkClient;
 
   const defaultModel = opts.defaultModel ?? CODEX_MODEL;
   const run = async (spec: ModelSpec, onDelta?: DeltaSink, signal?: AbortSignal): Promise<Completion> => {

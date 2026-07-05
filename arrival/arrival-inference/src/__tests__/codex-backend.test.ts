@@ -11,6 +11,10 @@
  * plus the SSE assembly, schema-blind JSON coercion, per-run credential refresh,
  * and usage mapping. No network: the client + credential seams are injected.
  */
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -18,11 +22,11 @@ import {
   clientHeaders,
   codexBackend,
   completeVia,
-  stripFence,
   CODEX_MODEL,
   type CodexCredential,
   type ResponsesClient,
 } from "../backends/codex.js";
+import { resolveCodexCredential } from "../backends/codex-auth.js";
 import type { ModelSpec } from "../model.js";
 
 const spec = (over: Partial<ModelSpec> = {}): ModelSpec => ({
@@ -168,21 +172,9 @@ describe("clientHeaders", () => {
   });
 });
 
-// ── stripFence: schema-blind JSON recovery ────────────────────────────────────────
-
-describe("stripFence", () => {
-  it("unwraps a ```json fence", () => {
-    expect(stripFence('```json\n{"a":1}\n```')).toBe('{"a":1}');
-  });
-  it("unwraps a bare ``` fence", () => {
-    expect(stripFence('```\n{"a":1}\n```')).toBe('{"a":1}');
-  });
-  it("passes through unfenced text (trimmed)", () => {
-    expect(stripFence('  {"a":1}  ')).toBe('{"a":1}');
-  });
-});
-
 // ── completeVia: SSE assembly + parse + usage ─────────────────────────────────────
+// (Fence-stripping is owned by the shared coercion ladder — pinned by the
+//  "recovers a fenced structured response" test below, not a local helper.)
 
 describe("completeVia — stream assembly", () => {
   it("assembles text from output_text deltas and maps usage", async () => {
@@ -443,148 +435,105 @@ describe("completeVia — server failure + malformed output are surfaced, not sw
   });
 });
 
-// ── single-flight refresh (the CONFIRMED HIGH race) ──────────────────────────────
+// ── refresh path against the REAL codex-auth module (temp CODEX_HOME, stubbed fetch;
+//    never touches a real credential) ───────────────────────────────────────────────
 
-describe("resolveCodexCredential — concurrent refresh is single-flight", () => {
-  it("collapses N concurrent expiring-token resolves onto ONE refresh POST", async () => {
-    // This exercises the real codex-auth module against a stubbed fetch + a fake
-    // ~/.codex/auth.json, proving two parallel resolves don't both POST the single-use
-    // refresh_token. Uses a temp CODEX_HOME so it never touches the real credential.
-    const os = await import("node:os");
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
+/** A decodable fake JWT carrying `exp` and the chatgpt account claim. */
+const codexJwt = (exp: number): string =>
+  `x.${Buffer.from(JSON.stringify({ exp, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
 
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
-    const prevHome = process.env.CODEX_HOME;
-    process.env.CODEX_HOME = dir;
-    // An EXPIRED access token (exp in the past) so both resolves take the refresh path.
-    const expiredJwt = `x.${Buffer.from(JSON.stringify({ exp: 1, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    fs.writeFileSync(
-      path.join(dir, "auth.json"),
-      JSON.stringify({ tokens: { access_token: expiredJwt, refresh_token: "rt-1", account_id: "acct-1" } }),
+const FRESH_JWT = codexJwt(9_999_999_999);
+
+/** Run `fn` with a temp CODEX_HOME holding `accessToken` + rt-1, and a stubbed
+ *  refresh endpoint answering `refreshJson`. Owns the save/restore of CODEX_HOME
+ *  and global fetch (a divergent restore leaks into every later test) and hands
+ *  back the auth-file path plus a live count of refresh POSTs. */
+async function withCodexAuth(
+  opts: { accessToken: string; mode?: number; refreshJson: Record<string, unknown> },
+  fn: (ctx: { authFile: string; posts: () => number }) => Promise<void>,
+): Promise<void> {
+  const dir = mkdtempSync(path.join(tmpdir(), "codex-auth-test-"));
+  const prevHome = process.env.CODEX_HOME;
+  process.env.CODEX_HOME = dir;
+  const authFile = path.join(dir, "auth.json");
+  writeFileSync(
+    authFile,
+    JSON.stringify({ tokens: { access_token: opts.accessToken, refresh_token: "rt-1", account_id: "acct-1" } }),
+    opts.mode === undefined ? {} : { mode: opts.mode },
+  );
+  let posts = 0;
+  const realFetch = globalThis.fetch;
+  // @ts-expect-error test stub
+  globalThis.fetch = async () => {
+    posts += 1;
+    return { ok: true, status: 200, json: async () => opts.refreshJson } as Response;
+  };
+  try {
+    await fn({ authFile, posts: () => posts });
+  } finally {
+    globalThis.fetch = realFetch;
+    if (prevHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = prevHome;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+describe("resolveCodexCredential — the refresh path", () => {
+  it("collapses N concurrent expiring-token resolves onto ONE refresh POST (single-flight)", async () => {
+    // The refresh_token is SINGLE-USE: two parallel resolves must not both POST it.
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2" } },
+      async ({ posts }) => {
+        const [a, b, c] = await Promise.all([
+          resolveCodexCredential({}),
+          resolveCodexCredential({}),
+          resolveCodexCredential({}),
+        ]);
+        expect(posts()).toBe(1);
+        for (const cred of [a, b, c]) expect(cred.accessToken).toBe(FRESH_JWT);
+      },
     );
-
-    let posts = 0;
-    const realFetch = globalThis.fetch;
-    // @ts-expect-error test stub
-    globalThis.fetch = async () => {
-      posts += 1;
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({ access_token: freshJwt, refresh_token: "rt-2" }),
-      } as Response;
-    };
-    try {
-      const [a, b, c] = await Promise.all([
-        resolveCodexCredential({}),
-        resolveCodexCredential({}),
-        resolveCodexCredential({}),
-      ]);
-      // The single-use refresh_token was POSTed exactly once despite three callers.
-      expect(posts).toBe(1);
-      expect(a.accessToken).toBe(freshJwt);
-      expect(b.accessToken).toBe(freshJwt);
-      expect(c.accessToken).toBe(freshJwt);
-    } finally {
-      globalThis.fetch = realFetch;
-      if (prevHome === undefined) delete process.env.CODEX_HOME;
-      else process.env.CODEX_HOME = prevHome;
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
   });
 
   it("treats a token with NO readable exp as expiring — refresh recovers it", async () => {
     // A malformed/exp-less access token used to read as "fresh forever": never
     // refreshed, every call 401'd at the backend, no recovery short of a manual
     // `codex login`. It must take the refresh path instead.
-    const os = await import("node:os");
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
-
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
-    const prevHome = process.env.CODEX_HOME;
-    process.env.CODEX_HOME = dir;
-    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    fs.writeFileSync(
-      path.join(dir, "auth.json"),
-      // access_token is NOT a decodable JWT — no exp claim can be read from it.
-      JSON.stringify({ tokens: { access_token: "not-a-jwt", refresh_token: "rt-1", account_id: "acct-1" } }),
+    await withCodexAuth(
+      { accessToken: "not-a-jwt", refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2" } },
+      async ({ posts }) => {
+        const out = await resolveCodexCredential({});
+        expect(posts()).toBe(1); // the broken token took the refresh path…
+        expect(out.accessToken).toBe(FRESH_JWT); // …and the caller got a LIVE credential
+      },
     );
-
-    let posts = 0;
-    const realFetch = globalThis.fetch;
-    // @ts-expect-error test stub
-    globalThis.fetch = async () => {
-      posts += 1;
-      return { ok: true, status: 200, json: async () => ({ access_token: freshJwt, refresh_token: "rt-2" }) } as Response;
-    };
-    try {
-      const out = await resolveCodexCredential({});
-      expect(posts).toBe(1); // the broken token took the refresh path…
-      expect(out.accessToken).toBe(freshJwt); // …and the caller got a LIVE credential
-    } finally {
-      globalThis.fetch = realFetch;
-      if (prevHome === undefined) delete process.env.CODEX_HOME;
-      else process.env.CODEX_HOME = prevHome;
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
   });
 
   it("persists the ROTATED token set to disk at mode 0600 (write-through contract)", async () => {
     // Two properties of the same write, asserted against the REAL file:
-    //  • write-through — the refresh_token is SINGLE-USE, so if the rotated set only
-    //    lives in memory, the next process reads the burned rt and bricks the session
-    //    until manual `codex login`;
+    //  • write-through — if the rotated set only lives in memory, the next process
+    //    reads the burned single-use rt and bricks the session until `codex login`;
     //  • mode 0600 — `codex login` creates auth.json owner-only, and the atomic
     //    temp+rename REPLACES the inode, so an unmoded temp file would silently
     //    publish a live OAuth credential to local users on the first refresh.
-    const os = await import("node:os");
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
-
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
-    const prevHome = process.env.CODEX_HOME;
-    process.env.CODEX_HOME = dir;
-    const expiredJwt = `x.${Buffer.from(JSON.stringify({ exp: 1, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
-    const authFile = path.join(dir, "auth.json");
-    // 0600 on disk, as `codex login` leaves it — the refresh must not loosen it.
-    fs.writeFileSync(
-      authFile,
-      JSON.stringify({ tokens: { access_token: expiredJwt, refresh_token: "rt-1", account_id: "acct-1" } }),
-      { mode: 0o600 },
+    await withCodexAuth(
+      {
+        accessToken: codexJwt(1),
+        mode: 0o600, // as `codex login` leaves it — the refresh must not loosen it
+        refreshJson: { access_token: FRESH_JWT, refresh_token: "rt-2", id_token: "id-2" },
+      },
+      async ({ authFile }) => {
+        await resolveCodexCredential({});
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { access_token: string; refresh_token: string; id_token?: string };
+          last_refresh?: string;
+        };
+        expect(onDisk.tokens.access_token).toBe(FRESH_JWT);
+        expect(onDisk.tokens.refresh_token).toBe("rt-2");
+        expect(onDisk.tokens.id_token).toBe("id-2");
+        expect(onDisk.last_refresh).toBeTruthy();
+        expect(statSync(authFile).mode & 0o777).toBe(0o600);
+      },
     );
-
-    const realFetch = globalThis.fetch;
-    // @ts-expect-error test stub
-    globalThis.fetch = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ access_token: freshJwt, refresh_token: "rt-2", id_token: "id-2" }),
-    }) as Response;
-    try {
-      await resolveCodexCredential({});
-      const onDisk = JSON.parse(fs.readFileSync(authFile, "utf8")) as {
-        tokens: { access_token: string; refresh_token: string; id_token?: string };
-        last_refresh?: string;
-      };
-      // Write-through: the FULL rotated set reached the file, not just memory.
-      expect(onDisk.tokens.access_token).toBe(freshJwt);
-      expect(onDisk.tokens.refresh_token).toBe("rt-2");
-      expect(onDisk.tokens.id_token).toBe("id-2");
-      expect(onDisk.last_refresh).toBeTruthy();
-      // Perms: still owner-only after the temp+rename replaced the inode.
-      expect(fs.statSync(authFile).mode & 0o777).toBe(0o600);
-    } finally {
-      globalThis.fetch = realFetch;
-      if (prevHome === undefined) delete process.env.CODEX_HOME;
-      else process.env.CODEX_HOME = prevHome;
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
   });
 });

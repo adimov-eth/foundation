@@ -66,25 +66,25 @@ const textEvents = (text: string, usage?: { input_tokens: number; output_tokens:
 
 describe("buildBody — the verified Codex wire contract", () => {
   it("falls back to the default model when the program named a NON-Codex token", () => {
-    const { body } = buildBody(spec({ model: "gpt-4o" }));
+    const body = buildBody(spec({ model: "gpt-4o" }));
     expect(body.model).toBe(CODEX_MODEL); // gpt-4o isn't accepted → default (cheap spark tier)
   });
 
   it("HONORS spec.model when it names an accepted Codex model (gpt-5.5 / spark)", () => {
-    expect(buildBody(spec({ model: "gpt-5.5" })).body.model).toBe("gpt-5.5");
-    expect(buildBody(spec({ model: "gpt-5.3-codex-spark" })).body.model).toBe("gpt-5.3-codex-spark");
+    expect(buildBody(spec({ model: "gpt-5.5" })).model).toBe("gpt-5.5");
+    expect(buildBody(spec({ model: "gpt-5.3-codex-spark" })).model).toBe("gpt-5.3-codex-spark");
   });
 
   it("respects an explicit defaultModel override", () => {
-    expect(buildBody(spec({ model: "unknown" }), "gpt-5.5").body.model).toBe("gpt-5.5");
+    expect(buildBody(spec({ model: "unknown" }), "gpt-5.5").model).toBe("gpt-5.5");
   });
 
   it("sets stream:true (the backend 400s 'Stream must be set to true' otherwise)", () => {
-    expect(buildBody(spec()).body.stream).toBe(true);
+    expect(buildBody(spec()).stream).toBe(true);
   });
 
   it("wraps input as a typed input_text list (a bare string 400s 'Input must be a list')", () => {
-    const { body } = buildBody(spec({ prompt: "hi there" }));
+    const body = buildBody(spec({ prompt: "hi there" }));
     expect(body.input).toEqual([{ role: "user", content: [{ type: "input_text", text: "hi there" }] }]);
   });
 
@@ -93,27 +93,24 @@ describe("buildBody — the verified Codex wire contract", () => {
       { role: "system", content: "be terse" },
       { role: "user", content: "ping" },
     ]);
-    const { body } = buildBody(spec({ prompt }));
+    const body = buildBody(spec({ prompt }));
     expect(body.instructions).toBe("be terse");
     expect(body.input).toEqual([{ role: "user", content: [{ type: "input_text", text: "ping" }] }]);
   });
 
-  it("appends a schema preamble to instructions and flags structured, when a schema is present", () => {
+  it("appends a schema preamble to instructions when a schema is present", () => {
     const schema = JSON.stringify(["object", ["name", "string"]]);
-    const { body, structured } = buildBody(spec({ schema }));
-    expect(structured).toBe(true);
+    const body = buildBody(spec({ schema }));
     expect(String(body.instructions)).toContain("Return ONLY a JSON object");
     expect(String(body.instructions)).toContain('"name"');
   });
 
-  it("is not structured and carries no instructions for a plain, schema-less prompt", () => {
-    const { body, structured } = buildBody(spec());
-    expect(structured).toBe(false);
-    expect(body.instructions).toBeUndefined();
+  it("carries no instructions for a plain, schema-less prompt", () => {
+    expect(buildBody(spec()).instructions).toBeUndefined();
   });
 
   it("sets store:false (stateless — the whole context rides each call, replay-safe)", () => {
-    expect(buildBody(spec()).body.store).toBe(false);
+    expect(buildBody(spec()).store).toBe(false);
   });
 
   it("merges spec.system (the persona) into instructions, in persona · call · format order", () => {
@@ -125,7 +122,7 @@ describe("buildBody — the verified Codex wire contract", () => {
       { role: "user", content: "ping" },
     ]);
     const schema = JSON.stringify(["object", ["ok", "boolean"]]);
-    const { body } = buildBody(spec({ prompt, system: "persona text", schema }));
+    const body = buildBody(spec({ prompt, system: "persona text", schema }));
     const instructions = String(body.instructions);
     const iPersona = instructions.indexOf("persona text");
     const iCall = instructions.indexOf("call-level instruction");
@@ -136,7 +133,7 @@ describe("buildBody — the verified Codex wire contract", () => {
   });
 
   it("carries a persona-only spec (no system turns in the prompt) as instructions", () => {
-    const { body } = buildBody(spec({ system: "be a pirate" }));
+    const body = buildBody(spec({ system: "be a pirate" }));
     expect(body.instructions).toBe("be a pirate");
   });
 
@@ -149,13 +146,13 @@ describe("buildBody — the verified Codex wire contract", () => {
   // the KNOWN LIMITATION note on buildBody for the lift procedure.
 
   it("TRIPWIRE: spec.maxTokens is deliberately NOT sent (unprobed against the live gate)", () => {
-    const { body } = buildBody(spec({ maxTokens: 512 }));
+    const body = buildBody(spec({ maxTokens: 512 }));
     expect(body).not.toHaveProperty("max_output_tokens");
     expect(body).not.toHaveProperty("max_tokens");
   });
 
   it("TRIPWIRE: spec.temperature is deliberately NOT sent (unprobed against the live gate)", () => {
-    const { body } = buildBody(spec({ temperature: 0 }));
+    const body = buildBody(spec({ temperature: 0 }));
     expect(body).not.toHaveProperty("temperature");
   });
 });
@@ -491,6 +488,44 @@ describe("resolveCodexCredential — concurrent refresh is single-flight", () =>
       expect(a.accessToken).toBe(freshJwt);
       expect(b.accessToken).toBe(freshJwt);
       expect(c.accessToken).toBe(freshJwt);
+    } finally {
+      globalThis.fetch = realFetch;
+      if (prevHome === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = prevHome;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("treats a token with NO readable exp as expiring — refresh recovers it", async () => {
+    // A malformed/exp-less access token used to read as "fresh forever": never
+    // refreshed, every call 401'd at the backend, no recovery short of a manual
+    // `codex login`. It must take the refresh path instead.
+    const os = await import("node:os");
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
+    const prevHome = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = dir;
+    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
+    fs.writeFileSync(
+      path.join(dir, "auth.json"),
+      // access_token is NOT a decodable JWT — no exp claim can be read from it.
+      JSON.stringify({ tokens: { access_token: "not-a-jwt", refresh_token: "rt-1", account_id: "acct-1" } }),
+    );
+
+    let posts = 0;
+    const realFetch = globalThis.fetch;
+    // @ts-expect-error test stub
+    globalThis.fetch = async () => {
+      posts += 1;
+      return { ok: true, status: 200, json: async () => ({ access_token: freshJwt, refresh_token: "rt-2" }) } as Response;
+    };
+    try {
+      const out = await resolveCodexCredential({});
+      expect(posts).toBe(1); // the broken token took the refresh path…
+      expect(out.accessToken).toBe(freshJwt); // …and the caller got a LIVE credential
     } finally {
       globalThis.fetch = realFetch;
       if (prevHome === undefined) delete process.env.CODEX_HOME;

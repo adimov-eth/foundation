@@ -26,7 +26,7 @@
 
 import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
 import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema } from "./_shared.js";
-import { resolveCodexCredential, CODEX_BASE_URL, type CodexCredential } from "./codex-auth.js";
+import { resolveCodexCredential, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
  *  tier is the cheaper/faster one — prefer it for tests and light work. */
@@ -48,10 +48,18 @@ export interface CodexOptions {
 }
 
 /** Strip a ```json … ``` fence if the model wrapped its JSON output. Exported for
- *  the unit test — the coercion is small but load-bearing on this schema-blind path. */
+ *  the unit test — the coercion is small but load-bearing on this schema-blind path.
+ *  (String surgery, not a regex: the fence-matching pattern tripped the house
+ *  super-linear-backtracking lint, and model output is attacker-adjacent input.) */
 export function stripFence(text: string): string {
-  const m = /^\s*```(?:json)?\s*\n([\s\S]*?)\n```\s*$/.exec(text.trim());
-  return m ? m[1] : text.trim();
+  const t = text.trim();
+  const nl = t.indexOf("\n");
+  if (nl === -1 || !t.endsWith("```")) return t;
+  const opener = t.slice(0, nl).trimEnd();
+  if (opener !== "```" && opener !== "```json") return t;
+  const body = t.slice(nl + 1, -3); // between the opener line and the closing fence
+  if (!body.endsWith("\n")) return t; // the closer must sit on its own line
+  return body.slice(0, -1);
 }
 
 /** Lower a ModelSpec into the Codex Responses request body (the verified shape).
@@ -69,10 +77,7 @@ export function stripFence(text: string): string {
  *  endpoint default. To lift: probe each field live with a `codex login`
  *  credential, then thread it here and flip the exclusion tripwires in
  *  codex-backend.test.ts. */
-export function buildBody(
-  spec: ModelSpec,
-  defaultModel: string = CODEX_MODEL,
-): { body: Record<string, unknown>; structured: boolean } {
+export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): Record<string, unknown> {
   const messages = parseChatPrompt(spec.prompt) ?? [{ role: "user" as const, content: spec.prompt }];
 
   const schema = renderSchema(spec.schema);
@@ -94,14 +99,11 @@ export function buildBody(
   }));
 
   return {
-    body: {
-      model: codexModelFor(spec.model, defaultModel),
-      input,
-      ...(systemText ? { instructions: systemText } : {}),
-      store: false, // stateless: the whole context rides each call (replay-safe)
-      stream: true, // MANDATORY on this backend
-    },
-    structured: Boolean(schema),
+    model: codexModelFor(spec.model, defaultModel),
+    input,
+    ...(systemText ? { instructions: systemText } : {}),
+    store: false, // stateless: the whole context rides each call (replay-safe)
+    stream: true, // MANDATORY on this backend
   };
 }
 
@@ -149,7 +151,7 @@ async function streamText(
   // an abort can't be stranded behind a never-settling next(). Pre-registered once
   // (not per-event) and given a no-op catch so an abort AFTER a clean finish (or
   // between events) can't surface as an unhandled rejection.
-  const aborted = new Promise<never>((_, reject) => {
+  const aborted = new Promise<never>((_resolve, reject) => {
     const raise = (): void =>
       reject(combined.reason instanceof Error ? combined.reason : new DOMException("aborted", "AbortError"));
     if (combined.aborted) raise();
@@ -167,7 +169,7 @@ async function streamText(
     ]);
     armIdle(); // first-event deadline
     const it = events[Symbol.asyncIterator]();
-    while (true) {
+    for (;;) {
       const r = await Promise.race([it.next(), aborted]);
       if (r.done) break;
       const ev = r.value;
@@ -205,8 +207,14 @@ async function streamText(
   }
 }
 
-interface CodexUsage { input_tokens?: number; output_tokens?: number }
-interface CodexError { message?: string; code?: string }
+interface CodexUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+}
+interface CodexError {
+  message?: string;
+  code?: string;
+}
 interface CodexEvent {
   type: string;
   delta?: string;
@@ -238,7 +246,7 @@ export async function completeVia(
   defaultModel: string = CODEX_MODEL,
   signal?: AbortSignal,
 ): Promise<Completion> {
-  const { body } = buildBody(spec, defaultModel);
+  const body = buildBody(spec, defaultModel);
   const { text, usage, finish } = await streamText(client, body, onDelta, signal);
   // Route through the shared, tolerant coercion ladder (fenced / lightly-malformed /
   // reasoning-channel recovery) which raises a LEGIBLE cause on failure — instead of a
@@ -266,6 +274,35 @@ export interface CodexDeps {
   makeClient?: (cred: CodexCredential) => ResponsesClient;
 }
 
+/** The production makeClient: lazily import the openai SDK once (the loader promise
+ *  is cached per backend instance), arm it with the credential's token + identity
+ *  headers, and adapt it to the sync {@link ResponsesClient} surface. */
+function sdkClientFactory(): (cred: CodexCredential) => ResponsesClient {
+  let OpenAICtor: Promise<new (o: unknown) => unknown> | null = null;
+  return (cred: CodexCredential): ResponsesClient => {
+    // A tiny thunk that defers to the loaded SDK; the outer closure caches the loader.
+    const client = (async () => {
+      OpenAICtor ??= import("openai").then((m) => m.default as unknown as new (o: unknown) => unknown);
+      const OpenAI = await OpenAICtor;
+      return new OpenAI({
+        apiKey: cred.accessToken,
+        baseURL: cred.baseURL,
+        defaultHeaders: clientHeaders(cred),
+        maxRetries: 0, // the inference plane owns retry
+      }) as ResponsesClient;
+    })();
+    // `reqOpts` must pass through — it carries the abort signal (caller + watchdogs).
+    return {
+      responses: {
+        create: async (body, reqOpts) => {
+          const armed = await client;
+          return armed.responses.create(body, reqOpts);
+        },
+      },
+    };
+  };
+}
+
 /**
  * A backend over the ChatGPT-subscription Codex Responses API. Requires a Codex
  * credential in ~/.codex/auth.json (run `codex login`). Bills against the ChatGPT
@@ -278,29 +315,7 @@ export interface CodexDeps {
  */
 export function codexBackend(opts: CodexOptions = {}, deps: CodexDeps = {}): ModelBackend {
   const resolveCredential = deps.resolveCredential ?? resolveCodexCredential;
-
-  const makeClient =
-    deps.makeClient ??
-    (() => {
-      // Lazily import the openai SDK once; reuse the loader across calls.
-      let OpenAICtor: Promise<new (o: unknown) => unknown> | null = null;
-      return (cred: CodexCredential): ResponsesClient => {
-        // A tiny thunk that defers to the loaded SDK; the outer closure caches it.
-        const client = (async () => {
-          OpenAICtor ??= import("openai").then((m) => m.default as unknown as new (o: unknown) => unknown);
-          const OpenAI = await OpenAICtor;
-          return new OpenAI({
-            apiKey: cred.accessToken,
-            baseURL: cred.baseURL ?? CODEX_BASE_URL,
-            defaultHeaders: clientHeaders(cred),
-            maxRetries: 0, // the inference plane owns retry
-          }) as ResponsesClient;
-        })();
-        // Adapt the async client to the sync ResponsesClient surface. `opts` must
-        // pass through — it carries the abort signal (caller + watchdogs).
-        return { responses: { create: async (body, opts) => (await client).responses.create(body, opts) } };
-      };
-    })();
+  const makeClient = deps.makeClient ?? sdkClientFactory();
 
   const defaultModel = opts.defaultModel ?? CODEX_MODEL;
   const run = async (spec: ModelSpec, onDelta?: DeltaSink, signal?: AbortSignal): Promise<Completion> => {

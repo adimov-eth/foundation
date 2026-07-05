@@ -181,6 +181,122 @@ describe("completeVia — stream assembly", () => {
   });
 });
 
+// ── abort + stall watchdogs (the vercel.ts war-story class, on the codex path) ────
+//
+// The openai SDK's request timeout is CLEARED once response headers arrive — it
+// never guards body reads — so a stalled Codex SSE stream was an infinite await.
+// And the caller's AbortSignal (infer-store's subscriber-refcount controller) was
+// dropped entirely: last-subscriber release left a live BILLED stream. These pin
+// both: the signal reaches the request, and idle/total watchdogs cover the read
+// loop even against a stream that IGNORES the signal.
+
+describe("completeVia — caller abort + idle/total watchdogs", () => {
+  it("rejects on CALLER abort mid-stream, even when the stream ignores the signal", async () => {
+    // One delta arrives, then next() never settles AND the signal is ignored — the
+    // worst case. The read loop must still unwind via its abort race.
+    let first = true;
+    const client: ResponsesClient = {
+      responses: {
+        create: async () => ({
+          [Symbol.asyncIterator]: () => ({
+            next: () =>
+              first
+                ? ((first = false),
+                  Promise.resolve({ done: false as const, value: { type: "response.output_text.delta", delta: "a" } }))
+                : new Promise<never>(() => {}),
+          }),
+        }),
+      },
+    };
+    const ac = new AbortController();
+    const p = completeVia(client, spec(), () => ac.abort(new Error("last subscriber released")), undefined, ac.signal);
+    await expect(p).rejects.toThrow(/last subscriber released/);
+  });
+
+  it("threads the caller's signal into the SDK request options (codexBackend.stream)", async () => {
+    let seen: AbortSignal | undefined;
+    const client: ResponsesClient = {
+      responses: {
+        create: async (_body, opts) => {
+          seen = opts?.signal;
+          return (async function* () {
+            yield { type: "response.output_text.delta", delta: "ok" } as never;
+            yield { type: "response.completed", response: { usage: { input_tokens: 1, output_tokens: 1 } } } as never;
+          })();
+        },
+      },
+    };
+    const backend = codexBackend({}, { resolveCredential: async () => cred, makeClient: () => client });
+    const ac = new AbortController();
+    await backend.stream!(spec(), () => {}, ac.signal);
+    expect(seen).toBeInstanceOf(AbortSignal);
+    // The request signal is the COMBINED one — it must follow the caller's abort.
+    ac.abort();
+    expect(seen!.aborted).toBe(true);
+  });
+
+  it("aborts a STALLED stream at the idle window (silent 0%-CPU wedge)", async () => {
+    process.env.ARRIVAL_INFER_IDLE_MS = "40";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () => ({
+            [Symbol.asyncIterator]: () => ({ next: () => new Promise<never>(() => {}) }),
+          }),
+        },
+      };
+      await expect(completeVia(client, spec())).rejects.toThrow(/idle 40ms/);
+    } finally {
+      delete process.env.ARRIVAL_INFER_IDLE_MS;
+    }
+  });
+
+  it("aborts a never-idle but unbounded stream at the TOTAL deadline", async () => {
+    process.env.ARRIVAL_INFER_TOTAL_MS = "60";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () =>
+            (async function* () {
+              // Emits forever, fast enough to never trip the idle window.
+              while (true) {
+                await new Promise((r) => setTimeout(r, 5));
+                yield { type: "response.output_text.delta", delta: "x" } as never;
+              }
+            })(),
+        },
+      };
+      await expect(completeVia(client, spec())).rejects.toThrow(/total 60ms/);
+    } finally {
+      delete process.env.ARRIVAL_INFER_TOTAL_MS;
+    }
+  });
+
+  it("a slow but ACTIVE stream survives — the idle window re-arms on every event", async () => {
+    process.env.ARRIVAL_INFER_IDLE_MS = "120";
+    try {
+      const client: ResponsesClient = {
+        responses: {
+          create: async () =>
+            (async function* () {
+              for (const d of ["a", "b", "c", "d"]) {
+                // Each gap (40ms) is under the window; the TOTAL run (160ms) is over
+                // it — only a re-armed watchdog passes this while a fixed one fails.
+                await new Promise((r) => setTimeout(r, 40));
+                yield { type: "response.output_text.delta", delta: d } as never;
+              }
+              yield { type: "response.completed", response: { usage: { input_tokens: 1, output_tokens: 4 } } } as never;
+            })(),
+        },
+      };
+      const out = await completeVia(client, spec());
+      expect(out.value).toBe("abcd");
+    } finally {
+      delete process.env.ARRIVAL_INFER_IDLE_MS;
+    }
+  });
+});
+
 // ── codexBackend: per-run credential resolution (the freshness invariant) ─────────
 
 describe("codexBackend — resolves the credential PER RUN", () => {

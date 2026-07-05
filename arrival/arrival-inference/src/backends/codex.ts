@@ -92,17 +92,78 @@ export function buildBody(
  *  raw SSE events. Assemble text from `output_text.delta`, usage off `completed`.
  *  We read the RAW events (not the SDK's typed `.stream()` helper, which
  *  reconstructs from `response.output` — a field this backend can leave null; the
- *  exact bug class Hermes documents sidestepping). */
+ *  exact bug class Hermes documents sidestepping).
+ *
+ *  `signal` is the CALLER's abort (infer-store releases the last subscriber →
+ *  the billed Codex request must die, not run to completion). On top of it ride
+ *  the same two watchdogs vercel.ts paid a war story for: an IDLE window re-armed
+ *  on every event (a mid-generation stall is otherwise an infinite await — the
+ *  openai SDK's timeout is cleared once response HEADERS arrive and never guards
+ *  body reads) and a TOTAL deadline (a never-quite-idle stream would run
+ *  unbounded). Same env knobs as vercel: ARRIVAL_INFER_IDLE_MS (default 180s),
+ *  ARRIVAL_INFER_TOTAL_MS (default 15 min).
+ *
+ *  The combined signal goes INTO the SDK request, but the read loop also RACES
+ *  every event against abort — an SDK (or fake) that ignores the signal still
+ *  can't wedge us awaiting a `next()` that never settles. */
 async function streamText(
   client: ResponsesClient,
   body: Record<string, unknown>,
   onDelta?: DeltaSink,
+  signal?: AbortSignal,
 ): Promise<{ text: string; usage: CodexUsage | null; finish: string | null }> {
-  const events = await client.responses.create({ ...body, stream: true });
+  const idleMs = Number(process.env.ARRIVAL_INFER_IDLE_MS) || 180_000;
+  const totalMs = Number(process.env.ARRIVAL_INFER_TOTAL_MS) || 900_000;
+  const watchdog = new AbortController();
+  const combined = signal ? AbortSignal.any([signal, watchdog.signal]) : watchdog.signal;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  const armIdle = (): void => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(
+      () => watchdog.abort(new Error(`codex idle ${idleMs}ms — stream stalled (aborted)`)),
+      idleMs,
+    );
+  };
+  const totalTimer = setTimeout(
+    () => watchdog.abort(new Error(`codex total ${totalMs}ms exceeded (aborted)`)),
+    totalMs,
+  );
+  // Reject the moment `combined` fires; the loop races this against each event so
+  // an abort can't be stranded behind a never-settling next(). Pre-registered once
+  // (not per-event) and given a no-op catch so an abort AFTER a clean finish (or
+  // between events) can't surface as an unhandled rejection.
+  const aborted = new Promise<never>((_, reject) => {
+    const raise = (): void =>
+      reject(combined.reason instanceof Error ? combined.reason : new DOMException("aborted", "AbortError"));
+    if (combined.aborted) raise();
+    else combined.addEventListener("abort", raise, { once: true });
+  });
+  aborted.catch(() => {});
+
   let text = "";
   let usage: CodexUsage | null = null;
   let finish: string | null = null;
-  for await (const ev of events) {
+  try {
+    const events = await Promise.race([
+      client.responses.create({ ...body, stream: true }, { signal: combined }),
+      aborted,
+    ]);
+    armIdle(); // first-event deadline
+    const it = events[Symbol.asyncIterator]();
+    while (true) {
+      const r = await Promise.race([it.next(), aborted]);
+      if (r.done) break;
+      const ev = r.value;
+      armIdle(); // ANY event counts as liveness — deltas, reasoning, keep-alives
+      handle(ev);
+    }
+  } finally {
+    if (idleTimer) clearTimeout(idleTimer);
+    clearTimeout(totalTimer);
+  }
+  return { text, usage, finish };
+
+  function handle(ev: CodexEvent): void {
     if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") {
       text += ev.delta;
       onDelta?.(ev.delta);
@@ -125,7 +186,6 @@ async function streamText(
       throw new Error(`Codex Responses stream failed: ${msg}`);
     }
   }
-  return { text, usage, finish };
 }
 
 interface CodexUsage { input_tokens?: number; output_tokens?: number }
@@ -142,22 +202,27 @@ interface CodexEvent {
 }
 
 /** The minimal Responses-stream client surface this backend needs (the openai SDK
- *  satisfies it at runtime). Named so the test can supply a fake. */
+ *  satisfies it at runtime — `create`'s second argument is its RequestOptions, of
+ *  which we use only `signal`). Named so the test can supply a fake. */
 export interface ResponsesClient {
-  responses: { create(body: unknown): Promise<AsyncIterable<CodexEvent>> };
+  responses: {
+    create(body: unknown, opts?: { signal?: AbortSignal }): Promise<AsyncIterable<CodexEvent>>;
+  };
 }
 
 /** Assemble a Completion from one streamed Codex response — the pure core, exported
  *  for the test. Given a resolved credential, a client built from it, and a spec:
- *  build the body, stream, parse. Refresh + client construction happen ABOVE this. */
+ *  build the body, stream, parse. Refresh + client construction happen ABOVE this.
+ *  `signal` is the caller's abort; watchdogs ride on top of it (see streamText). */
 export async function completeVia(
   client: ResponsesClient,
   spec: ModelSpec,
   onDelta?: DeltaSink,
   defaultModel: string = CODEX_MODEL,
+  signal?: AbortSignal,
 ): Promise<Completion> {
   const { body } = buildBody(spec, defaultModel);
-  const { text, usage, finish } = await streamText(client, body, onDelta);
+  const { text, usage, finish } = await streamText(client, body, onDelta, signal);
   // Route through the shared, tolerant coercion ladder (fenced / lightly-malformed /
   // reasoning-channel recovery) which raises a LEGIBLE cause on failure — instead of a
   // hand-rolled `JSON.parse(stripFence(...))` that threw "Unexpected end of JSON input"
@@ -214,16 +279,17 @@ export function codexBackend(opts: CodexOptions = {}, deps: CodexDeps = {}): Mod
             maxRetries: 0, // the inference plane owns retry
           }) as ResponsesClient;
         })();
-        // Adapt the async client to the sync ResponsesClient surface.
-        return { responses: { create: async (body) => (await client).responses.create(body) } };
+        // Adapt the async client to the sync ResponsesClient surface. `opts` must
+        // pass through — it carries the abort signal (caller + watchdogs).
+        return { responses: { create: async (body, opts) => (await client).responses.create(body, opts) } };
       };
     })();
 
   const defaultModel = opts.defaultModel ?? CODEX_MODEL;
-  const run = async (spec: ModelSpec, onDelta?: DeltaSink): Promise<Completion> => {
+  const run = async (spec: ModelSpec, onDelta?: DeltaSink, signal?: AbortSignal): Promise<Completion> => {
     const cred = await resolveCredential({ allowRefresh: opts.allowRefresh });
     const client = makeClient(cred);
-    return completeVia(client, spec, onDelta, defaultModel);
+    return completeVia(client, spec, onDelta, defaultModel, signal);
   };
 
   // Not wrapped in lazyBackend: resolution is already per-run and lazy (the SDK
@@ -231,6 +297,9 @@ export function codexBackend(opts: CodexOptions = {}, deps: CodexDeps = {}): Mod
   // behavior lazyBackend's cache-once would defeat.
   return {
     complete: (spec) => run(spec),
-    stream: (spec, onDelta) => run(spec, onDelta),
+    // The caller's signal (infer-store passes its subscriber-refcount controller's)
+    // MUST reach the request — dropping it leaves a live BILLED stream running after
+    // the last subscriber releases.
+    stream: (spec, onDelta, signal) => run(spec, onDelta, signal),
   };
 }

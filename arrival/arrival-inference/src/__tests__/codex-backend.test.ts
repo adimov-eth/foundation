@@ -339,4 +339,58 @@ describe("resolveCodexCredential — concurrent refresh is single-flight", () =>
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it("persists the ROTATED token set to disk at mode 0600 (write-through contract)", async () => {
+    // Two properties of the same write, asserted against the REAL file:
+    //  • write-through — the refresh_token is SINGLE-USE, so if the rotated set only
+    //    lives in memory, the next process reads the burned rt and bricks the session
+    //    until manual `codex login`;
+    //  • mode 0600 — `codex login` creates auth.json owner-only, and the atomic
+    //    temp+rename REPLACES the inode, so an unmoded temp file would silently
+    //    publish a live OAuth credential to local users on the first refresh.
+    const os = await import("node:os");
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { resolveCodexCredential } = await import("../backends/codex-auth.js");
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codex-auth-test-"));
+    const prevHome = process.env.CODEX_HOME;
+    process.env.CODEX_HOME = dir;
+    const expiredJwt = `x.${Buffer.from(JSON.stringify({ exp: 1, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
+    const freshJwt = `x.${Buffer.from(JSON.stringify({ exp: 9999999999, "https://api.openai.com/auth": { chatgpt_account_id: "acct-1" } })).toString("base64url")}.y`;
+    const authFile = path.join(dir, "auth.json");
+    // 0600 on disk, as `codex login` leaves it — the refresh must not loosen it.
+    fs.writeFileSync(
+      authFile,
+      JSON.stringify({ tokens: { access_token: expiredJwt, refresh_token: "rt-1", account_id: "acct-1" } }),
+      { mode: 0o600 },
+    );
+
+    const realFetch = globalThis.fetch;
+    // @ts-expect-error test stub
+    globalThis.fetch = async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ access_token: freshJwt, refresh_token: "rt-2", id_token: "id-2" }),
+    }) as Response;
+    try {
+      await resolveCodexCredential({});
+      const onDisk = JSON.parse(fs.readFileSync(authFile, "utf8")) as {
+        tokens: { access_token: string; refresh_token: string; id_token?: string };
+        last_refresh?: string;
+      };
+      // Write-through: the FULL rotated set reached the file, not just memory.
+      expect(onDisk.tokens.access_token).toBe(freshJwt);
+      expect(onDisk.tokens.refresh_token).toBe("rt-2");
+      expect(onDisk.tokens.id_token).toBe("id-2");
+      expect(onDisk.last_refresh).toBeTruthy();
+      // Perms: still owner-only after the temp+rename replaced the inode.
+      expect(fs.statSync(authFile).mode & 0o777).toBe(0o600);
+    } finally {
+      globalThis.fetch = realFetch;
+      if (prevHome === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = prevHome;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });

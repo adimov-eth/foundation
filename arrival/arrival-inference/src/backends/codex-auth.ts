@@ -115,8 +115,13 @@ async function refresh(tokens: CodexTokens): Promise<CodexTokens> {
   // sibling temp then rename — rename is atomic on POSIX, so a reader sees either the
   // old file or the new one, never a partial. (Single-flight below prevents the racing
   // writers in-process; this guards crashes and cross-process interleave.)
+  //
+  // mode 0o600: `codex login` creates auth.json owner-only, and rename REPLACES the
+  // inode — a default-umask temp file would silently downgrade a live OAuth credential
+  // to world-readable on the first refresh. The mode rides the temp file so the
+  // credential is never on disk more open than 0600, even pre-rename.
   const tmp = `${p}.${process.pid}.tmp`;
-  writeFileSync(tmp, body);
+  writeFileSync(tmp, body, { mode: 0o600 });
   renameSync(tmp, p);
   return next;
 }

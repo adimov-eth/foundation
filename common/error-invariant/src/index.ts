@@ -47,5 +47,3 @@ Error.invariant = function invariant(
   const value: string = provided ? `${prefix}: ${provided}` : prefix;
   throw new Ctor(value);
 };
-
-export {};

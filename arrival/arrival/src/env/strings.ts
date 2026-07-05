@@ -192,12 +192,23 @@ export const STRING_OPS = {
     invariant(strings.length > 0, "string-for-each: expected at least one string");
     const strs = strings.map(stringValue);
     const minLen = Math.min(...strs.map((s) => s.length));
-    const pending: unknown[] = [];
+    // R7RS applies for-each's proc IN ORDER (unlike map, whose dynamic order is
+    // unspecified). An async proc (a membrane callback) must therefore be AWAITED
+    // before the next application — the previous shape started EVERY application
+    // up front and Promise.all'd, so an effectful proc's set!s landed in
+    // completion order. Caught by the official r7rs suite under CI load
+    // (2026-07-05): string-for-each over "abcde" consed 'a' LAST. The sync path
+    // stays allocation-free; the loop goes async only at the first promise.
+    const applyAt = (i: number): unknown => proc(...strs.map((s) => new SchemeCharacter(s[i])));
     for (let i = 0; i < minLen; i++) {
-      const ret = proc(...strs.map((s) => new SchemeCharacter(s[i])));
-      if (is_promise(ret)) pending.push(ret);
+      const ret = applyAt(i);
+      if (is_promise(ret)) {
+        return (async () => {
+          await ret;
+          for (let j = i + 1; j < minLen; j++) await applyAt(j);
+        })();
+      }
     }
-    if (pending.length > 0) return (promise_all(pending) as Promise<unknown[]>).then(() => undefined);
   },
 };
 

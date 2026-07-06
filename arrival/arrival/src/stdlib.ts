@@ -1661,6 +1661,16 @@ export const global_env = new Environment(
       });
     }),
     // ------------------------------------------------------------------
+    // KNOWN R7RS DIVERGENCE (deferred, 2026-07-05; pinned 2026-07-06): delegating to
+    // the deliberately-parallel list `map` below means an ASYNC proc's applications
+    // land in COMPLETION order — R7RS 6.10 specifies application order for for-each
+    // (map's dynamic order is unspecified, so map's parallelism is legal; for-each's
+    // is not). string-/vector-for-each were sequentialized in 6bc5349, which
+    // explicitly deferred lists as a core-semantics decision: list map's fan-out is
+    // the engine's inference-parallelism design, and sequentializing for-each changes
+    // the timing of every effectful list loop. The divergence is pinned by an
+    // `it.fails` ordering test (vector-map-promise-leak.test.ts) — if for-each gets
+    // its own sequential loop, that test flips red: drop its `.fails` then.
     "for-each": doc("for-each", function (this: Environment, fn: SchemeFunction, ...lists: SchemeValue[]) {
       typecheck("for-each", fn, "function");
       for (const [i, arg] of lists.entries()) {

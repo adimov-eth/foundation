@@ -1044,12 +1044,16 @@ export class Project extends PlexusModel<null> {
     // unchanged. (The previously data-only traced env is now the full capability env; capabilities a
     // caller doesn't pass stay inert, so behaviour is preserved.)
     const h = this.run(source, { ...opts, trace: opts.trace });
-    // An early abort rejects EVERY handle promise at once. The awaits below observe
-    // them one at a time and throw on the FIRST — the caller then never receives the
-    // object, so the remaining rejections have nobody to land on and surface as
-    // unhandled AbortErrors (timing-dependent: seen as a flaky "Unhandled Rejection"
-    // failing the arrival-chain suite). Pre-observe all four; the caller's own awaits
-    // still see the rejection through the original promises.
+    // An early abort rejects every handle promise at once. run() already pre-observes
+    // `result` and `userForms` at creation (see the .catch pair where the handle is
+    // built) — the actual orphans here were `finished` and `env`: the awaits below
+    // observe one at a time and throw on the FIRST, the caller never receives the
+    // object, and the unobserved pair surfaced as timing-dependent unhandled
+    // AbortErrors (the flaky "Unhandled Rejection" failing the arrival-chain suite).
+    // Pre-observing all four is belt-and-braces — two are already covered; the
+    // original comment overcounted the orphans (corrected in round-2 review,
+    // 2026-07-06). The caller's own awaits still see the rejection through the
+    // original promises.
     for (const p of [h.userForms, h.finished, h.env, h.result]) void (p as Promise<unknown>).catch(() => {});
     return { userForms: await h.userForms, finished: h.finished, env: await h.env, result: h.result };
   }

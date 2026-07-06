@@ -6,9 +6,13 @@
 // empirically against the live backend (it is documented NOWHERE — not in Hermes,
 // not in OpenAI's API reference), one 400 at a time:
 //
-//   • MODEL — only `gpt-5.5` is accepted for a ChatGPT account. Every `gpt-5*-codex`,
-//     `gpt-4o`, `o4-mini`, `codex-mini-latest` returns
+//   • MODEL — the account gate accepts a SMALL SET (see CODEX_MODELS): `gpt-5.5`
+//     and `gpt-5.3-codex-spark`. `gpt-5*-codex`, `gpt-4o`, `o4-mini`,
+//     `codex-mini-latest` all return
 //     "… model is not supported when using Codex with a ChatGPT account."
+//     (This bullet once said "only gpt-5.5" — over-generalized from an incomplete
+//     probe set, and it kept saying so AFTER the paragraph below corrected it: the
+//     same comment-rot class twice in one header. Round-2 review, 2026-07-06.)
 //   • STREAM-ONLY — a non-stream request 400s "Stream must be set to true". This is
 //     WHY Hermes goes straight to the raw SSE iterator; it never had a one-shot path.
 //   • TYPED INPUT — `input` must be a list of `{role, content:[{type:"input_text",
@@ -25,7 +29,7 @@
 // single-model hard gate; that was over-generalized from an incomplete probe set.)
 
 import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
-import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema, streamGuard } from "./_shared.js";
+import { mergeSystem, parseModelValue, renderSchema, specMessages, streamGuard } from "./_shared.js";
 import { resolveCodexCredential, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
@@ -35,16 +39,17 @@ export const CODEX_MODELS = ["gpt-5.5", "gpt-5.3-codex-spark"] as const;
 export const CODEX_MODEL = "gpt-5.3-codex-spark";
 /** Resolve the model to send: honor `spec.model` if the backend accepts it, else
  *  `defaultModel` (the backend's configured fallback; {@link CODEX_MODEL} when unset). */
-export const codexModelFor = (specModel: string, defaultModel: string = CODEX_MODEL): string =>
+export const codexModelFor = (specModel: string, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): string =>
   (CODEX_MODELS as readonly string[]).includes(specModel) ? specModel : defaultModel;
 
 export interface CodexOptions {
   /** Route the OAuth refresh ourselves (default). `false` requires a CLI-fresh
    *  token and never POSTs the credential — the caller runs `codex login`. */
   allowRefresh?: boolean;
-  /** Override the fallback model (default {@link CODEX_MODEL}). Must be a
-   *  {@link CODEX_MODELS} id or the backend will 400. */
-  defaultModel?: string;
+  /** Override the fallback model (default {@link CODEX_MODEL}). Typed to the
+   *  accepted set — the doc used to say "must be a CODEX_MODELS id" while the
+   *  `string` type let any typo through to a guaranteed 400 on every fallback. */
+  defaultModel?: (typeof CODEX_MODELS)[number];
 }
 
 /** Lower a ModelSpec into the Codex Responses request body (the verified shape).
@@ -63,7 +68,7 @@ export interface CodexOptions {
  *  credential, then thread it here and flip the exclusion tripwires in
  *  codex-backend.test.ts. `spec.tools` is held to a STRICTER bar: REFUSED with a
  *  throw, not silently excluded — see the guard in the function body. */
-export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): Record<string, unknown> {
+export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): Record<string, unknown> {
   // spec.tools is REFUSED, not dropped. Tools are CONTENT-KEYED (model.ts: "different
   // tools can change the completion") and the agentic loop treats a no-tool-call turn
   // as the FINAL answer — so silently de-tooling a spec doesn't degrade, it
@@ -81,7 +86,7 @@ export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): 
         `would be indistinguishable from a real one — bind a tool-capable backend for agentic specs.`,
     );
   }
-  const messages = parseChatPrompt(spec.prompt) ?? [{ role: "user" as const, content: spec.prompt }];
+  const messages = specMessages(spec); // the shared spec→messages lowering — backends must not drift on it
 
   const schema = renderSchema(spec.schema);
   const schemaPreamble = schema
@@ -224,7 +229,7 @@ export async function completeVia(
   client: ResponsesClient,
   spec: ModelSpec,
   onDelta?: DeltaSink,
-  defaultModel: string = CODEX_MODEL,
+  defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL,
   signal?: AbortSignal,
 ): Promise<Completion> {
   const body = buildBody(spec, defaultModel);

@@ -204,11 +204,10 @@ describe("completeVia — stream assembly", () => {
     expect(out.value).toEqual({ algorithm: "merge", complexity: "O(n log n)" });
   });
 
-  it("strips a fenced structured response before parsing", async () => {
-    const client = fakeClient(textEvents('```json\n{"ok":true}\n```'));
-    const out = await completeVia(client, spec({ schema: JSON.stringify(["object", ["ok", "boolean"]]) }));
-    expect(out.value).toEqual({ ok: true });
-  });
+  // (Fenced-JSON recovery is pinned ONCE, by the "recovers a fenced structured
+  //  response … via the shared ladder" test in the failure-paths block below — a
+  //  verbatim duplicate lived here and survived the 58cd9b6 dedup whose own message
+  //  named the ladder-level test as the single keeper. Round-2 review, 2026-07-06.)
 
   it("forwards each delta to onDelta in order", async () => {
     const client = fakeClient(textEvents("abcd"));

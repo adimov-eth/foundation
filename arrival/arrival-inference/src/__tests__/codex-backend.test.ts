@@ -608,4 +608,54 @@ describe("resolveCodexCredential — the refresh path", () => {
       },
     );
   });
+
+  it("persists the rotation even when the auth.json re-read fails mid-refresh", async () => {
+    // The single-use rt is burned server-side the moment the POST succeeds — from
+    // then on the rotated set is the ONLY working credential. The write-through
+    // re-reads auth.json to preserve sibling fields; if that re-read throws
+    // (file deleted/corrupted between POST and write), the rotation must still
+    // land on disk in a minimal payload, or the session bricks until a manual
+    // `codex login`. (Round-2 review, 2026-07-06.)
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: {} },
+      async ({ authFile }) => {
+        // Layered stub: delete auth.json BEFORE the refresh response returns, so the
+        // post-POST re-read hits ENOENT. (The harness's finally still restores fetch.)
+        // @ts-expect-error test stub
+        globalThis.fetch = async () => {
+          rmSync(authFile);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ access_token: FRESH_JWT, refresh_token: "rt-2" }),
+          } as Response;
+        };
+        const out = await resolveCodexCredential({});
+        expect(out.accessToken).toBe(FRESH_JWT);
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { refresh_token: string };
+        };
+        expect(onDisk.tokens.refresh_token).toBe("rt-2"); // rotation survived the lost re-read
+      },
+    );
+  });
+
+  it("an unusable refreshed token REJECTS legibly — after persisting the rotation", async () => {
+    // Presence-only validation shipped an opaque failure: a 200 carrying a truthy but
+    // unparseable access_token was handed to the caller → backend 401 with no cause,
+    // plus one refresh POST and one rt rotation per inference call. The fix throws a
+    // NAMED error — but only after the write-through, because the burned rt makes the
+    // rotated set the only copy worth protecting. (Round-2 review, 2026-07-06.)
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: { access_token: "garbage-not-a-jwt", refresh_token: "rt-2" } },
+      async ({ authFile }) => {
+        await expect(resolveCodexCredential({})).rejects.toThrow(/unusable access token.*codex login/is);
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { access_token: string; refresh_token: string };
+        };
+        expect(onDisk.tokens.refresh_token).toBe("rt-2"); // rotation persisted despite the reject
+        expect(onDisk.tokens.access_token).toBe("garbage-not-a-jwt");
+      },
+    );
+  });
 });

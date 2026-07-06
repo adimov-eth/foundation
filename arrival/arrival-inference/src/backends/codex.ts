@@ -114,10 +114,11 @@ async function streamText(
   let text = "";
   let usage: CodexUsage | null = null;
   let finish: string | null = null;
+  let it: AsyncIterator<CodexEvent> | undefined;
   try {
     const events = await guard.race(client.responses.create(body, { signal: guard.signal }));
     guard.armIdle(); // first-event deadline
-    const it = events[Symbol.asyncIterator]();
+    it = events[Symbol.asyncIterator]();
     for (;;) {
       const r = await guard.race(it.next());
       if (r.done) break;
@@ -137,16 +138,32 @@ async function streamText(
         // "recovered" into a wrong value rather than raising "raise max tokens".)
         const reason = ev.response?.incomplete_details?.reason ?? "incomplete";
         finish = /token|length|max/i.test(reason) ? "length" : reason;
-      } else if (ev.type === "response.failed" || ev.type === "response.error") {
+      } else if (ev.type === "response.failed" || ev.type === "error") {
         // A server FAILURE event (policy/quota/backend) — the old loop dropped these,
         // so a blocked call became an empty-string "success". Surface the upstream cause.
-        const err = ev.response?.error ?? ev.error;
+        // TWO wire shapes (openai@6 responses.d.ts): `response.failed` nests the error
+        // as `response.error`; the top-level ResponseErrorEvent is `type: "error"` —
+        // documented "Always `error`", NOT "response.error" (a name that exists in no
+        // protocol version; the guard shipped matching that fiction and reading a
+        // nested `ev.error`, so a real mid-stream `error` event fell through EVERY
+        // arm: partial text resolved as success, and a schema'd truncation was
+        // jsonrepair'd into a plausible WRONG value. Round-2 review kill-probe,
+        // 2026-07-06). The `error` event carries code/message FLAT on the event.
+        const err = ev.response?.error ?? (ev.type === "error" ? ev : undefined);
         const msg = err?.message ?? err?.code ?? "unknown error";
         throw new Error(`Codex Responses stream failed: ${msg}`);
       }
     }
   } finally {
     guard.done();
+    // Close the iterator on EVERY exit. The openai SDK's stream generator tears its
+    // transport down in its own `finally { … abort() }` — which only runs once the
+    // iterator is CLOSED. The for-await this manual loop replaced did that on throw
+    // automatically; the manual shape must do it by hand, or the throw paths above
+    // (failure event, guard abort) leave the SSE socket open, trusting the server to
+    // hang up. Fire-and-forget + swallow: closing a dead iterator must never mask the
+    // real error. (Round-2 review, 2026-07-06.)
+    void it?.return?.().catch(() => {});
   }
   return { text, usage, finish };
 }
@@ -162,7 +179,9 @@ interface CodexError {
 interface CodexEvent {
   type: string;
   delta?: string;
-  error?: CodexError;
+  /** FLAT payload of a top-level `error` event (ResponseErrorEvent). */
+  message?: string;
+  code?: string;
   response?: {
     usage?: CodexUsage;
     error?: CodexError;

@@ -383,9 +383,67 @@ describe("completeVia — server failure + malformed output are surfaced, not sw
     await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*content policy/i);
   });
 
-  it("throws on a top-level response.error event too", async () => {
-    const client = fakeClient([{ type: "response.error", error: { code: "server_error" } }]);
+  it("throws on a top-level `error` event — the REAL wire shape, code/message FLAT", async () => {
+    // ResponseErrorEvent (openai@6 responses.d.ts): `type` is "Always `error`" and
+    // code/message sit flat on the event. An earlier guard matched the FICTIONAL name
+    // "response.error" with a nested payload — its test pinned that fiction back at
+    // the implementation, so a real mid-stream server error resolved as SUCCESS
+    // (round-2 review kill-probe, 2026-07-06). This pins the real contract.
+    const client = fakeClient([
+      { type: "response.output_text.delta", delta: "partial answer" },
+      { type: "error", code: "server_error", message: "boom mid-stream" },
+    ]);
+    await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*boom mid-stream/i);
+  });
+
+  it("a flat `error` event with only a code still surfaces the code, not 'unknown error'", async () => {
+    const client = fakeClient([{ type: "error", code: "server_error" }]);
     await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*server_error/i);
+  });
+
+  it("a schema'd stream cut by a mid-stream `error` REJECTS — never a jsonrepair'd wrong value", async () => {
+    // The round-2 kill-probe's exact scenario: truncated JSON + a real `error` event.
+    // Under the fictional-name guard this RESOLVED to {algorithm:"merge"} — a plausible
+    // wrong value fabricated by jsonrepair from a failed stream.
+    const client = fakeClient([
+      { type: "response.output_text.delta", delta: '{"algorithm":"merge' },
+      { type: "error", code: "server_error", message: "upstream reset" },
+    ]);
+    await expect(
+      completeVia(client, spec({ schema: JSON.stringify(["object", ["algorithm", "string"]]) })),
+    ).rejects.toThrow(/stream failed.*upstream reset/i);
+  });
+
+  it("closes the stream iterator when a failure event throws (SSE transport teardown)", async () => {
+    // The openai SDK's stream generator aborts its transport in its own finally —
+    // which only runs when the iterator is CLOSED. The manual read loop must call
+    // it.return() on the throw path or the socket stays open (round-2 review).
+    let returned = false;
+    const events = [
+      { type: "response.created" },
+      { type: "response.failed", response: { error: { message: "quota" } } },
+    ];
+    const client: ResponsesClient = {
+      responses: {
+        create: async () => {
+          let i = 0;
+          return {
+            [Symbol.asyncIterator]() {
+              return {
+                next: async () =>
+                  i < events.length ? { done: false as const, value: events[i++] as never } : { done: true as const, value: undefined as never },
+                return: async () => {
+                  returned = true;
+                  return { done: true as const, value: undefined as never };
+                },
+              };
+            },
+          };
+        },
+      },
+    };
+    await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*quota/i);
+    expect(returned).toBe(true);
   });
 
   it("a schema'd REFUSAL yields a LEGIBLE error naming the model, not `Unexpected token`", async () => {

@@ -61,8 +61,26 @@ export interface CodexOptions {
  *  plan-billed plane has no per-token spend anyway) and sampling runs at the
  *  endpoint default. To lift: probe each field live with a `codex login`
  *  credential, then thread it here and flip the exclusion tripwires in
- *  codex-backend.test.ts. */
+ *  codex-backend.test.ts. `spec.tools` is held to a STRICTER bar: REFUSED with a
+ *  throw, not silently excluded — see the guard in the function body. */
 export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): Record<string, unknown> {
+  // spec.tools is REFUSED, not dropped. Tools are CONTENT-KEYED (model.ts: "different
+  // tools can change the completion") and the agentic loop treats a no-tool-call turn
+  // as the FINAL answer — so silently de-tooling a spec doesn't degrade, it
+  // FABRICATES: the model answers from priors, the loop concludes with zero
+  // dispatches, and the result is indistinguishable from a real finish. Tool-calling
+  // is unprobed against this gate (same evidence bar as the maxTokens/temperature
+  // exclusion above), but unlike an unenforced cap the failure mode is silent-wrong,
+  // so it throws. To lift: probe the platform `tools` field live against
+  // chatgpt.com/backend-api/codex, lower ToolDescriptors here, and flip the tripwire
+  // in codex-backend.test.ts. (Round-2 review, 2026-07-06.)
+  if (spec.tools?.length) {
+    throw new Error(
+      `codex backend cannot honor spec.tools (${spec.tools.length} declared): tool-calling is ` +
+        `unprobed on the ChatGPT-account Codex plane, and a silently tool-less agentic answer ` +
+        `would be indistinguishable from a real one — bind a tool-capable backend for agentic specs.`,
+    );
+  }
   const messages = parseChatPrompt(spec.prompt) ?? [{ role: "user" as const, content: spec.prompt }];
 
   const schema = renderSchema(spec.schema);

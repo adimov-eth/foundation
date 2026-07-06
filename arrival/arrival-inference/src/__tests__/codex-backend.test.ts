@@ -159,6 +159,20 @@ describe("buildBody — the verified Codex wire contract", () => {
     const body = buildBody(spec({ temperature: 0 }));
     expect(body).not.toHaveProperty("temperature");
   });
+
+  it("TRIPWIRE: spec.tools is REFUSED (thrown), never silently dropped", () => {
+    // Stricter than the exclusions above, because the failure mode is worse: tools are
+    // CONTENT-KEYED and the agentic loop treats a no-tool-call turn as the FINAL
+    // answer — a silently de-tooled spec returns a plausible answer-from-priors with
+    // zero dispatches, indistinguishable from a real finish (round-2 review,
+    // 2026-07-06). An unenforced cap degrades; a tool-less agentic answer LIES.
+    const tooled = spec({
+      tools: [{ name: "search", description: "look things up", inputSchema: { type: "object" } }],
+    });
+    expect(() => buildBody(tooled)).toThrow(/cannot honor spec\.tools.*tool-capable backend/is);
+    // and an empty tools list is NOT an agentic spec — it must build normally:
+    expect(buildBody(spec({ tools: [] }))).toHaveProperty("model");
+  });
 });
 
 // ── clientHeaders: the identity headers the backend gates on ──────────────────────

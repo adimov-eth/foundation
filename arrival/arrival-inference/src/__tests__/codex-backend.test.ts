@@ -141,21 +141,21 @@ describe("buildBody — the verified Codex wire contract", () => {
     expect(body.instructions).toBe("be a pirate");
   });
 
-  // ── EXCLUSION TRIPWIRES — flip these only after a LIVE probe ────────────────────
-  // max_output_tokens/temperature are standard *platform* Responses fields that have
-  // never been probed against the chatgpt.com/backend-api/codex gate (the contract
-  // that 400s on unaccepted models, non-stream, bare-string input). A rejected field
-  // would 400 EVERY call that sets it — the inference plane sets maxTokens routinely,
-  // so shipping unprobed bricks the backend. These pin the deliberate exclusion; see
-  // the KNOWN LIMITATION note on buildBody for the lift procedure.
+  // ── EXCLUSION TRIPWIRES — the exclusions are PROBED FACT, not caution ───────────
+  // Probed live 2026-07-07 against gpt-5.3-codex-spark: max_output_tokens and
+  // temperature are each rejected with `400 {"detail":"Unsupported parameter: …"}`.
+  // A sent field would 400 EVERY call that sets it — the inference plane sets
+  // maxTokens routinely, so threading either bricks the backend. These pin the
+  // probed truth; do not flip them without a fresh live probe (the gate's contract
+  // is documented nowhere and can drift silently).
 
-  it("TRIPWIRE: spec.maxTokens is deliberately NOT sent (unprobed against the live gate)", () => {
+  it("TRIPWIRE: spec.maxTokens is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
     const body = buildBody(spec({ maxTokens: 512 }));
     expect(body).not.toHaveProperty("max_output_tokens");
     expect(body).not.toHaveProperty("max_tokens");
   });
 
-  it("TRIPWIRE: spec.temperature is deliberately NOT sent (unprobed against the live gate)", () => {
+  it("TRIPWIRE: spec.temperature is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
     const body = buildBody(spec({ temperature: 0 }));
     expect(body).not.toHaveProperty("temperature");
   });
@@ -166,6 +166,11 @@ describe("buildBody — the verified Codex wire contract", () => {
     // answer — a silently de-tooled spec returns a plausible answer-from-priors with
     // zero dispatches, indistinguishable from a real finish (round-2 review,
     // 2026-07-06). An unenforced cap degrades; a tool-less agentic answer LIES.
+    // NOTE the asymmetry with the exclusions above (probed 2026-07-07): the gate
+    // ACCEPTS platform tools and the model emits real function_call items — the
+    // refusal guards THIS BACKEND's missing call-parsing, not the wire. Lift it by
+    // implementing tool-call parsing (see the buildBody guard comment), not by
+    // deleting the throw.
     const tooled = spec({
       tools: [{ name: "search", description: "look things up", inputSchema: { type: "object" } }],
     });

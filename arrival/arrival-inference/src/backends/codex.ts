@@ -57,16 +57,14 @@ export interface CodexOptions {
  *  typed input) without a live backend. `defaultModel` is the fallback when
  *  `spec.model` is not a {@link CODEX_MODELS} id.
  *
- *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are deliberately NOT
- *  sent. The wire contract of chatgpt.com/backend-api/codex is documented nowhere
- *  and was established one 400 at a time; `max_output_tokens`/`temperature` are
- *  standard *platform* Responses fields but have never been probed against THIS
- *  gate, and a rejected field would 400 every call — bricking the backend is worse
- *  than an unenforced cap. So the spend ceiling is NOT honored on this path (the
- *  plan-billed plane has no per-token spend anyway) and sampling runs at the
- *  endpoint default. To lift: probe each field live with a `codex login`
- *  credential, then thread it here and flip the exclusion tripwires in
- *  codex-backend.test.ts. `spec.tools` is held to a STRICTER bar: REFUSED with a
+ *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are NOT sent, and this
+ *  is now PERMANENT-WITH-EVIDENCE, not caution: probed live 2026-07-07 against
+ *  gpt-5.3-codex-spark, both fields are rejected with
+ *  `400 {"detail":"Unsupported parameter: max_output_tokens"}` (resp. `temperature`)
+ *  — sending either would 400 EVERY call that sets it. So the spend ceiling cannot
+ *  be honored on this path (the plan-billed plane has no per-token spend anyway) and
+ *  sampling runs at the endpoint default. Do NOT "lift" these without re-probing;
+ *  the exclusion tripwires in codex-backend.test.ts pin the probed truth. `spec.tools` is held to a STRICTER bar: REFUSED with a
  *  throw, not silently excluded — see the guard in the function body. */
 export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): Record<string, unknown> {
   // spec.tools is REFUSED, not dropped. Tools are CONTENT-KEYED (model.ts: "different
@@ -74,11 +72,16 @@ export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[n
   // as the FINAL answer — so silently de-tooling a spec doesn't degrade, it
   // FABRICATES: the model answers from priors, the loop concludes with zero
   // dispatches, and the result is indistinguishable from a real finish. Tool-calling
-  // is unprobed against this gate (same evidence bar as the maxTokens/temperature
-  // exclusion above), but unlike an unenforced cap the failure mode is silent-wrong,
-  // so it throws. To lift: probe the platform `tools` field live against
-  // chatgpt.com/backend-api/codex, lower ToolDescriptors here, and flip the tripwire
-  // in codex-backend.test.ts. (Round-2 review, 2026-07-06.)
+  // works on this plane — probed live 2026-07-07: the gate ACCEPTS the platform
+  // `tools` field and the model genuinely emits function_call output items
+  // (response.output_item.added → response.function_call_arguments.done, zero text)
+  // — but THIS BACKEND does not parse those events, so sending tools without
+  // consuming the calls would assemble an empty/garbage text turn: the same
+  // fabrication one layer down. The refusal stands until tool-call parsing lands
+  // (lower ToolDescriptors → platform shape, consume the call items, return
+  // Completion.toolCalls, and probe the function_call_output feed-back shape —
+  // a feature with its own wire probes, not a flag flip). (Round-2 review
+  // 2026-07-06; probe evidence 2026-07-07.)
   if (spec.tools?.length) {
     throw new Error(
       `codex backend cannot honor spec.tools (${spec.tools.length} declared): tool-calling is ` +

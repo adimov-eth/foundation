@@ -57,14 +57,22 @@ export interface CodexOptions {
  *  typed input) without a live backend. `defaultModel` is the fallback when
  *  `spec.model` is not a {@link CODEX_MODELS} id.
  *
- *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are NOT sent, and this
- *  is now PERMANENT-WITH-EVIDENCE, not caution: probed live 2026-07-07 against
- *  gpt-5.3-codex-spark, both fields are rejected with
+ *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are NOT sendable:
+ *  probed live 2026-07-07 against gpt-5.3-codex-spark, both are rejected with
  *  `400 {"detail":"Unsupported parameter: max_output_tokens"}` (resp. `temperature`)
- *  — sending either would 400 EVERY call that sets it. So the spend ceiling cannot
- *  be honored on this path (the plan-billed plane has no per-token spend anyway) and
- *  sampling runs at the endpoint default. Do NOT "lift" these without re-probing;
- *  the exclusion tripwires in codex-backend.test.ts pin the probed truth.
+ *  — sending either 400s EVERY call. But the two have OPPOSITE cache-key semantics
+ *  (model.ts), so the OSS engine resolves them DIFFERENTLY:
+ *    • `maxTokens` is an EXECUTION bound, EXCLUDED from the content key — dropping it
+ *      is cache-HONEST (a cap never labels a cached completion). Silently excluded; the
+ *      plan-billed plane has no per-token spend anyway.
+ *    • `temperature` is a CONTENT-KEYED param — `(llm/with … :temperature t)` folds `t`
+ *      into the cache key (chain-env → inferIdentityKey). Silently dropping it would mint
+ *      a cell LABELLED temperature=t whose value was sampled at the plane's default
+ *      (probed: 1) — a cached result claiming a param it never applied, the exact
+ *      cache-dishonesty the `spec.tools` handling was built to refuse. So a spec that
+ *      SETS a temperature is REFUSED with a legible throw (the guard below); a spec that
+ *      leaves it unset runs clean at the plane default. Do NOT "lift" this without
+ *      re-probing; the tripwires in codex-backend.test.ts pin the probed truth.
  *
  *  TOOLS — supported, probed BOTH directions live (2026-07-07): the gate accepts the
  *  Responses FLAT function shape (`{type:"function", name, description, parameters}`
@@ -74,6 +82,18 @@ export interface CodexOptions {
  *  that uses the result. Tool turns in the message list lower to typed input items
  *  (see the mapping below). */
 export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): Record<string, unknown> {
+  // A SET temperature is content-keyed but unsendable on this plane (see KNOWN
+  // LIMITATION above): honoring it is impossible, and silently dropping it makes the
+  // cache dishonest. Refuse legibly — the same resolution the engine gives any
+  // content-keyed field a backend can't honor. Unset ⇒ clean run at the plane default.
+  if (spec.temperature !== undefined) {
+    throw new Error(
+      `codex backend cannot honor spec.temperature=${spec.temperature}: the ChatGPT-account Codex ` +
+        `plane rejects the temperature param (400), so it would be silently dropped and the cache ` +
+        `entry (keyed on temperature) would claim a sampling setting it never applied — bind a ` +
+        `temperature-honoring backend for this model, or drop the :temperature binding.`,
+    );
+  }
   const messages = specMessages(spec); // the shared spec→messages lowering — backends must not drift on it
 
   const schema = renderSchema(spec.schema);

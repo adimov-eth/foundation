@@ -528,22 +528,25 @@ describe("provenance × spec §5.3 (car/cdr element-only)", () => {
   // Spec §5.3 (docs/spec/arrival-chain.md:218): `(car (list a b)) → a, with
   // provenance P<A>`. Phantom contributor `b` must NOT show up in `a`'s lineage.
   //
-  // TWO provenance mechanisms exist and the fix landed in only ONE (verified
-  // 2026-07-05):
-  //   - ON-VALUE path — `stdlib.ts` `car`/`cdr` now route
-  //     `withInputProvenance([list.car], list.car)` (element-only). FIXED.
-  //   - TRACE path — arrival-provenance `computeProvenance` walks the invocation
-  //     tree independently and STILL unions children onto the car invocation.
-  //     This test drives `sandboxRunTraced` (the TRACE path), so it still sees
-  //     P<A,B>. NOT fixed there.
+  // FIXED end-to-end, including the TRACE path (corrected 2026-07-08). A prior
+  // comment here claimed the trace path "STILL unions children … so it still sees
+  // P<A,B>. NOT fixed there," and kept this `.fails`. That claim was FALSE — a
+  // fabricated reason, never checked against the trace it named. Verified by
+  // logging every `car` invocation of this exact program: the real OUTER car (the
+  // root invocation, `parent === null`) carries `[inferA]` ALONE — no union, no
+  // phantom `b`. The on-value fix (`stdlib.ts:1008` car → `withInputProvenance(
+  // [list.car], list.car)`, element-only) produces a value whose provenance the
+  // trace engine forwards VERBATIM: `computeProvenance` (trace.ts:105-106) returns
+  // `inv.value.provenance` when `field === null` and the set is authoritative,
+  // BEFORE the child-union fallback (trace.ts:114+). So car never reaches the
+  // union — the trace engine returns the element-only lineage too.
   //
-  // Kept `.fails` DELIBERATELY: it is honest — it documents that the trace-path
-  // fix is not yet landed (the on-value fix does not reach the trace engine). When
-  // the trace path is fixed (car/cdr must be element-only in `computeProvenance`
-  // too — an accessorField-style projection, not a child-union), this flips to red;
-  // drop `.fails` then. Do NOT drop it now: that would hide a real divergence.
-  it.fails(
-    "(car (list a b)) carries only a's provenance, not b's [TRACE path — still unions; on-value path is fixed]",
+  // The `.fails` only "correctly failed" because the old assertion selected
+  // `cars.at(-1)` — an INNER car (ordering accident) with `[]` provenance — not the
+  // outer car. Selecting the outer car by `parent === null` (as slice.ts:190 does)
+  // makes this a genuine PASS. Now a plain `it`.
+  it(
+    "(car (list a b)) carries only a's provenance, not b's [element-only through the trace path]",
     async () => {
       const { project, cache } = fresh();
       const { stop, done } = workerOver(project, cache);
@@ -568,11 +571,15 @@ describe("provenance × spec §5.3 (car/cdr element-only)", () => {
       expect(infers.length).toBe(2);
       const [inferA, inferB] = infers;
 
-      // The OUTER (car …) — there are 3 `car` invocations in this program
-      // (two inside the list-construction, one outermost). The outermost is
-      // the one whose parent is the top-level expression.
+      // The OUTER (car …) — there are 3 `car` invocations in this program (two
+      // inside the list-construction, one outermost). The outermost is the ROOT
+      // invocation (parent === null), as the slicer selects it (slice.ts:190).
+      // (The old `cars.at(-1)` picked an INNER car — an ordering accident — which
+      // carries [] provenance; that wrong selection, NOT any trace-path bug, was
+      // the sole reason this was kept `.fails`. Verified 2026-07-08 by logging
+      // every car: the real outer car id=0 carries [inferA] alone, no phantom b.)
       const cars = findInvocationsForCall(trace, "car");
-      const outerCar = cars.at(-1)!;
+      const outerCar = cars.find((c) => c.parent === null) ?? cars.at(-1)!;
 
       // Per spec §5.3: outer car receives only A's id — B is a sibling whose
       // lineage lives on the container, not on element-A.

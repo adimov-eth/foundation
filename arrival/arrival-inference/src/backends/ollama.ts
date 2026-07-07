@@ -9,7 +9,7 @@ import * as nodeHttps from "node:https";
 import invariant from "tiny-invariant";
 
 import type { Completion, ModelBackend, ModelSpec, ToolCall, ToolDescriptor } from "../model.js";
-import { coerceModelJson, renderSchema, specMessages, type ChatMessage } from "./_shared.js";
+import { coerceModelJson, renderSchema, specMessages, streamGuard, type ChatMessage } from "./_shared.js";
 
 /** POST `payload` to `url` and resolve with the streaming response. Uses node:http(s)
  *  directly — NOT global fetch — because undici's 300s headersTimeout fires while a large
@@ -140,22 +140,22 @@ export function ollamaBackend(opts: OllamaOptions = {}): ModelBackend {
       let doneReason: string | undefined;
       const usage = { inputTokens: 0, outputTokens: 0 };
       const rawToolCalls: NonNullable<NonNullable<OllamaChatResponse["message"]>["tool_calls"]> = [];
-      // INTER-TOKEN IDLE WATCHDOG (see vercel.ts): a stream that stalls mid-generation would await
-      // forever — destroy the socket on idle so the for-await throws (transient → makeInfer retries).
-      // Env: ARRIVAL_INFER_IDLE_MS (default 180s).
-      const idleMs = Number(process.env.ARRIVAL_INFER_IDLE_MS) || 180_000;
-      let idleTimer: ReturnType<typeof setTimeout> | undefined;
-      const armIdle = (): void => {
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimer = setTimeout(
-          () => res.destroy(new Error(`infer idle ${idleMs}ms — stream stalled (aborted)`)),
-          idleMs,
-        );
-      };
+      // INTER-TOKEN IDLE + TOTAL watchdog: a stream that stalls mid-generation would await
+      // forever, and a never-quite-idle one would run unbounded. The shared `streamGuard` owns
+      // BOTH (its total deadline is the backstop this backend previously LACKED — an idle-only
+      // watchdog can't preempt a slow-but-alive stream); its abort is bridged to `res.destroy`
+      // so the for-await throws (transient → makeInfer retries). One place for the timing
+      // machinery, not a per-backend copy. Env: ARRIVAL_INFER_IDLE_MS / ARRIVAL_INFER_TOTAL_MS.
+      const guard = streamGuard("infer");
+      guard.signal.addEventListener(
+        "abort",
+        () => res.destroy(guard.signal.reason instanceof Error ? guard.signal.reason : new Error("aborted")),
+        { once: true },
+      );
       try {
-        armIdle();
+        guard.armIdle();
         for await (const piece of res) {
-          armIdle(); // reset on every chunk — fires only on a true stall
+          guard.armIdle(); // reset on every chunk — fires only on a true stall
           buf += piece as string;
           let nl: number;
           while ((nl = buf.indexOf("\n")) >= 0) {
@@ -176,7 +176,7 @@ export function ollamaBackend(opts: OllamaOptions = {}): ModelBackend {
           }
         }
       } finally {
-        if (idleTimer) clearTimeout(idleTimer);
+        guard.done();
       }
 
       // Schema'd: parse content to the structured value (recover from the reasoning channel

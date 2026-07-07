@@ -144,20 +144,29 @@ describe("buildBody — the verified Codex wire contract", () => {
   // ── EXCLUSION TRIPWIRES — the exclusions are PROBED FACT, not caution ───────────
   // Probed live 2026-07-07 against gpt-5.3-codex-spark: max_output_tokens and
   // temperature are each rejected with `400 {"detail":"Unsupported parameter: …"}`.
-  // A sent field would 400 EVERY call that sets it — the inference plane sets
-  // maxTokens routinely, so threading either bricks the backend. These pin the
-  // probed truth; do not flip them without a fresh live probe (the gate's contract
-  // is documented nowhere and can drift silently).
+  // But they have OPPOSITE cache-key semantics (model.ts), so the resolutions DIFFER:
+  // maxTokens is EXCLUDED from the key → silently dropped is cache-honest; temperature
+  // is CONTENT-KEYED → dropping it silently would mint a cache cell claiming a sampling
+  // setting it never applied, so a SET temperature is REFUSED. Unset runs clean.
 
-  it("TRIPWIRE: spec.maxTokens is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
+  it("TRIPWIRE: spec.maxTokens is silently NOT sent (execution bound, cache-excluded — honest to drop)", () => {
     const body = buildBody(spec({ maxTokens: 512 }));
     expect(body).not.toHaveProperty("max_output_tokens");
     expect(body).not.toHaveProperty("max_tokens");
   });
 
-  it("TRIPWIRE: spec.temperature is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
-    const body = buildBody(spec({ temperature: 0 }));
+  it("TRIPWIRE: a SET spec.temperature is REFUSED, not silently dropped (content-keyed → cache-honesty)", () => {
+    // Silently dropping it (the pre-fix behavior) let a temperature-keyed cache cell
+    // claim a sampling setting sampled at the plane default (probed: 1) — the exact
+    // cache-dishonesty the tools handling refuses. Now it throws legibly.
+    expect(() => buildBody(spec({ temperature: 0 }))).toThrow(/cannot honor spec\.temperature.*temperature-honoring backend/is);
+    expect(() => buildBody(spec({ temperature: 0.7 }))).toThrow(/cannot honor spec\.temperature/i);
+  });
+
+  it("an UNSET temperature runs clean (no temperature key on the body, no throw)", () => {
+    const body = buildBody(spec()); // spec() leaves temperature undefined
     expect(body).not.toHaveProperty("temperature");
+    expect(body).toHaveProperty("model");
   });
 
   // ── TOOLS — the probed round-trip contract (2026-07-07, both directions live) ───

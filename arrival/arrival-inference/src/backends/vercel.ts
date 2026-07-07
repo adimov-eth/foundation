@@ -4,7 +4,7 @@ import { streamText, type ModelMessage } from "ai";
 import invariant from "tiny-invariant";
 
 import type { Completion, ModelBackend, ModelSpec } from "../model.js";
-import { coerceModelJson, renderSchema, specMessages } from "./_shared.js";
+import { coerceModelJson, renderSchema, specMessages, streamGuard } from "./_shared.js";
 
 export interface VercelOptions {
   /** Which AI-SDK provider. `openai-compatible` covers LM Studio / OpenRouter / any /v1
@@ -76,36 +76,25 @@ export function vercelBackend(opts: VercelOptions): ModelBackend {
       const maxOutputTokens =
         spec.maxTokens ?? opts.maxTokens ?? (opts.provider === "anthropic" ? ANTHROPIC_DEFAULT_MAX_TOKENS : undefined);
 
-      // INTER-TOKEN IDLE WATCHDOG: streaming kills the headers-timeout wall, but a stream that
-      // STALLS mid-generation (a local LM Studio model that hangs after some tokens) would await
-      // forever — a silent 0%-CPU wedge. Abort if no delta arrives within the idle window; the
-      // for-await then throws, surfacing as a transient error that `makeInfer` re-rolls. The
-      // window is generous (a slow thinking model can pause between tokens) but finite. Env:
-      // ARRIVAL_INFER_IDLE_MS (default 180s).
-      const idleMs = Number(process.env.ARRIVAL_INFER_IDLE_MS) || 180_000;
-      const ac = new AbortController();
-      let idleTimer: ReturnType<typeof setTimeout> | undefined;
-      const armIdle = (): void => {
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => ac.abort(new Error(`infer idle ${idleMs}ms — stream stalled (aborted)`)), idleMs);
-      };
-      // TOTAL deadline backstop: the idle watchdog only catches a STALL — a pathologically slow but
-      // never-quite-idle stream would run unbounded. A generous hard ceiling closes that gap.
-      // Env: ARRIVAL_INFER_TOTAL_MS (default 15 min).
-      const totalMs = Number(process.env.ARRIVAL_INFER_TOTAL_MS) || 900_000;
-      const totalTimer = setTimeout(() => ac.abort(new Error(`infer total ${totalMs}ms exceeded (aborted)`)), totalMs);
+      // INTER-TOKEN IDLE + TOTAL watchdog: streaming kills the headers-timeout wall, but a stream
+      // that STALLS mid-generation (a local LM Studio model that hangs after some tokens) would
+      // await forever — a silent 0%-CPU wedge; and a pathologically slow but never-quite-idle
+      // stream would run unbounded. The shared `streamGuard` owns BOTH (idle window re-armed on
+      // any activity + a total ceiling) so the timing machinery is not copy-pasted per backend —
+      // its `signal` drives the SDK's abort. Env: ARRIVAL_INFER_IDLE_MS / ARRIVAL_INFER_TOTAL_MS.
+      const guard = streamGuard("infer");
 
       const result = streamText({
         model: model(spec.model),
         messages,
-        abortSignal: ac.signal,
+        abortSignal: guard.signal,
         ...(system === undefined ? {} : { system }),
         ...(temperature === undefined ? {} : { temperature }),
         ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
       });
       let text = "";
       try {
-        armIdle(); // first-activity deadline
+        guard.armIdle(); // first-activity deadline
         // fullStream (NOT textStream): re-arm on ANY activity — content OR reasoning. A reasoning
         // model actively thinking emits `reasoning-delta` parts (silent on textStream), so the
         // content-only watchdog FALSE-ABORTED it mid-think (the nemotron / glm:thinking "stall").
@@ -113,13 +102,12 @@ export function vercelBackend(opts: VercelOptions): ModelBackend {
         // from `text-delta` parts only; an `error` part is re-thrown (textStream threw upstream
         // errors; fullStream surfaces them as parts — preserve the makeInfer retry path).
         for await (const part of result.fullStream) {
-          armIdle();
+          guard.armIdle();
           if (part.type === "text-delta") text += part.text;
           else if (part.type === "error") throw new Error(String(part.error));
         }
       } finally {
-        if (idleTimer) clearTimeout(idleTimer);
-        clearTimeout(totalTimer);
+        guard.done();
       }
       const u = await result.usage;
 

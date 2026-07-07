@@ -28,8 +28,8 @@
 // routes to the default when this backend is bound. (An earlier version claimed a
 // single-model hard gate; that was over-generalized from an incomplete probe set.)
 
-import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
-import { mergeSystem, parseModelValue, renderSchema, specMessages, streamGuard } from "./_shared.js";
+import type { Completion, DeltaSink, ModelBackend, ModelSpec, ToolCall } from "../model.js";
+import { mergeSystem, parseModelValue, parseToolArguments, renderSchema, specMessages, streamGuard } from "./_shared.js";
 import { resolveCodexCredential, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
@@ -64,31 +64,16 @@ export interface CodexOptions {
  *  — sending either would 400 EVERY call that sets it. So the spend ceiling cannot
  *  be honored on this path (the plan-billed plane has no per-token spend anyway) and
  *  sampling runs at the endpoint default. Do NOT "lift" these without re-probing;
- *  the exclusion tripwires in codex-backend.test.ts pin the probed truth. `spec.tools` is held to a STRICTER bar: REFUSED with a
- *  throw, not silently excluded — see the guard in the function body. */
+ *  the exclusion tripwires in codex-backend.test.ts pin the probed truth.
+ *
+ *  TOOLS — supported, probed BOTH directions live (2026-07-07): the gate accepts the
+ *  Responses FLAT function shape (`{type:"function", name, description, parameters}`
+ *  — NOT chat-completions' nested `{function:{…}}`, so `toolsToOpenAI` cannot be
+ *  reused here), the model emits real `function_call` output items, and a
+ *  `function_call_output` item fed back in `input` round-trips to a final answer
+ *  that uses the result. Tool turns in the message list lower to typed input items
+ *  (see the mapping below). */
 export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): Record<string, unknown> {
-  // spec.tools is REFUSED, not dropped. Tools are CONTENT-KEYED (model.ts: "different
-  // tools can change the completion") and the agentic loop treats a no-tool-call turn
-  // as the FINAL answer — so silently de-tooling a spec doesn't degrade, it
-  // FABRICATES: the model answers from priors, the loop concludes with zero
-  // dispatches, and the result is indistinguishable from a real finish. Tool-calling
-  // works on this plane — probed live 2026-07-07: the gate ACCEPTS the platform
-  // `tools` field and the model genuinely emits function_call output items
-  // (response.output_item.added → response.function_call_arguments.done, zero text)
-  // — but THIS BACKEND does not parse those events, so sending tools without
-  // consuming the calls would assemble an empty/garbage text turn: the same
-  // fabrication one layer down. The refusal stands until tool-call parsing lands
-  // (lower ToolDescriptors → platform shape, consume the call items, return
-  // Completion.toolCalls, and probe the function_call_output feed-back shape —
-  // a feature with its own wire probes, not a flag flip). (Round-2 review
-  // 2026-07-06; probe evidence 2026-07-07.)
-  if (spec.tools?.length) {
-    throw new Error(
-      `codex backend cannot honor spec.tools (${spec.tools.length} declared): tool-calling is ` +
-        `unprobed on the ChatGPT-account Codex plane, and a silently tool-less agentic answer ` +
-        `would be indistinguishable from a real one — bind a tool-capable backend for agentic specs.`,
-    );
-  }
   const messages = specMessages(spec); // the shared spec→messages lowering — backends must not drift on it
 
   const schema = renderSchema(spec.schema);
@@ -104,14 +89,46 @@ export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[n
     persona: spec.system,
     schemaPreamble,
   });
-  const input = messagesWithoutSystem.map((m) => ({
-    role: m.role,
-    content: [{ type: "input_text", text: m.content }],
+  // The agentic tool round-trip lowers to TYPED input items (probed 2026-07-07;
+  // store:false means the WHOLE trajectory rides `input` every call):
+  //   assistant turn w/ toolCalls → its text (if any) as a message item, then one
+  //     `{type:"function_call", call_id, name, arguments:<JSON string>}` per call
+  //     (the model's own item shape, echoed back);
+  //   tool turn → `{type:"function_call_output", call_id, output}`.
+  // Plain turns stay `{role, content:[{type:"input_text", text}]}` — the verified
+  // typed-input contract.
+  const input = messagesWithoutSystem.flatMap((m): Record<string, unknown>[] => {
+    if (m.role === "tool") {
+      return [{ type: "function_call_output", call_id: m.toolCallId, output: m.content }];
+    }
+    if (m.role === "assistant" && m.toolCalls && m.toolCalls.length > 0) {
+      return [
+        ...(m.content ? [{ role: m.role, content: [{ type: "input_text", text: m.content }] }] : []),
+        ...m.toolCalls.map((tc) => ({
+          type: "function_call",
+          call_id: tc.id,
+          name: tc.name,
+          arguments: JSON.stringify(tc.arguments ?? {}),
+        })),
+      ];
+    }
+    return [{ role: m.role, content: [{ type: "input_text", text: m.content }] }];
+  });
+
+  // Tools ride the Responses FLAT function shape (probed: nested chat-completions
+  // shape is a different wire; `strict` is optional — omitted). `parameters` is the
+  // descriptor's JSON-Schema inputSchema, same defaulting as toolsToOpenAI.
+  const tools = (spec.tools ?? []).map((t) => ({
+    type: "function",
+    name: t.name,
+    ...(t.description === undefined ? {} : { description: t.description }),
+    parameters: t.inputSchema ?? { type: "object", properties: {}, additionalProperties: false },
   }));
 
   return {
     model: codexModelFor(spec.model, defaultModel),
     input,
+    ...(tools.length > 0 ? { tools } : {}),
     ...(systemText ? { instructions: systemText } : {}),
     store: false, // stateless: the whole context rides each call (replay-safe)
     stream: true, // MANDATORY on this backend
@@ -135,11 +152,12 @@ async function streamText(
   body: Record<string, unknown>,
   onDelta?: DeltaSink,
   signal?: AbortSignal,
-): Promise<{ text: string; usage: CodexUsage | null; finish: string | null }> {
+): Promise<{ text: string; usage: CodexUsage | null; finish: string | null; toolCalls: ToolCall[] }> {
   const guard = streamGuard("codex", signal);
   let text = "";
   let usage: CodexUsage | null = null;
   let finish: string | null = null;
+  const toolCalls: ToolCall[] = [];
   let it: AsyncIterator<CodexEvent> | undefined;
   try {
     const events = await guard.race(client.responses.create(body, { signal: guard.signal }));
@@ -153,6 +171,16 @@ async function streamText(
       if (ev.type === "response.output_text.delta" && typeof ev.delta === "string") {
         text += ev.delta;
         onDelta?.(ev.delta);
+      } else if (ev.type === "response.output_item.done" && ev.item?.type === "function_call") {
+        // The COMPLETE call arrives on this one event: {call_id, name, arguments}
+        // (probed 2026-07-07 — arguments is a JSON string, done-status item).
+        // response.function_call_arguments.done carries the same arguments and is
+        // deliberately ignored: one source of truth per call, no double-collect.
+        toolCalls.push({
+          id: ev.item.call_id,
+          name: ev.item.name ?? "",
+          arguments: parseToolArguments(ev.item.arguments),
+        });
       } else if (ev.type === "response.completed" && ev.response?.usage) {
         usage = ev.response.usage;
       } else if (ev.type === "response.incomplete") {
@@ -191,7 +219,7 @@ async function streamText(
     // real error. (Round-2 review, 2026-07-06.)
     void it?.return?.().catch(() => {});
   }
-  return { text, usage, finish };
+  return { text, usage, finish, toolCalls };
 }
 
 interface CodexUsage {
@@ -208,6 +236,9 @@ interface CodexEvent {
   /** FLAT payload of a top-level `error` event (ResponseErrorEvent). */
   message?: string;
   code?: string;
+  /** On `response.output_item.done`: the finished output item (function_call carries
+   *  the whole call — call_id/name/arguments — in one event). */
+  item?: { type?: string; call_id?: string; name?: string; arguments?: string };
   response?: {
     usage?: CodexUsage;
     error?: CodexError;
@@ -236,14 +267,20 @@ export async function completeVia(
   signal?: AbortSignal,
 ): Promise<Completion> {
   const body = buildBody(spec, defaultModel);
-  const { text, usage, finish } = await streamText(client, body, onDelta, signal);
-  // Route through the shared, tolerant coercion ladder (fenced / lightly-malformed /
-  // reasoning-channel recovery) which raises a LEGIBLE cause on failure — instead of a
-  // hand-rolled `JSON.parse(stripFence(...))` that threw "Unexpected end of JSON input"
-  // with no model name or finish reason. `parseModelValue` returns text as-is when the
-  // spec has no schema, so this one call handles both paths.
-  const value = parseModelValue(spec, text, { finish });
-  return { value, usage: { inputTokens: usage?.input_tokens ?? 0, outputTokens: usage?.output_tokens ?? 0 } };
+  const { text, usage, finish, toolCalls } = await streamText(client, body, onDelta, signal);
+  // The tool-vs-parse arc, same decision chatBackend makes (its docstring: "the single
+  // place the tool-vs-text decision and the coercion ladder live" — mirror it, don't
+  // diverge): a tool-calling turn returns the calls with the raw text (often empty; a
+  // schema'd parse would reject it — the agentic loop dispatches and re-infers). A
+  // plain turn routes through the shared, tolerant coercion ladder (fenced /
+  // lightly-malformed / reasoning-channel recovery) which raises a LEGIBLE cause on
+  // failure. `parseModelValue` returns text as-is when the spec has no schema.
+  const value = toolCalls.length > 0 ? text : parseModelValue(spec, text, { finish });
+  return {
+    value,
+    ...(toolCalls.length > 0 ? { toolCalls } : {}),
+    usage: { inputTokens: usage?.input_tokens ?? 0, outputTokens: usage?.output_tokens ?? 0 },
+  };
 }
 
 /** Build the armed Responses client for a credential — the headers are the verified

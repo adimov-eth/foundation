@@ -691,8 +691,10 @@ export function toolCallsFromOpenAI(
 }
 
 /** OpenAI tool-call arguments arrive as a JSON string; parse to an object,
- *  tolerating empty/malformed (→ `{}`). */
-function parseToolArguments(raw: string | undefined): unknown {
+ *  tolerating empty/malformed (→ `{}`). Exported so the codex backend's Responses
+ *  event parsing shares the SAME tolerance — arguments handling must not drift
+ *  between the chat-completions and Responses planes. */
+export function parseToolArguments(raw: string | undefined): unknown {
   if (!raw) return {};
   try {
     return JSON.parse(raw);

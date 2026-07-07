@@ -6,9 +6,13 @@
 // empirically against the live backend (it is documented NOWHERE — not in Hermes,
 // not in OpenAI's API reference), one 400 at a time:
 //
-//   • MODEL — only `gpt-5.5` is accepted for a ChatGPT account. Every `gpt-5*-codex`,
-//     `gpt-4o`, `o4-mini`, `codex-mini-latest` returns
+//   • MODEL — the account gate accepts a SMALL SET (see CODEX_MODELS): `gpt-5.5`
+//     and `gpt-5.3-codex-spark`. `gpt-5*-codex`, `gpt-4o`, `o4-mini`,
+//     `codex-mini-latest` all return
 //     "… model is not supported when using Codex with a ChatGPT account."
+//     (This bullet once said "only gpt-5.5" — over-generalized from an incomplete
+//     probe set, and it kept saying so AFTER the paragraph below corrected it: the
+//     same comment-rot class twice in one header. Round-2 review, 2026-07-06.)
 //   • STREAM-ONLY — a non-stream request 400s "Stream must be set to true". This is
 //     WHY Hermes goes straight to the raw SSE iterator; it never had a one-shot path.
 //   • TYPED INPUT — `input` must be a list of `{role, content:[{type:"input_text",
@@ -25,7 +29,7 @@
 // single-model hard gate; that was over-generalized from an incomplete probe set.)
 
 import type { Completion, DeltaSink, ModelBackend, ModelSpec } from "../model.js";
-import { mergeSystem, parseChatPrompt, parseModelValue, renderSchema, streamGuard } from "./_shared.js";
+import { mergeSystem, parseModelValue, renderSchema, specMessages, streamGuard } from "./_shared.js";
 import { resolveCodexCredential, type CodexCredential } from "./codex-auth.js";
 
 /** Model ids the ChatGPT-account Codex backend accepts (verified live). The `-spark`
@@ -35,16 +39,17 @@ export const CODEX_MODELS = ["gpt-5.5", "gpt-5.3-codex-spark"] as const;
 export const CODEX_MODEL = "gpt-5.3-codex-spark";
 /** Resolve the model to send: honor `spec.model` if the backend accepts it, else
  *  `defaultModel` (the backend's configured fallback; {@link CODEX_MODEL} when unset). */
-export const codexModelFor = (specModel: string, defaultModel: string = CODEX_MODEL): string =>
+export const codexModelFor = (specModel: string, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): string =>
   (CODEX_MODELS as readonly string[]).includes(specModel) ? specModel : defaultModel;
 
 export interface CodexOptions {
   /** Route the OAuth refresh ourselves (default). `false` requires a CLI-fresh
    *  token and never POSTs the credential — the caller runs `codex login`. */
   allowRefresh?: boolean;
-  /** Override the fallback model (default {@link CODEX_MODEL}). Must be a
-   *  {@link CODEX_MODELS} id or the backend will 400. */
-  defaultModel?: string;
+  /** Override the fallback model (default {@link CODEX_MODEL}). Typed to the
+   *  accepted set — the doc used to say "must be a CODEX_MODELS id" while the
+   *  `string` type let any typo through to a guaranteed 400 on every fallback. */
+  defaultModel?: (typeof CODEX_MODELS)[number];
 }
 
 /** Lower a ModelSpec into the Codex Responses request body (the verified shape).
@@ -52,18 +57,39 @@ export interface CodexOptions {
  *  typed input) without a live backend. `defaultModel` is the fallback when
  *  `spec.model` is not a {@link CODEX_MODELS} id.
  *
- *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are deliberately NOT
- *  sent. The wire contract of chatgpt.com/backend-api/codex is documented nowhere
- *  and was established one 400 at a time; `max_output_tokens`/`temperature` are
- *  standard *platform* Responses fields but have never been probed against THIS
- *  gate, and a rejected field would 400 every call — bricking the backend is worse
- *  than an unenforced cap. So the spend ceiling is NOT honored on this path (the
- *  plan-billed plane has no per-token spend anyway) and sampling runs at the
- *  endpoint default. To lift: probe each field live with a `codex login`
- *  credential, then thread it here and flip the exclusion tripwires in
- *  codex-backend.test.ts. */
-export function buildBody(spec: ModelSpec, defaultModel: string = CODEX_MODEL): Record<string, unknown> {
-  const messages = parseChatPrompt(spec.prompt) ?? [{ role: "user" as const, content: spec.prompt }];
+ *  KNOWN LIMITATION — `spec.maxTokens` and `spec.temperature` are NOT sent, and this
+ *  is now PERMANENT-WITH-EVIDENCE, not caution: probed live 2026-07-07 against
+ *  gpt-5.3-codex-spark, both fields are rejected with
+ *  `400 {"detail":"Unsupported parameter: max_output_tokens"}` (resp. `temperature`)
+ *  — sending either would 400 EVERY call that sets it. So the spend ceiling cannot
+ *  be honored on this path (the plan-billed plane has no per-token spend anyway) and
+ *  sampling runs at the endpoint default. Do NOT "lift" these without re-probing;
+ *  the exclusion tripwires in codex-backend.test.ts pin the probed truth. `spec.tools` is held to a STRICTER bar: REFUSED with a
+ *  throw, not silently excluded — see the guard in the function body. */
+export function buildBody(spec: ModelSpec, defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL): Record<string, unknown> {
+  // spec.tools is REFUSED, not dropped. Tools are CONTENT-KEYED (model.ts: "different
+  // tools can change the completion") and the agentic loop treats a no-tool-call turn
+  // as the FINAL answer — so silently de-tooling a spec doesn't degrade, it
+  // FABRICATES: the model answers from priors, the loop concludes with zero
+  // dispatches, and the result is indistinguishable from a real finish. Tool-calling
+  // works on this plane — probed live 2026-07-07: the gate ACCEPTS the platform
+  // `tools` field and the model genuinely emits function_call output items
+  // (response.output_item.added → response.function_call_arguments.done, zero text)
+  // — but THIS BACKEND does not parse those events, so sending tools without
+  // consuming the calls would assemble an empty/garbage text turn: the same
+  // fabrication one layer down. The refusal stands until tool-call parsing lands
+  // (lower ToolDescriptors → platform shape, consume the call items, return
+  // Completion.toolCalls, and probe the function_call_output feed-back shape —
+  // a feature with its own wire probes, not a flag flip). (Round-2 review
+  // 2026-07-06; probe evidence 2026-07-07.)
+  if (spec.tools?.length) {
+    throw new Error(
+      `codex backend cannot honor spec.tools (${spec.tools.length} declared): tool-calling is ` +
+        `unprobed on the ChatGPT-account Codex plane, and a silently tool-less agentic answer ` +
+        `would be indistinguishable from a real one — bind a tool-capable backend for agentic specs.`,
+    );
+  }
+  const messages = specMessages(spec); // the shared spec→messages lowering — backends must not drift on it
 
   const schema = renderSchema(spec.schema);
   const schemaPreamble = schema
@@ -114,10 +140,11 @@ async function streamText(
   let text = "";
   let usage: CodexUsage | null = null;
   let finish: string | null = null;
+  let it: AsyncIterator<CodexEvent> | undefined;
   try {
     const events = await guard.race(client.responses.create(body, { signal: guard.signal }));
     guard.armIdle(); // first-event deadline
-    const it = events[Symbol.asyncIterator]();
+    it = events[Symbol.asyncIterator]();
     for (;;) {
       const r = await guard.race(it.next());
       if (r.done) break;
@@ -137,16 +164,32 @@ async function streamText(
         // "recovered" into a wrong value rather than raising "raise max tokens".)
         const reason = ev.response?.incomplete_details?.reason ?? "incomplete";
         finish = /token|length|max/i.test(reason) ? "length" : reason;
-      } else if (ev.type === "response.failed" || ev.type === "response.error") {
+      } else if (ev.type === "response.failed" || ev.type === "error") {
         // A server FAILURE event (policy/quota/backend) — the old loop dropped these,
         // so a blocked call became an empty-string "success". Surface the upstream cause.
-        const err = ev.response?.error ?? ev.error;
+        // TWO wire shapes (openai@6 responses.d.ts): `response.failed` nests the error
+        // as `response.error`; the top-level ResponseErrorEvent is `type: "error"` —
+        // documented "Always `error`", NOT "response.error" (a name that exists in no
+        // protocol version; the guard shipped matching that fiction and reading a
+        // nested `ev.error`, so a real mid-stream `error` event fell through EVERY
+        // arm: partial text resolved as success, and a schema'd truncation was
+        // jsonrepair'd into a plausible WRONG value. Round-2 review kill-probe,
+        // 2026-07-06). The `error` event carries code/message FLAT on the event.
+        const err = ev.response?.error ?? (ev.type === "error" ? ev : undefined);
         const msg = err?.message ?? err?.code ?? "unknown error";
         throw new Error(`Codex Responses stream failed: ${msg}`);
       }
     }
   } finally {
     guard.done();
+    // Close the iterator on EVERY exit. The openai SDK's stream generator tears its
+    // transport down in its own `finally { … abort() }` — which only runs once the
+    // iterator is CLOSED. The for-await this manual loop replaced did that on throw
+    // automatically; the manual shape must do it by hand, or the throw paths above
+    // (failure event, guard abort) leave the SSE socket open, trusting the server to
+    // hang up. Fire-and-forget + swallow: closing a dead iterator must never mask the
+    // real error. (Round-2 review, 2026-07-06.)
+    void it?.return?.().catch(() => {});
   }
   return { text, usage, finish };
 }
@@ -162,7 +205,9 @@ interface CodexError {
 interface CodexEvent {
   type: string;
   delta?: string;
-  error?: CodexError;
+  /** FLAT payload of a top-level `error` event (ResponseErrorEvent). */
+  message?: string;
+  code?: string;
   response?: {
     usage?: CodexUsage;
     error?: CodexError;
@@ -187,7 +232,7 @@ export async function completeVia(
   client: ResponsesClient,
   spec: ModelSpec,
   onDelta?: DeltaSink,
-  defaultModel: string = CODEX_MODEL,
+  defaultModel: (typeof CODEX_MODELS)[number] = CODEX_MODEL,
   signal?: AbortSignal,
 ): Promise<Completion> {
   const body = buildBody(spec, defaultModel);

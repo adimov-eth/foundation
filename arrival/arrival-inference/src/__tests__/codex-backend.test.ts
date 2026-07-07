@@ -141,23 +141,42 @@ describe("buildBody — the verified Codex wire contract", () => {
     expect(body.instructions).toBe("be a pirate");
   });
 
-  // ── EXCLUSION TRIPWIRES — flip these only after a LIVE probe ────────────────────
-  // max_output_tokens/temperature are standard *platform* Responses fields that have
-  // never been probed against the chatgpt.com/backend-api/codex gate (the contract
-  // that 400s on unaccepted models, non-stream, bare-string input). A rejected field
-  // would 400 EVERY call that sets it — the inference plane sets maxTokens routinely,
-  // so shipping unprobed bricks the backend. These pin the deliberate exclusion; see
-  // the KNOWN LIMITATION note on buildBody for the lift procedure.
+  // ── EXCLUSION TRIPWIRES — the exclusions are PROBED FACT, not caution ───────────
+  // Probed live 2026-07-07 against gpt-5.3-codex-spark: max_output_tokens and
+  // temperature are each rejected with `400 {"detail":"Unsupported parameter: …"}`.
+  // A sent field would 400 EVERY call that sets it — the inference plane sets
+  // maxTokens routinely, so threading either bricks the backend. These pin the
+  // probed truth; do not flip them without a fresh live probe (the gate's contract
+  // is documented nowhere and can drift silently).
 
-  it("TRIPWIRE: spec.maxTokens is deliberately NOT sent (unprobed against the live gate)", () => {
+  it("TRIPWIRE: spec.maxTokens is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
     const body = buildBody(spec({ maxTokens: 512 }));
     expect(body).not.toHaveProperty("max_output_tokens");
     expect(body).not.toHaveProperty("max_tokens");
   });
 
-  it("TRIPWIRE: spec.temperature is deliberately NOT sent (unprobed against the live gate)", () => {
+  it("TRIPWIRE: spec.temperature is NOT sent (probed 2026-07-07: 400 'Unsupported parameter')", () => {
     const body = buildBody(spec({ temperature: 0 }));
     expect(body).not.toHaveProperty("temperature");
+  });
+
+  it("TRIPWIRE: spec.tools is REFUSED (thrown), never silently dropped", () => {
+    // Stricter than the exclusions above, because the failure mode is worse: tools are
+    // CONTENT-KEYED and the agentic loop treats a no-tool-call turn as the FINAL
+    // answer — a silently de-tooled spec returns a plausible answer-from-priors with
+    // zero dispatches, indistinguishable from a real finish (round-2 review,
+    // 2026-07-06). An unenforced cap degrades; a tool-less agentic answer LIES.
+    // NOTE the asymmetry with the exclusions above (probed 2026-07-07): the gate
+    // ACCEPTS platform tools and the model emits real function_call items — the
+    // refusal guards THIS BACKEND's missing call-parsing, not the wire. Lift it by
+    // implementing tool-call parsing (see the buildBody guard comment), not by
+    // deleting the throw.
+    const tooled = spec({
+      tools: [{ name: "search", description: "look things up", inputSchema: { type: "object" } }],
+    });
+    expect(() => buildBody(tooled)).toThrow(/cannot honor spec\.tools.*tool-capable backend/is);
+    // and an empty tools list is NOT an agentic spec — it must build normally:
+    expect(buildBody(spec({ tools: [] }))).toHaveProperty("model");
   });
 });
 
@@ -190,11 +209,10 @@ describe("completeVia — stream assembly", () => {
     expect(out.value).toEqual({ algorithm: "merge", complexity: "O(n log n)" });
   });
 
-  it("strips a fenced structured response before parsing", async () => {
-    const client = fakeClient(textEvents('```json\n{"ok":true}\n```'));
-    const out = await completeVia(client, spec({ schema: JSON.stringify(["object", ["ok", "boolean"]]) }));
-    expect(out.value).toEqual({ ok: true });
-  });
+  // (Fenced-JSON recovery is pinned ONCE, by the "recovers a fenced structured
+  //  response … via the shared ladder" test in the failure-paths block below — a
+  //  verbatim duplicate lived here and survived the 58cd9b6 dedup whose own message
+  //  named the ladder-level test as the single keeper. Round-2 review, 2026-07-06.)
 
   it("forwards each delta to onDelta in order", async () => {
     const client = fakeClient(textEvents("abcd"));
@@ -383,9 +401,67 @@ describe("completeVia — server failure + malformed output are surfaced, not sw
     await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*content policy/i);
   });
 
-  it("throws on a top-level response.error event too", async () => {
-    const client = fakeClient([{ type: "response.error", error: { code: "server_error" } }]);
+  it("throws on a top-level `error` event — the REAL wire shape, code/message FLAT", async () => {
+    // ResponseErrorEvent (openai@6 responses.d.ts): `type` is "Always `error`" and
+    // code/message sit flat on the event. An earlier guard matched the FICTIONAL name
+    // "response.error" with a nested payload — its test pinned that fiction back at
+    // the implementation, so a real mid-stream server error resolved as SUCCESS
+    // (round-2 review kill-probe, 2026-07-06). This pins the real contract.
+    const client = fakeClient([
+      { type: "response.output_text.delta", delta: "partial answer" },
+      { type: "error", code: "server_error", message: "boom mid-stream" },
+    ]);
+    await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*boom mid-stream/i);
+  });
+
+  it("a flat `error` event with only a code still surfaces the code, not 'unknown error'", async () => {
+    const client = fakeClient([{ type: "error", code: "server_error" }]);
     await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*server_error/i);
+  });
+
+  it("a schema'd stream cut by a mid-stream `error` REJECTS — never a jsonrepair'd wrong value", async () => {
+    // The round-2 kill-probe's exact scenario: truncated JSON + a real `error` event.
+    // Under the fictional-name guard this RESOLVED to {algorithm:"merge"} — a plausible
+    // wrong value fabricated by jsonrepair from a failed stream.
+    const client = fakeClient([
+      { type: "response.output_text.delta", delta: '{"algorithm":"merge' },
+      { type: "error", code: "server_error", message: "upstream reset" },
+    ]);
+    await expect(
+      completeVia(client, spec({ schema: JSON.stringify(["object", ["algorithm", "string"]]) })),
+    ).rejects.toThrow(/stream failed.*upstream reset/i);
+  });
+
+  it("closes the stream iterator when a failure event throws (SSE transport teardown)", async () => {
+    // The openai SDK's stream generator aborts its transport in its own finally —
+    // which only runs when the iterator is CLOSED. The manual read loop must call
+    // it.return() on the throw path or the socket stays open (round-2 review).
+    let returned = false;
+    const events = [
+      { type: "response.created" },
+      { type: "response.failed", response: { error: { message: "quota" } } },
+    ];
+    const client: ResponsesClient = {
+      responses: {
+        create: async () => {
+          let i = 0;
+          return {
+            [Symbol.asyncIterator]() {
+              return {
+                next: async () =>
+                  i < events.length ? { done: false as const, value: events[i++] as never } : { done: true as const, value: undefined as never },
+                return: async () => {
+                  returned = true;
+                  return { done: true as const, value: undefined as never };
+                },
+              };
+            },
+          };
+        },
+      },
+    };
+    await expect(completeVia(client, spec())).rejects.toThrow(/stream failed.*quota/i);
+    expect(returned).toBe(true);
   });
 
   it("a schema'd REFUSAL yields a LEGIBLE error naming the model, not `Unexpected token`", async () => {
@@ -533,6 +609,56 @@ describe("resolveCodexCredential — the refresh path", () => {
         expect(onDisk.tokens.id_token).toBe("id-2");
         expect(onDisk.last_refresh).toBeTruthy();
         expect(statSync(authFile).mode & 0o777).toBe(0o600);
+      },
+    );
+  });
+
+  it("persists the rotation even when the auth.json re-read fails mid-refresh", async () => {
+    // The single-use rt is burned server-side the moment the POST succeeds — from
+    // then on the rotated set is the ONLY working credential. The write-through
+    // re-reads auth.json to preserve sibling fields; if that re-read throws
+    // (file deleted/corrupted between POST and write), the rotation must still
+    // land on disk in a minimal payload, or the session bricks until a manual
+    // `codex login`. (Round-2 review, 2026-07-06.)
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: {} },
+      async ({ authFile }) => {
+        // Layered stub: delete auth.json BEFORE the refresh response returns, so the
+        // post-POST re-read hits ENOENT. (The harness's finally still restores fetch.)
+        // @ts-expect-error test stub
+        globalThis.fetch = async () => {
+          rmSync(authFile);
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ access_token: FRESH_JWT, refresh_token: "rt-2" }),
+          } as Response;
+        };
+        const out = await resolveCodexCredential({});
+        expect(out.accessToken).toBe(FRESH_JWT);
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { refresh_token: string };
+        };
+        expect(onDisk.tokens.refresh_token).toBe("rt-2"); // rotation survived the lost re-read
+      },
+    );
+  });
+
+  it("an unusable refreshed token REJECTS legibly — after persisting the rotation", async () => {
+    // Presence-only validation shipped an opaque failure: a 200 carrying a truthy but
+    // unparseable access_token was handed to the caller → backend 401 with no cause,
+    // plus one refresh POST and one rt rotation per inference call. The fix throws a
+    // NAMED error — but only after the write-through, because the burned rt makes the
+    // rotated set the only copy worth protecting. (Round-2 review, 2026-07-06.)
+    await withCodexAuth(
+      { accessToken: codexJwt(1), refreshJson: { access_token: "garbage-not-a-jwt", refresh_token: "rt-2" } },
+      async ({ authFile }) => {
+        await expect(resolveCodexCredential({})).rejects.toThrow(/unusable access token.*codex login/is);
+        const onDisk = JSON.parse(readFileSync(authFile, "utf8")) as {
+          tokens: { access_token: string; refresh_token: string };
+        };
+        expect(onDisk.tokens.refresh_token).toBe("rt-2"); // rotation persisted despite the reject
+        expect(onDisk.tokens.access_token).toBe("garbage-not-a-jwt");
       },
     );
   });

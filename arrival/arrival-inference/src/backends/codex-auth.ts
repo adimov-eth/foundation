@@ -114,7 +114,18 @@ async function refresh(tokens: CodexTokens): Promise<CodexTokens> {
     id_token: j.id_token || tokens.id_token,
   };
   const p = authPath();
-  const payload = JSON.parse(readFileSync(p, "utf8")) as Record<string, unknown>;
+  // The single-use refresh_token is ALREADY BURNED server-side by this point — from
+  // here on, `next` is the only copy of the working credential. If the re-read of
+  // auth.json fails (deleted/corrupted mid-refresh), persisting the rotated set in a
+  // minimal payload beats preserving sibling fields of a file we can no longer read;
+  // failing here would discard the rotation and brick the session until a manual
+  // `codex login`. (Round-2 review, 2026-07-06.)
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(readFileSync(p, "utf8")) as Record<string, unknown>;
+  } catch {
+    payload = {};
+  }
   const body = JSON.stringify({ ...payload, tokens: next, last_refresh: new Date().toISOString() }, null, 2);
   // ATOMIC write: a torn writeFileSync (crash / concurrent writer) would leave a
   // half-written auth.json that bricks BOTH this backend and the Codex CLI. Write a
@@ -129,6 +140,18 @@ async function refresh(tokens: CodexTokens): Promise<CodexTokens> {
   const tmp = `${p}.${process.pid}.tmp`;
   writeFileSync(tmp, body, { mode: 0o600 });
   renameSync(tmp, p);
+  // Validate USABILITY only after the write-through: the rotated refresh_token must
+  // reach disk no matter what (see above), but handing the caller an access token
+  // that is unparseable or already expired would just trade this legible error for
+  // an opaque backend 401 — plus one refresh POST and one rt rotation per inference
+  // call until someone noticed. Presence-only validation shipped exactly that.
+  // (Round-2 review, 2026-07-06.)
+  if (isExpiring(next.access_token)) {
+    throw new Error(
+      "Codex refresh returned an unusable access token (unparseable or already expiring). " +
+        "The rotated refresh_token was persisted; run `codex login` if this repeats.",
+    );
+  }
   return next;
 }
 

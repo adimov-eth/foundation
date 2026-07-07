@@ -30,11 +30,14 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # NON-BLOCKING (2026-07-05): this step had never actually executed — install was
-      # red on a lockfile drift until PR #7, so the gate below it never ran. First real
-      # run surfaced ~1200 pre-existing errors across 11 packages (rot, not regressions).
-      # The sweep is tracked in the PR #7 follow-through plan (tracks D2/D4); flip this
-      # back to blocking once `pnpm lint` is green at root.
+      # NON-BLOCKING (2026-07-05): install had been red on a lockfile drift (three
+      # missing workspace importers), so this gate hadn't run on any recent main — the
+      # last green Lint on main was 2026-06-18 (run 27796112587; an earlier comment
+      # here claimed it had "never actually executed", which that run refutes — round-2
+      # review, 2026-07-06). The first post-drift run surfaced ~1200 pre-existing
+      # errors across 11 packages (rot, not regressions). The sweep is tracked in the
+      # PR #7 follow-through plan (tracks D2/D4); flip this back to blocking once
+      # `pnpm lint` is green at root.
       - name: Lint (non-blocking until the D4 rot sweep lands)
         run: pnpm lint
         continue-on-error: true

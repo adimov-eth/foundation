@@ -227,8 +227,14 @@ describe("CRITICAL: resource exhaustion (DoS vectors)", () => {
     }
     const elapsed = Date.now() - start;
     expect(caught).toBe(true);
-    // O(1) cap vs ~200MB allocation: the failure mode is seconds, not ms — bound
-    // sits above CI scheduler noise, far below the allocation stall (2026-07-05).
+    // The regression guard here is `caught` above, NOT the clock: per the probe note
+    // in this test's docblock, the UNCAPPED call allocates 200MB in ~1ms and RETURNS —
+    // so cap removal fails the assert, never the bound. (A widening comment placed
+    // here in c5f2224 claimed "the failure mode is seconds, not ms", contradicting
+    // the probe 25 lines up — corrected in round-2 review, 2026-07-06. The seconds-
+    // scale stall story is true of make-vector below, not make-string.) The bound
+    // only flags a pathologically slow cap implementation; it just needs to sit
+    // above CI scheduler noise.
     expect(elapsed).toBeLessThan(3000);
   });
 

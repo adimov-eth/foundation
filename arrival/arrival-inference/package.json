@@ -1,7 +1,7 @@
 {
   "name": "@here.build/arrival-inference",
   "version": "0.1.0",
-  "description": "Inference runtime for Arrival \u2014 the 'talk to LLMs' layer: model router, provider backends (anthropic/openai-compatible/openrouter/ollama/vercel), pricing/cost, single-flight infer cache, and the agentic tool-loop. Knows ModelSpec (data), never the scheme evaluator.",
+  "description": "Inference runtime for Arrival \u2014 the 'talk to LLMs' layer: model router, provider backends (anthropic/openai-compatible/openrouter/ollama/vercel/codex), pricing/cost, single-flight infer cache, and the agentic tool-loop. Knows ModelSpec (data), never the scheme evaluator.",
   "keywords": [
     "arrival",
     "llm",

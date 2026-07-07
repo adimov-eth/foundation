@@ -73,4 +73,24 @@ describe("for-each applies an async proc IN ORDER (R7RS)", () => {
     await run(`(vector-for-each slow-first-vec (vector 1 2 3 4 5))`);
     expect(order).toEqual([0, 1, 2, 3, 4]);
   });
+
+  // KNOWN DIVERGENCE, pinned not fixed (round-2 review, 2026-07-06): LIST for-each
+  // still delegates to the deliberately-parallel list map ("call function for all
+  // elements in parallel" — the engine's inference fan-out design), so async effects
+  // land in COMPLETION order. 6bc5349 sequentialized string/vector and explicitly
+  // deferred lists as a core-semantics decision; before this pin, that deferral lived
+  // only in the commit message — invisible in-tree, unpinned, and indistinguishable
+  // from an oversight. `.fails` is the honest state (the provenance §5.3 idiom): the
+  // body asserts the R7RS-correct order and is EXPECTED to fail. If list for-each
+  // gets its own sequential loop, this flips red — drop the `.fails` then (stdlib.ts
+  // for-each carries the matching marker).
+  it.fails(
+    "list for-each: effects land in application order [KNOWN divergence — delegates to parallel map]",
+    async () => {
+      const order: number[] = [];
+      env.set("slow-first-list", slowFirstRecorder(order));
+      await run(`(for-each slow-first-list (list 1 2 3 4 5))`);
+      expect(order).toEqual([0, 1, 2, 3, 4]);
+    },
+  );
 });

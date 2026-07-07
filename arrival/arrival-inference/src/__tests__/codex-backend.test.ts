@@ -160,23 +160,71 @@ describe("buildBody — the verified Codex wire contract", () => {
     expect(body).not.toHaveProperty("temperature");
   });
 
-  it("TRIPWIRE: spec.tools is REFUSED (thrown), never silently dropped", () => {
-    // Stricter than the exclusions above, because the failure mode is worse: tools are
-    // CONTENT-KEYED and the agentic loop treats a no-tool-call turn as the FINAL
-    // answer — a silently de-tooled spec returns a plausible answer-from-priors with
-    // zero dispatches, indistinguishable from a real finish (round-2 review,
-    // 2026-07-06). An unenforced cap degrades; a tool-less agentic answer LIES.
-    // NOTE the asymmetry with the exclusions above (probed 2026-07-07): the gate
-    // ACCEPTS platform tools and the model emits real function_call items — the
-    // refusal guards THIS BACKEND's missing call-parsing, not the wire. Lift it by
-    // implementing tool-call parsing (see the buildBody guard comment), not by
-    // deleting the throw.
-    const tooled = spec({
-      tools: [{ name: "search", description: "look things up", inputSchema: { type: "object" } }],
+  // ── TOOLS — the probed round-trip contract (2026-07-07, both directions live) ───
+  // History: tools were first silently dropped (round-2 CONFIRMED major — a de-tooled
+  // agentic spec FABRICATES: the loop reads a no-tool-call turn as the final answer),
+  // then REFUSED with a throw, now SUPPORTED with the wire shapes pinned below. The
+  // refusal's rationale still governs the shapes: every lowering here must round-trip
+  // through the gate, or the fabrication returns one layer down.
+
+  it("lowers spec.tools to the Responses FLAT function shape (not chat-completions' nested)", () => {
+    // Probed: the gate accepts {type:"function", name, description, parameters} FLAT;
+    // toolsToOpenAI's nested {function:{…}} is a DIFFERENT wire — reusing it here
+    // would be the plausible-but-wrong move. `strict` is optional (probed omitted).
+    const body = buildBody(
+      spec({ tools: [{ name: "get_weather", description: "weather for a city", inputSchema: { type: "object", properties: { city: { type: "string" } } } }] }),
+    );
+    expect(body.tools).toEqual([
+      {
+        type: "function",
+        name: "get_weather",
+        description: "weather for a city",
+        parameters: { type: "object", properties: { city: { type: "string" } } },
+      },
+    ]);
+    expect(body).not.toHaveProperty("tool_choice"); // endpoint default; unprobed knobs stay home
+  });
+
+  it("a tool with no inputSchema gets the empty-object schema (same defaulting as toolsToOpenAI)", () => {
+    const body = buildBody(spec({ tools: [{ name: "ping" }] }));
+    expect((body.tools as Array<{ parameters: unknown }>)[0].parameters).toEqual({
+      type: "object",
+      properties: {},
+      additionalProperties: false,
     });
-    expect(() => buildBody(tooled)).toThrow(/cannot honor spec\.tools.*tool-capable backend/is);
-    // and an empty tools list is NOT an agentic spec — it must build normally:
-    expect(buildBody(spec({ tools: [] }))).toHaveProperty("model");
+  });
+
+  it("an empty tools list sends NO tools field", () => {
+    expect(buildBody(spec({ tools: [] }))).not.toHaveProperty("tools");
+  });
+
+  it("lowers the agentic tool round-trip to typed input items (function_call / function_call_output)", () => {
+    // The exact wire shapes probed 2026-07-07: the model's own function_call item
+    // echoed back (call_id/name/arguments-as-JSON-string), the tool result as a
+    // function_call_output keyed by call_id. store:false ⇒ the whole trajectory
+    // rides input every round.
+    const prompt = JSON.stringify([
+      { role: "user", content: "weather in Bangkok?" },
+      { role: "assistant", content: "", toolCalls: [{ id: "call_1", name: "get_weather", arguments: { city: "Bangkok" } }] },
+      { role: "tool", content: '{"temperature_c":33}', toolCallId: "call_1" },
+    ]);
+    const body = buildBody(spec({ prompt, tools: [{ name: "get_weather" }] }));
+    expect(body.input).toEqual([
+      { role: "user", content: [{ type: "input_text", text: "weather in Bangkok?" }] },
+      { type: "function_call", call_id: "call_1", name: "get_weather", arguments: '{"city":"Bangkok"}' },
+      { type: "function_call_output", call_id: "call_1", output: '{"temperature_c":33}' },
+    ]);
+  });
+
+  it("an assistant turn with BOTH text and tool calls emits the text item then the call items", () => {
+    const prompt = JSON.stringify([
+      { role: "user", content: "hi" },
+      { role: "assistant", content: "checking…", toolCalls: [{ id: "c1", name: "lookup", arguments: {} }] },
+      { role: "tool", content: "found", toolCallId: "c1" },
+    ]);
+    const { input } = buildBody(spec({ prompt })) as { input: Array<Record<string, unknown>> };
+    expect(input.map((i) => i.type ?? i.role)).toEqual(["user", "assistant", "function_call", "function_call_output"]);
+    expect(input[2]).toMatchObject({ call_id: "c1", arguments: "{}" });
   });
 });
 
@@ -228,6 +276,80 @@ describe("completeVia — stream assembly", () => {
     ]);
     const out = await completeVia(client, spec());
     expect(out.usage).toEqual({ inputTokens: 0, outputTokens: 0 });
+  });
+});
+
+// ── tool-call parsing — the probed event stream (2026-07-07) ──────────────────────
+// The COMPLETE call arrives on `response.output_item.done` with item.type ===
+// "function_call": {call_id, name, arguments:<JSON string>}. response.completed's
+// `output` is [] on this plane (the Hermes bug class — never reconstruct from it),
+// and response.function_call_arguments.done duplicates the arguments (ignored: one
+// source of truth per call). A tool-calling turn often has ZERO text.
+
+describe("completeVia — tool calls", () => {
+  /** The verbatim event sequence the live gate emitted for a forced tool call. */
+  const toolCallEvents = [
+    { type: "response.created" },
+    { type: "response.in_progress" },
+    { type: "response.output_item.added", item: { id: "rs_1", type: "reasoning" } },
+    { type: "response.output_item.done", item: { id: "rs_1", type: "reasoning" } },
+    {
+      type: "response.output_item.added",
+      item: { id: "fc_1", type: "function_call", status: "in_progress", arguments: "", call_id: "call_abc", name: "get_weather" },
+    },
+    { type: "response.function_call_arguments.done", arguments: '{"city":"Bangkok"}', item_id: "fc_1" },
+    {
+      type: "response.output_item.done",
+      item: { id: "fc_1", type: "function_call", status: "completed", arguments: '{"city":"Bangkok"}', call_id: "call_abc", name: "get_weather" },
+    },
+    { type: "response.completed", response: { usage: { input_tokens: 40, output_tokens: 9 } } },
+  ];
+
+  it("collects the call from output_item.done — id, name, parsed arguments — exactly once", async () => {
+    const client = fakeClient(toolCallEvents);
+    const out = await completeVia(client, spec({ tools: [{ name: "get_weather" }] }));
+    // exactly one call despite arguments appearing on TWO event types:
+    expect(out.toolCalls).toEqual([{ id: "call_abc", name: "get_weather", arguments: { city: "Bangkok" } }]);
+    expect(out.usage).toEqual({ inputTokens: 40, outputTokens: 9 });
+  });
+
+  it("a tool-calling turn SKIPS the schema parse (the chatBackend tool-vs-parse arc)", async () => {
+    // Zero text + a schema'd spec: forcing parseModelValue here would throw "no
+    // content" on every agentic round — the calls ARE the turn's content; the
+    // agentic loop dispatches and re-infers.
+    const client = fakeClient(toolCallEvents);
+    const out = await completeVia(client, spec({ schema: JSON.stringify(["object", ["x", "string"]]) }));
+    expect(out.toolCalls).toHaveLength(1);
+    expect(out.value).toBe(""); // the raw (empty) text, not a parse error
+  });
+
+  it("a plain turn (no calls) has NO toolCalls key — the loop reads its text as final", async () => {
+    const client = fakeClient(textEvents("done"));
+    const out = await completeVia(client, spec());
+    expect(out).not.toHaveProperty("toolCalls");
+  });
+
+  it("malformed call arguments degrade to {} (shared parseToolArguments tolerance)", async () => {
+    const client = fakeClient([
+      {
+        type: "response.output_item.done",
+        item: { type: "function_call", call_id: "c1", name: "f", arguments: "{not json" },
+      },
+      { type: "response.completed", response: { usage: { input_tokens: 1, output_tokens: 1 } } },
+    ]);
+    const out = await completeVia(client, spec());
+    expect(out.toolCalls).toEqual([{ id: "c1", name: "f", arguments: {} }]);
+  });
+
+  it("a reasoning output item is NOT a tool call (item.type dispatch, not event.type)", async () => {
+    const client = fakeClient([
+      { type: "response.output_item.done", item: { id: "rs_9", type: "reasoning" } },
+      { type: "response.output_text.delta", delta: "plain answer" },
+      { type: "response.completed", response: { usage: { input_tokens: 2, output_tokens: 2 } } },
+    ]);
+    const out = await completeVia(client, spec());
+    expect(out).not.toHaveProperty("toolCalls");
+    expect(out.value).toBe("plain answer");
   });
 });
 

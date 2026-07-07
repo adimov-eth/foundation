@@ -1,5 +1,6 @@
 /**
- * Granular per-site coverage of the `=== nil` identity-equality meta-bug.
+ * Granular per-site coverage of the `=== nil` identity-equality meta-bug (FIXED —
+ * these are regression guards now; see STATUS below).
  *
  * Background — what the bug is and why it matters
  * -----------------------------------------------
@@ -12,22 +13,24 @@
  * same `toString() === "()"`) but FAILS `=== nil` because it is a different
  * heap object.
  *
- * `is_nil` in guards.ts was FIXED to use `instanceof Nil` (see the doc
- * comment at guards.ts:92-103). The 20 sites enumerated below were left on
- * `=== nil`; each one is a place where a Nil clone slips through with the
- * wrong answer. The audit count is informally "~21"; we map 20 concrete
- * sites here and a summary stub that documents the meta-bug count.
+ * STATUS: FIXED (corrected 2026-07-08). This file was written as an `it.fails`
+ * migration ledger while sites still used `=== nil`. Every enumerated site has
+ * since migrated to `instanceof Nil` — a source-wide check finds ZERO live
+ * `=== nil` sites (the only remaining `=== nil` occurrences are comments that
+ * document the fix, e.g. rosetta.ts:112, membrane.ts:86, Pair.ts:672). The
+ * `fantasy-land-lips.ts` file cited below NO LONGER EXISTS — `traversePair`/
+ * `mapPair`/`reducePair`/`chainPair` moved to `values/Pair.ts`. So the two tests
+ * that were still `it.fails` were red only for STALE assertions on already-fixed
+ * code (a wrong `toEqual` and an old of-count); both are corrected + now plain
+ * passing `it()`. The whole file is now a REGRESSION SUITE: green today, flips
+ * red if any site regresses to `=== nil`.
  *
  * Test shape
  * ----------
- * One test per site. Each `it.fails` block:
- *   - quotes the file:line of the bug source,
- *   - mints a nil clone via `nil.withProvenance(new Set([42]))`,
- *   - exercises ONLY the path gated by that `=== nil` check,
- *   - asserts the value `is_nil`-equivalent and behavior-equivalent should produce.
- *
- * When a fix lands, removing `.failing` flips the test green; the test file
- * doubles as the migration acceptance suite.
+ * One test per site: mint a nil clone via `nil.withProvenance(new Set([42]))`,
+ * exercise the path, assert the value is `is_nil`-equivalent and
+ * behavior-equivalent. (Citations to `fantasy-land-lips.ts:NN` below are stale
+ * paths — the real home is `values/Pair.ts`.)
  */
 
 import { describe, expect, it } from "vitest";
@@ -100,20 +103,19 @@ describe("membrane.ts — `=== nil` identity-equality sites", () => {
 // =========================================================================
 
 describe("rosetta.ts — `=== nil` identity-equality sites", () => {
-  // rosetta.ts:70 — `schemeToJs(value)` short-circuits `value == null || value === nil`
-  // by returning the value as-is. A Nil clone fails BOTH checks (it is not
-  // nullish, and not === nil), so control falls through the function body.
-  // It is not a SchemeExact/SchemeInexact/SchemeJSObject/SchemeJSArray/
-  // SchemeBool/SchemeString/Pair/plain-object — so the final `return value`
-  // (line 156) hands back the Nil instance. JS-side consumers expecting
-  // `null` (the contract that `value === nil` is supposed to give them) see
-  // a Nil object instead.
-  it.fails("schemeToJs(nil-clone) — should return null/undefined (rosetta.ts:70)", () => {
-    // The current `schemeToJs(nil)` returns `nil` itself (note: this branch
-    // actually returns `value` not `null` — it is the `== null` branch's
-    // shared exit). Whatever the singleton returns, the clone must match.
-    const singletonResult = schemeToJs(nil);
-    expect(schemeToJs(cloneNil())).toEqual(singletonResult);
+  // FIXED (corrected 2026-07-08): `schemeToJs` short-circuits on
+  // `value == null || value instanceof Nil` (rosetta.ts:116) — `instanceof Nil`,
+  // NOT the old `=== nil` reference check. A Nil clone hits that FIRST branch and
+  // is returned as-is (it never falls through to `return value` at the end). This
+  // was once an `it.fails` claiming a `=== nil` fall-through bug; that bug is
+  // fixed, and the old assertion `toEqual(schemeToJs(nil))` was WRONG anyway — a
+  // clone carries its own provenance (Set{42}) while the singleton carries none
+  // (Set{}), so `toEqual` correctly reports them unequal. The right invariant is:
+  // both convert to a Nil (is_nil-true), which is what a JS consumer needs.
+  it("schemeToJs(nil-clone) returns a Nil (instanceof-Nil short-circuit, rosetta.ts:116)", () => {
+    const out = schemeToJs(cloneNil());
+    expect(is_nil(out)).toBe(true);
+    expect(is_nil(schemeToJs(nil))).toBe(true);
   });
 
   // rosetta.ts:130 — Inside the Pair-spine recursion, the tail is converted
@@ -247,18 +249,17 @@ describe("fantasy-land-lips.ts — `=== nil` identity-equality sites", () => {
     expect(collected).toEqual([1]);
   });
 
-  // fantasy-land-lips.ts:108 — `traversePair`'s base case
-  // `if (!pair || pair === nil) return of(nil)`. With a clone in tail
-  // position, recursion proceeds one phantom step. Expected: `of` called
-  // exactly once at termination, with `nil` argument.
-  // Post-Nil-fix: `traversePair` correctly terminates at the clone via
-  // `pair instanceof Nil`, so the of-call count is now driven purely by the
-  // algorithm (one of() for the base case + one of(new Pair(...)) for each
-  // leaf-mode head wrapping). For a 1-element Pair that's 2 calls — the
-  // pre-existing assertion `ofCalls.length === 1` reflected the broken-
-  // termination shape rather than the algorithm's correct invariant, so we
-  // keep it `.fails` until the assertion is rewritten.
-  it.fails("traversePair(of, f, Pair(1, nil-clone)) — of-nil called once (fantasy-land-lips.ts:108)", () => {    const ofCalls: unknown[] = [];
+  // FIXED (corrected 2026-07-08): `traversePair`'s base case (Pair.ts:759 — the
+  // old `fantasy-land-lips.ts` path no longer exists) is
+  // `if (!pair || pair instanceof Nil) return of(nil)`, so a Nil clone in tail
+  // position terminates correctly via `instanceof`. The of-call count is then
+  // driven purely by the algorithm: one of(nil) for the base case + one
+  // of(Pair(...)) per head-wrap. For a 1-element Pair that is 2 calls. This was
+  // kept `it.fails` with a stale `ofCalls.length === 1` assertion (the old
+  // broken-termination shape); the fix's own comment (below) admitted it needed
+  // rewriting. Rewritten: assert the correct count 2, with the base-case arg nil.
+  it("traversePair(of, f, Pair(1, nil-clone)) — of called twice: base of(nil) + head-wrap (Pair.ts:759)", () => {
+    const ofCalls: unknown[] = [];
     const of = (v: unknown) => {
       ofCalls.push(v);
       return v;
@@ -266,8 +267,8 @@ describe("fantasy-land-lips.ts — `=== nil` identity-equality sites", () => {
     const p = new Pair(1, cloneNil());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (p as any)["fantasy-land/traverse"](of, (x: unknown) => x);
-    expect(ofCalls.length).toBe(1);
-    expect(is_nil(ofCalls[0])).toBe(true);
+    expect(ofCalls.length).toBe(2);
+    expect(is_nil(ofCalls[0])).toBe(true); // base case of(nil) fires first
   });
 
   // fantasy-land-lips.ts:120 — `chainPair`'s base case

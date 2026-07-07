@@ -1,5 +1,5 @@
 /**
- * R7RS identity-predicate conformance — bug ledger.
+ * R7RS identity-predicate conformance — regression guards (bug FIXED).
  *
  * Why this file exists
  * --------------------
@@ -9,21 +9,21 @@
  * interchangeable — collapsing them breaks `memq`/`assv`/`hash-table-ref/eqv`/
  * `case` dispatch.
  *
- * Our current `eq?` and `eqv?` are both aliased to a single `equal` helper at
- * `lips.ts:3634-3635`. That helper takes a partial-deep stance:
- *   - For Pair / Array / unknown objects it falls through to `else x === y`
- *     (lips.ts:674) — happens to match the R7RS pointer-grade answer.
- *   - For strings (lips.ts:670-672) it value-compares via `valueOf()` — wrong:
- *     two distinct heap SchemeString instances compare equal, collapsing
- *     eq?/eqv? into a string-equal? shape.
+ * HISTORY (corrected 2026-07-08): this file was written as an `it.fails` bug
+ * LEDGER for a real string-identity bug — `eq?`/`eqv?` value-compared strings
+ * via `.valueOf()`, so two distinct heap SchemeStrings compared equal,
+ * collapsing eq?/eqv? into an equal? shape. That bug is FIXED: `eq?`/`eqv?` are
+ * bound (stdlib.ts:1853-1854) to pointer-grade `eq`/`eqv` in
+ * `values/structural-equal.ts`, whose SchemeString path returns `false` for
+ * distinct instances (structural-equal.ts:145-158, with its own past-tense war
+ * story). The old citations to `lips.ts:670-672`/`:3634-3635` are dead — that
+ * file no longer exists.
  *
- * The string path is the load-bearing identity bug. Symbol interning and the
- * accidental-correct Pair/Array path are guarded as passing invariants so any
- * future patch that "unifies" `equal` won't silently regress the right answers.
- *
- * Style — each `it.fails` describes EXPECTED R7RS behavior. `it.fails` is
- * vitest 4's "this should fail; passing = regression" — perfect for bug
- * ledgers (when the bug gets fixed, removing `.fails` flips the test green).
+ * So the "known bugs" block below is now a set of REGRESSION GUARDS: plain
+ * `it()` that PASS, pinning the correct pointer-grade answers. (They were once
+ * `it.fails`; the comments that still predicted a `#t` failure were stale —
+ * the probe returns `#f`, the correct value. Verified + corrected 2026-07-08.)
+ * If a future "unify equal" patch reintroduces valueOf-collapse, these flip red.
  */
 
 import { describe, expect, it } from "vitest";
@@ -84,48 +84,34 @@ describe("r7rs identity — passing invariants (regression guards)", () => {
   });
 });
 
-describe("r7rs identity — known bugs (it.fails — flipping to green = regression of the bug)", () => {
+describe("r7rs identity — string-identity regression guards (bug fixed; these PIN the correct answer)", () => {
   it(
-    "eq? on two distinct string-copy results SHOULD be #f (R7RS § 6.1)",
+    "eq? on two distinct string-copy results is #f (R7RS § 6.1)",
     async () => {
-      // R7RS § 6.1: `(eq? "x" "x")` on literals is implementation-defined,
-      // BUT distinct heap instances (`string-copy` minted fresh objects)
-      // should not compare eq? — the predicate is meant to be at most a
-      // pointer-grade check. Current bug: `lips.ts:670-672` compares strings
-      // via `.valueOf()`, returning #t for two unrelated heap instances.
-      // This collapses eq?/eqv? into string-equal? shape, breaking the
-      // R7RS three-tier hierarchy.
-      //
-      // Predicted failure value: result === #t (truthy) instead of #f.
+      // Once the load-bearing bug: eq? value-compared strings via `.valueOf()`,
+      // returning #t for two distinct heap instances (collapsing eq? into
+      // string-equal?). FIXED — `eq` (structural-equal.ts) is pointer-grade for
+      // SchemeString. This pins #f; a valueOf-collapse regression flips it red.
       const r = await evalScheme(`(eq? (string-copy "abc") (string-copy "abc"))`);
       expect(truthy(r)).toBe(false);
     },
   );
 
   it(
-    "eqv? on two distinct string-copy results SHOULD be #f (R7RS § 6.1)",
+    "eqv? on two distinct string-copy results is #f (R7RS § 6.1)",
     async () => {
-      // Same root cause: `lips.ts:3634-3635` aliases both eq? and eqv? to
-      // the same `equal` helper. R7RS § 6.1 leaves eqv? on string literals
-      // unspecified, but the same-instance-vs-fresh-instance distinction
-      // must be respected — value-comparing-via-valueOf makes eqv?
-      // indistinguishable from equal? for strings.
-      //
-      // Predicted failure value: result === #t (truthy) instead of #f.
+      // Same fix: `eqv` is pointer-grade for strings, not aliased to `equal`.
+      // Distinct heap instances answer #f (atom-grade). Regression guard.
       const r = await evalScheme(`(eqv? (string-copy "abc") (string-copy "abc"))`);
       expect(truthy(r)).toBe(false);
     },
   );
 
   it(
-    "eqv? on two distinct make-string results SHOULD be #f (R7RS § 6.1)",
+    "eqv? on two distinct make-string results is #f (R7RS § 6.1)",
     async () => {
-      // Same alias chain exercised through a different constructor. Every
-      // `make-string` call mints a fresh SchemeString; eqv? on two distinct
-      // heap instances should answer #f under atom-grade semantics, but the
-      // `equal`-via-valueOf path collapses them to #t.
-      //
-      // Predicted failure value: result === #t (truthy) instead of #f.
+      // Fresh SchemeString per `make-string`; eqv? answers #f under atom-grade
+      // semantics. Was #t under the valueOf-collapse bug; now correct.
       const r = await evalScheme(`(eqv? (make-string 1 #\\a) (make-string 1 #\\a))`);
       expect(truthy(r)).toBe(false);
     },

@@ -1,22 +1,23 @@
 /**
  * CRITICAL: Sandbox security findings — each test corresponds to a specific
- * known attack vector or resource-exhaustion bug.
+ * attack vector or resource-exhaustion bug that WAS live and has since been
+ * fixed. These tests are REGRESSION GUARDS: they pin the secure, post-fix
+ * behavior so a future change can't silently reopen a hole.
  *
  * War-story format: every test cites (a) the audit finding it covers, (b) the
- * file:line that is the source of the bug, and (c) the secure invariant we
- * *want* to hold. Tests marked `.fails` describe the desired post-fix
- * behavior — they are RED today; when the fix lands they will flip to GREEN
- * and vitest will fail until `.fails` is removed.
+ * secure invariant that now holds, and (c) where the fix actually lives today.
+ * Every test is a green plain `it()` asserting the CORRECT behavior — there are
+ * NO `.fails`/`.failing` tripwires left. The originally-cited buggy file:line
+ * pointers are STALE: each fix moved the implementation (e.g. the eval-escape
+ * verbs were deleted from wrappedOps; the execution budget landed on the
+ * generator trampoline in eval/evaluator.ts around the RunOptions.budgetMs
+ * deadline path, ~L674+). Where a comment below still names an old bug site it
+ * is describing history, not a live line — grep the named symbol before
+ * trusting any file:line here.
  *
  * Probe origin: ran experimental probe (`_sandbox-escape-probe.test.ts`,
- * deleted) against current main on 2026-05-28 to confirm each vector. Findings
- * live as comments below — do not delete them without re-running the probe.
- *
- * Vitest API note: `it.fails(name, fn)` is the vitest 4 spelling of "this test
- * is expected to fail." When the underlying bug is fixed and the test starts
- * passing, vitest reports the suite as failed, forcing the `.fails` marker to
- * be removed. (Vitest 3+ docs sometimes call this `.failing`; in vitest 4 the
- * canonical name is `.fails`.)
+ * deleted) against main on 2026-05-28 to confirm each vector when it was still
+ * open. The findings survive as history in the comments below.
  */
 
 import { describe, expect, it } from "vitest";
@@ -262,19 +263,24 @@ describe("CRITICAL: resource exhaustion (DoS vectors)", () => {
   }, 15000);
 
   /**
-   * Audit finding: `evaluator.ts:411` — `run()` is the generator trampoline.
-   * It has no wall-clock budget, no instruction counter, no cancellation.
-   * Sandbox code can `(let loop () (loop))` forever; the host has no way to
-   * reclaim the worker except by killing the process.
+   * Audit finding (FIXED): the generator trampoline used to have no wall-clock
+   * budget, no instruction counter, no cancellation — sandbox code could
+   * `(let loop () (loop))` forever and the host had no way to reclaim the
+   * worker except by killing the process.
    *
-   * Secure invariant: each `run()` invocation should honor a budget (either
-   * passed via options or a per-host default). Exceeding the budget should
-   * throw a recoverable error, not hang forever.
+   * Fixed: the wall-clock budget now lives on the trampoline in
+   * eval/evaluator.ts as `RunOptions.budgetMs` (see the deadline path around
+   * evaluator.ts:674-906). When set, the trampoline starts a deadline at
+   * `performance.now() + budgetMs` and throws a `SchemeError` whose message is
+   * "execution budget exceeded (<n>ms)" (matches /budget/i) once the deadline
+   * passes — checked at the same 1000-iter / 5ms iteration boundary as the
+   * abort signal, so it costs nothing on the hot path and composes with
+   * `signal` (whichever fires first wins).
    *
-   * This test DOCUMENTS the missing infra rather than exploits it — actually
-   * running `(let loop () (loop))` with no budget would hang the test runner.
-   * The shape is: when budget infra exists, this test will compile against
-   * its public API and the .failing marker can be removed.
+   * Secure invariant (now HELD, pinned below): a run given a `budgetMs` honors
+   * it — an unbounded loop throws a recoverable /budget/ error instead of
+   * hanging. This is a green regression guard, not a documented gap; there is
+   * no `.failing` marker to remove.
    */
   it("infinite loop is bounded by a wall-clock budget (budgetMs)", async () => {
     await initBridge();

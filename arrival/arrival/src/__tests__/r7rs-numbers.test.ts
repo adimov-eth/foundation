@@ -1,32 +1,34 @@
 /**
- * R7RS numeric-tower conformance — bug ledger.
+ * R7RS numeric-tower conformance — regression guards.
  *
  * Why this file exists
  * --------------------
  * R7RS § 6.2 defines a numeric tower with an exactness contract: operations
- * that take exact arguments and CAN return exact answers MUST do so. Our
- * implementation has two structural shortcuts that violate this:
+ * that take exact arguments and CAN return exact answers MUST do so. Several
+ * structural shortcuts once violated this; they have since been fixed, and the
+ * `it()` cases below PIN the corrected behavior so it cannot silently regress.
+ * These are passing invariants — not a `it.fails` bug ledger. (There are no
+ * `it.fails` cases in this file; every test asserts the correct, post-fix
+ * result.) What each guard covers, and where the fix lives:
  *
- *   1. `expt` at `operators/numeric.ts:340-344` is just `Math.pow`, so every
- *      result starts as a JS float. The `Num` codec at `membrane.ts:443-448`
- *      then promotes back to exact only when the float happens to be a safe
- *      integer — making `(expt 2 10) = exact 1024` but `(expt 2 -1) = inexact
- *      0.5` (should be exact 1/2) and `(expt 2 1000) = inexact ~1e+301`
- *      (should be exact bigint).
+ *   1. `expt` used to be `Math.pow`, so every result started as a JS float that
+ *      only re-promoted to exact when it happened to be a safe integer —
+ *      `(expt 2 10) = exact 1024` but `(expt 2 -1) = inexact 0.5` (should be
+ *      exact 1/2) and `(expt 2 1000) = inexact ~1e+301` (should be exact
+ *      bigint). FIXED in `schemeExpt` at `operators/numeric.ts:379`: an exact
+ *      integer base raised to an exact integer power computes with BigInt `**`
+ *      (exact rational for negative powers).
  *
- *   2. Comparison ops (`<`, `>`, `<=`, `>=`) at `operators/numeric.ts:392-406`
- *      coerce every operand through `toReal` which does `Number(num)/Number(denom)`.
- *      For exacts beyond 2^53 this is lossy — two distinct huge integers
- *      collapse to the same float, so `(< 999999999999999998 999999999999999999)`
- *      returns #f.
+ *   2. Comparison ops (`<`, `>`, `<=`, `>=`) used to coerce every operand to a
+ *      JS double, so two distinct exacts beyond 2^53 collapsed to the same
+ *      float and `(< 999999999999999998 999999999999999999)` returned #f.
+ *      FIXED in `schemeCompare` at `operators/numeric.ts:462`: the exact/exact
+ *      case routes through `SchemeExact.cmp` (bigint cross-multiplication).
  *
- * Plus the smaller hazards: `(exact 1e-10)` throws because the
- * `bridge.ts:497` exponential-string path doesn't handle "1e-10"; and
- * `(number->string 5.0)` returns "5" instead of "5." (chibi compat), losing
- * exactness information when round-tripped.
- *
- * Style — each `it.fails` describes EXPECTED R7RS behavior; comment cites
- * file:line of the bug source.
+ * Plus the smaller hazards, also fixed in `bridge.ts`: `(exact 1e-10)` once
+ * threw because the exponential-string path didn't handle "1e-10"; and
+ * `(number->string 5.0)` once returned "5" instead of "5." (chibi compat),
+ * losing exactness information when round-tripped.
  */
 
 import { describe, expect, it } from "vitest";
@@ -75,14 +77,14 @@ describe("r7rs numbers — passing invariants (regression guards)", () => {
   });
 
   it("(eqv? +inf.0 +inf.0) is #t (R7RS § 6.2)", async () => {
-    // R7RS: +inf.0 is eqv? to itself. Inexact path uses `equals()` at
-    // numbers.ts:396-398 which is `===` on `real`; Infinity === Infinity.
+    // R7RS: +inf.0 is eqv? to itself. Inexact path uses `SchemeInexact.equals`
+    // at numbers.ts:445-446 which is `===` on `real`; Infinity === Infinity.
     const r = await evalScheme("(eqv? +inf.0 +inf.0)");
     expect(truthy(r)).toBe(true);
   });
 
   it("inexact on a rational converts to float (R7RS § 6.2)", async () => {
-    // bridge.ts:483-484: exact denom-aware path → Number(num)/Number(denom).
+    // bridge.ts:467-468: exact denom-aware path → Number(num)/Number(denom).
     const r = await evalScheme("(inexact 1/2)");
     expect(num(r)).toBe(0.5);
   });
@@ -156,9 +158,9 @@ describe("r7rs numbers — exactness/precision fixes (regression guards)", () =>
   it(
     "exact->inexact is bound (R5RS alias, R7RS-compatible naming)",
     async () => {
-      // R5RS § 6.2.5 alias for R7RS `inexact`. Bound at `lips.ts` via a
-      // late-lookup trampoline (target lives in bridge.ts, applied during
-      // initBridge).
+      // R5RS § 6.2.5 alias for R7RS `inexact`. Bound at `stdlib.ts:1870` via a
+      // call-time-lookup trampoline (target `inexact` lives in bridge.ts,
+      // applied to global_env during initBridge).
       const r = await evalScheme("(exact->inexact 1/2)");
       expect(num(r)).toBe(0.5);
     },
@@ -167,8 +169,8 @@ describe("r7rs numbers — exactness/precision fixes (regression guards)", () =>
   it(
     "inexact->exact is bound (R5RS alias, R7RS-compatible naming)",
     async () => {
-      // R5RS § 6.2.5 alias for R7RS `exact`. Same trampoline shape as
-      // `exact->inexact`.
+      // R5RS § 6.2.5 alias for R7RS `exact`. Same call-time-lookup trampoline
+      // shape as `exact->inexact`, bound at `stdlib.ts:1873`.
       const r = await evalScheme("(inexact->exact 0.5)");
       expect(truthy(await evalScheme("(exact? (inexact->exact 0.5))"))).toBe(true);
       // Type sanity: 0.5 → 1/2 exact, valueOf === 0.5.

@@ -173,6 +173,32 @@ describe("host-rosetta harvest (the exported surface must reach the checker)", (
     // The nested `(x: SNum) => SBool` must survive intact (not collapse to `unknown[]`).
     expect(fragment).toContain("(pred: (x: SNum) => SBool, xs: List<SNum>) => SNum");
   });
+
+  // REGRESSION GUARD against verifying-my-own-assumptions: the sigs above are hand-authored.
+  // These are the `type:` strings the interpreter ACTUALLY stores in `__rosettaTypes__`, grepped
+  // verbatim from arrival-chain/src/data-effects.ts (http/sql) and loader.ts (require). If a future
+  // change to sigToArrow's grammar stops parsing what defineRosetta really emits, THIS fails — not
+  // a fake fixture that happens to share my parser's assumptions. Each carries the optional-param
+  // (`opts?`) shape, the case most likely to trip a naive `\([^)]*\)` scan.
+  it("survives every rosetta sig the live interpreter actually emits", () => {
+    const realEnv = {
+      __rosettaTypes__: new Map([
+        ["http/get", "(label: SStr, path: SStr, opts?: unknown): unknown"],
+        ["sql/query", "(label: SStr, query: SStr, params?: unknown): unknown"],
+        ["require", "(specifier: SStr): unknown"],
+        ["require/extension", "(suffix: SStr, resolver: unknown): unknown"],
+      ]),
+    };
+    const { fragment, hostMembers } = harvestHostLeaves(realEnv);
+    // No throw, all four members present as arrow types.
+    expect(fragment).toContain('"http/get": (label: SStr, path: SStr, opts?: unknown) => unknown;');
+    expect(hostMembers.has("http/get")).toBe(true);
+    // End-to-end through the checker: a real host-verb call is clean AND bites on arity misuse.
+    const clean = diagnoseScheme('(http/get "l" "https://x")', { hostMembers, preludeAppend: fragment });
+    expect(clean.diagnostics.filter((d) => d.severity === "error")).toEqual([]);
+    const bad = diagnoseScheme("(http/get 5)", { hostMembers, preludeAppend: fragment });
+    expect(bad.diagnostics.some((d) => d.code === 2554)).toBe(true); // wrong arg count
+  });
 });
 
 describe("multi-line lift + top-form attribution", () => {

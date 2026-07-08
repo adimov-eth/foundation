@@ -15,13 +15,16 @@ import { diagnoseScheme, harvestHostLeaves, loadAuthoredPrelude } from "../index
 /** True iff any diagnostic is an error. */
 const hasError = (scm: string): boolean => diagnoseScheme(scm).diagnostics.some((d) => d.severity === "error");
 
-/** Assert no spurious `Property does not exist` (TS2339/TS2551) — the mis-signal a missing
- *  ArrShape member produces on correct Scheme. */
-const expectNoPropertyError = (scm: string): void => {
-  const { diagnostics } = diagnoseScheme(scm);
-  const spurious = diagnostics.find((d) => d.code === 2339 || d.code === 2551);
-  expect(spurious, `${scm} should not report a 'Property does not exist' error`).toBeUndefined();
-};
+// Each diagnoseScheme call boots a fresh ~49MB tsgo-wasm process (~2s local, ~4s CI), so tests
+// that would loop one call per snippet time out under CI. Instead we batch snippets into ONE
+// program (one line each → one spawn) and reason per-line — strictly stronger (the heads coexist)
+// and ~30× cheaper. `linesWithError` returns the set of 0-based lines carrying an error.
+const linesWithError = (program: string): Set<number> =>
+  new Set(
+    diagnoseScheme(program)
+      .diagnostics.filter((d) => d.severity === "error")
+      .map((d) => d.line),
+  );
 
 describe("the prelude asset", () => {
   it("loads and declares the __arr table (the load-bearing `export {}` must survive)", () => {
@@ -51,9 +54,16 @@ describe("the bite contract", () => {
   });
 
   it("bites across the builtin surface", () => {
-    expect(hasError("(string-length 42)")).toBe(true); // 42 not a string
-    expect(hasError('(+ 1 "x")')).toBe(true); // string in arithmetic
-    expect(hasError("(vector-ref (list 1 2) 0)")).toBe(true); // list where a vector is wanted
+    // One program, one spawn — each line is a distinct wrong-type call that must error.
+    const bites = [
+      "(string-length 42)", //        line 0 — 42 not a string
+      '(+ 1 "x")', //                 line 1 — string in arithmetic
+      "(vector-ref (list 1 2) 0)", // line 2 — list where a vector is wanted
+    ];
+    const errored = linesWithError(bites.join("\n"));
+    for (const [line] of bites.entries()) {
+      expect(errored, `line ${line} (${bites[line]}) should bite`).toContain(line);
+    }
   });
 });
 
@@ -62,20 +72,15 @@ describe("idiomatic-builtin coverage (no spurious 'Property does not exist')", (
   // ArrShape member, else correct R7RS Scheme reports TS2339/TS2551 'Property X does not exist
   // on ArrShape' — a real-type-error SHAPE on correct code, the exact mis-signal this lens exists
   // to avoid (and the opposite of the loud TS2304 'Cannot find name' contract for the unmodelled).
-  it("clean-checks the c[ad]+r accessor family (was TS2339/TS2551 before coverage)", () => {
-    for (const scm of [
+
+  it("clean-checks the c[ad]+r family + and/or, list ops, and predicates (were TS2339/TS2551)", () => {
+    // ONE program, ONE spawn (see linesWithError): every idiom coexists and NONE may error. This
+    // is the whole coverage surface added by accessor.d.ts / logic.d.ts and the leaf additions.
+    const program = [
       "(cadr (list 1 2 3))",
       "(cddr (list 1 2 3 4))",
       "(caddr (list 1 2 3 4))",
       "(cadddr (list 1 2 3 4 5))",
-    ]) {
-      expectNoPropertyError(scm);
-      expect(hasError(scm), scm).toBe(false);
-    }
-  });
-
-  it("clean-checks and/or, list ops, and numeric/list predicates (were TS2339)", () => {
-    for (const scm of [
       "(and #t #t)",
       "(or #f #t)",
       "(first (list 1 2))",
@@ -88,19 +93,28 @@ describe("idiomatic-builtin coverage (no spurious 'Property does not exist')", (
       "(empty? (list))",
       '(string=? "a" "a")',
       '(string-ci=? "A" "a")',
-    ]) {
-      expectNoPropertyError(scm);
-      expect(hasError(scm), scm).toBe(false);
-    }
+    ].join("\n");
+    const { diagnostics } = diagnoseScheme(program);
+    // No 'Property does not exist' anywhere — the specific mis-signal a missing member produces.
+    expect(diagnostics.filter((d) => d.code === 2339 || d.code === 2551)).toEqual([]);
+    // And nothing errors at all — every line is well-typed Scheme.
+    expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
   });
 
   it("still BITES on a wrong argument through the newly-covered heads", () => {
-    // Coverage must not become permissiveness: these are genuine type errors that must survive.
-    expect(hasError("(cadr 5)")).toBe(true); //     5 is not a list
-    expect(hasError("(caddr 42)")).toBe(true); //   42 is not a list
-    expect(hasError("(first 7)")).toBe(true); //    7 is not a list
-    expect(hasError('(zero? "x")')).toBe(true); //  string where a number is wanted
-    expect(hasError("(string=? 1 2)")).toBe(true); // numbers where strings are wanted
+    // Coverage must not become permissiveness. One program, one spawn: each 0-based line is a
+    // genuine type error that must survive — assert every line carries one.
+    const bites = [
+      "(cadr 5)", //        line 0 — 5 is not a list
+      "(caddr 42)", //      line 1 — 42 is not a list
+      "(first 7)", //       line 2 — 7 is not a list
+      '(zero? "x")', //     line 3 — string where a number is wanted
+      "(string=? 1 2)", //  line 4 — numbers where strings are wanted
+    ];
+    const errored = linesWithError(bites.join("\n"));
+    for (const [line] of bites.entries()) {
+      expect(errored, `line ${line} (${bites[line]}) should bite`).toContain(line);
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "@here.build/arrival-type-lens",
   "version": "0.1.0",
-  "description": "The TypeScript type surface arrival Scheme is checked against — base types + generic per-builtin leaves + a host-rosetta harvester, checked via the portable tsgo-wasm compiler (RECONSTRUCTION)",
+  "description": "The TypeScript type surface arrival Scheme is checked against — base types + generic per-builtin leaves, plus a consumer-supplied host-function typing contract, checked via the portable tsgo-wasm compiler (RECONSTRUCTION)",
   "keywords": [
     "arrival",
     "scheme",

@@ -28,11 +28,16 @@ export interface RosettaTypedEnv {
   readonly __rosettaTypes__?: ReadonlyMap<string, string>;
 }
 
-/** The result of harvesting a live env's host-rosetta signatures. */
+/** The result of harvesting a live env's host-rosetta signatures. Feed BOTH fields into a
+ *  diagnose run together — `diagnoseScheme(scm, { hostMembers, preludeAppend: fragment })` — so
+ *  the host heads both lower through `__arr` (hostMembers) AND have their signatures declared
+ *  (fragment). `hostMembers` alone routes to `__arr` with no declaration (host calls go untyped
+ *  / spurious); `fragment` alone declares members the emitter never routes to. */
 export interface HarvestResult {
-  /** A `.d.ts` fragment augmenting `ArrShape` with each host rosetta's colocated signature. */
+  /** A `.d.ts` fragment augmenting `ArrShape` with each host rosetta's colocated signature.
+   *  Pass as `diagnoseScheme(scm, { preludeAppend: fragment })`. */
   readonly fragment: string;
-  /** The host-member name set — pass as `emitTypes(scm, { hostMembers })` so those heads
+  /** The host-member name set — pass as `diagnoseScheme(scm, { hostMembers })` so those heads
    *  lower through `__arr` too. */
   readonly hostMembers: Set<string>;
 }
@@ -56,15 +61,37 @@ export function harvestHostLeaves(env: RosettaTypedEnv | null | undefined): Harv
 
 /** Turn a rosetta sig fragment `"(a: T): U"` into an arrow type `"(a: T) => U"`.
  *  Rosetta sigs are colon-return method-form; ArrShape members here are arrow-typed.
- *  The return-type group is `[^\s]`-anchored-greedy with in-code trimming (rather than a lazy
- *  `.+?\s*$`, which backtracks super-linearly against the trailing `\s*`). */
+ *
+ *  Parses via a balanced-paren scan, NOT a `\([^)]*\)` regex — a callback-typed param such as
+ *  `(pred: (x: T) => U, xs: List<T>): List<T>` has an inner `)` the flat regex would stop at,
+ *  silently producing a malformed group → the permissive `(...args: unknown[]) => unknown`
+ *  fallback. That silent widening is exactly the degradation this lens disavows, so on an
+ *  UNPARSEABLE sig we THROW (loud) rather than fall back. */
 function sigToArrow(sig: string): string {
-  const m = /^\s*(\([^)]*\))\s*:\s*(\S.*)$/.exec(sig);
-  if (!m?.[1] || m[2] === undefined) return `(...args: unknown[]) => unknown`;
-  return `${m[1]} => ${m[2].trimEnd()}`;
+  const s = sig.trim();
+  if (s[0] !== "(") throw new Error(`rosetta sig must start with a paren param list: ${sig}`);
+  // Walk to the matching close of the leading param list, respecting nesting.
+  let depth = 0;
+  let close = -1;
+  for (const [i, c] of [...s].entries()) {
+    if (c === "(") depth++;
+    else if (c === ")" && --depth === 0) {
+      close = i;
+      break;
+    }
+  }
+  if (close === -1) throw new Error(`rosetta sig has an unbalanced param list: ${sig}`);
+  const params = s.slice(0, close + 1);
+  const rest = s.slice(close + 1).trimStart();
+  if (rest[0] !== ":") throw new Error(`rosetta sig is missing the ': <return>' after params: ${sig}`);
+  const ret = rest.slice(1).trim();
+  if (ret === "") throw new Error(`rosetta sig has an empty return type: ${sig}`);
+  return `${params} => ${ret}`;
 }
 
-/** The full prelude for a given env: authored builtins + harvested host leaves. */
+/** The full prelude for a given env: authored builtins + harvested host leaves. Convenience over
+ *  `harvestHostLeaves`; the harvested half is also usable directly as
+ *  `diagnoseScheme(scm, { hostMembers, preludeAppend: fragment })`. */
 export function fullPrelude(env: RosettaTypedEnv | null | undefined): { ts: string; hostMembers: Set<string> } {
   const authored = loadAuthoredPrelude();
   const { fragment, hostMembers } = harvestHostLeaves(env);

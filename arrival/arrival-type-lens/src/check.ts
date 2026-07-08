@@ -38,9 +38,14 @@ function prelude(): string {
   return preludeCache;
 }
 
-/** Options forwarded to emitTypes (e.g. host-member set from a harvested env). */
+/** Options for a diagnose run. `hostMembers` is forwarded to emitTypes so those host heads
+ *  lower through `__arr`; `preludeAppend` is the harvested `.d.ts` fragment that DECLARES those
+ *  members (from `fullPrelude`/`harvestHostLeaves`). Pass BOTH together — `hostMembers` without
+ *  the matching `preludeAppend` lowers host calls to `__arr.<name>` with no declaration, which
+ *  regresses to a spurious `TS2339`. */
 export interface DiagnoseOptions {
   readonly hostMembers?: Set<string>;
+  readonly preludeAppend?: string;
 }
 
 /** One type diagnostic, positioned on the source `.scm`. */
@@ -145,12 +150,24 @@ function runTsgo(preText: string, modText: string): string {
     );
     if (res.error) throw res.error;
     const out = (res.stdout ?? "") + (res.stderr ?? "");
-    // Distinguish a real type-check (which parses into TSxxxx diagnostics) from a CHECKER FAILURE.
-    // tsgo prints its own runtime failures as `Error: …` (no `TSxxxx`) — if we saw one and no
-    // diagnostic line, the "0 diagnostics" is a false all-clear; surface it loudly instead.
-    if (!/\bTS\d+:/.test(out) && /^Error:/m.test(out)) {
-      const firstLine = out.split("\n").find((l) => l.startsWith("Error:")) ?? "unknown tsgo failure";
-      throw new Error(`tsgo-wasm failed to run: ${firstLine}`);
+    // Distinguish a real type-check from a CHECKER FAILURE. tsgo's contract: exit 0 = clean, exit
+    // 1 = diagnostics (each a `TSxxxx` line). ANYTHING ELSE — a non-zero/other exit or a kill
+    // signal — with no parseable `TSxxxx` means the checker produced NO verdict, so an empty diag
+    // set is a false all-clear, not "clean". Surface it loudly. This is the general form of the
+    // env-limit war story (tsgo printed `Error: total length…` to stderr, empty stdout, 0 diags):
+    // the invariant is "no TSxxxx AND the process exited unhappy", which also catches a Go
+    // `panic:`, an OOM/SIGKILL (status=null, signal set, empty output), and future format drift —
+    // not just the one `Error:`-prefixed string. "0 errors from a tool that didn't run" ≠ 0 errors.
+    const sawDiag = /\bTS\d+:/.test(out);
+    const exitedUnhappy = res.status !== 0 || res.signal !== null;
+    if (!sawDiag && exitedUnhappy) {
+      const errLine = out
+        .split("\n")
+        .find((l) => /^(?:Error|panic|fatal error):/.test(l))
+        ?.trim();
+      const detail =
+        errLine ?? `exit status=${String(res.status)} signal=${String(res.signal)}; output: ${out.slice(0, 300)}`;
+      throw new Error(`tsgo-wasm failed to run (${detail})`);
     }
     return out;
   } finally {
@@ -216,8 +233,11 @@ function topFormOf(spans: ReadonlyArray<{ start: number; end: number }>, offset:
  * each attributed to its enclosing top-level form.
  */
 export function diagnoseScheme(scm: string, opts: DiagnoseOptions = {}): DiagnoseResult {
-  const { ts: emittedTs, mappings, droppedForms } = emitTypes(scm, opts);
-  const raw = runTsgo(prelude(), emittedTs);
+  const { ts: emittedTs, mappings, droppedForms } = emitTypes(scm, { hostMembers: opts.hostMembers });
+  // Authored builtins + (optional) harvested host-rosetta declarations. The append DECLARES the
+  // ArrShape members that `hostMembers` causes the emitter to route through `__arr`.
+  const pre = opts.preludeAppend ? `${prelude()}\n${opts.preludeAppend}` : prelude();
+  const raw = runTsgo(pre, emittedTs);
   const forms = topFormSpans(scm);
 
   const diagnostics: SchemeDiagnostic[] = [];

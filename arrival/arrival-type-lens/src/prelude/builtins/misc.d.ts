@@ -1,9 +1,14 @@
 // misc.d.ts — predicates, equality, vectors, io/control.
-// `null? eq? eqv? equal? not apply` route through __arr (isBuiltin); rest bare.
+// `null? empty? zero? even? odd? eq? eqv? equal? not apply` route through __arr
+// (isBuiltin); rest bare. empty? is a list-length predicate; zero?/even?/odd? numeric.
 
 declare global {
   interface ArrShape {
     "null?"(x: unknown): SBool;
+    "empty?"(xs: List<unknown>): SBool;
+    "zero?"(x: SNum): SBool;
+    "even?"(x: SNum): SBool;
+    "odd?"(x: SNum): SBool;
     "eq?"(a: unknown, b: unknown): SBool;
     "eqv?"(a: unknown, b: unknown): SBool;
     "equal?"(a: unknown, b: unknown): SBool;

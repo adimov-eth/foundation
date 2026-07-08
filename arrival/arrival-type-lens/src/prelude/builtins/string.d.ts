@@ -1,9 +1,12 @@
 // string.d.ts — string builtins in the SStr/SNum/Sym vocabulary.
-// `string-append` routes through __arr (isBuiltin); the rest are bare (camelCased).
+// `string-append string=? string-ci=?` route through __arr (isBuiltin); the rest are
+// bare (camelCased). The `=?` predicates are variadic string comparisons → SBool.
 
 declare global {
   interface ArrShape {
     "string-append"(...xs: SStr[]): SStr;
+    "string=?"(...xs: SStr[]): SBool;
+    "string-ci=?"(...xs: SStr[]): SBool;
   }
   function stringLength(s: SStr): SNum;
   function substring(s: SStr, start: SNum, end?: SNum): SStr;

@@ -5,9 +5,10 @@
 // wrong-type args bite. This is the difference from the coarse prelude — element
 // types are inferred, not flattened to `unknown`.
 //
-// Split: the 4 in `isBuiltin()` (car in car.d.ts; cdr/cons/list/map/filter/length/
-// append/reverse/list-ref here) route through `__arr`; the bare ones (for-each/fold/
-// assoc/member/list-tail) are ambient globals (camelCased by the emitter).
+// Split: the list heads in `isBuiltin()` (car in car.d.ts; cdr/cons/list/map/filter/
+// length/append/reverse/list-ref plus every/some/first/max-by here) route through
+// `__arr`; the bare ones (for-each/fold/assoc/member/list-tail) are ambient globals
+// (camelCased by the emitter).
 
 declare global {
   interface ArrShape {
@@ -20,6 +21,12 @@ declare global {
     "list-ref"<T>(xs: List<T>, i: SNum): T;
     map<T, U>(f: (x: T) => U, xs: List<T>): List<U>;
     filter<T>(f: (x: T) => SBool, xs: List<T>): List<T>;
+    // every/some lower to Array.prototype.every/some (→ boolean); first is xs[0]; max-by
+    // reduces to the element maximizing the key (all in isBuiltin → __arr, so declared here).
+    every<T>(f: (x: T) => SBool, xs: List<T>): SBool;
+    some<T>(f: (x: T) => SBool, xs: List<T>): SBool;
+    first<T>(xs: List<T>): T;
+    "max-by"<T>(f: (x: T) => SNum, xs: List<T>): T;
   }
 
   // bare (not in isBuiltin → camelCase ambient)

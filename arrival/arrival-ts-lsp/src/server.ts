@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // @here.build/arrival-ts-lsp · server — a type-checker for arrival Scheme, as an MCP server.
 //
 // ⚠️ RECONSTRUCTION — and a DELIBERATELY DIFFERENT ANIMAL from its namesake ghost.

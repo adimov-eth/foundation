@@ -38,11 +38,14 @@ function prelude(): string {
   return preludeCache;
 }
 
-/** Options for a diagnose run. `hostMembers` is forwarded to emitTypes so those host heads
- *  lower through `__arr`; `preludeAppend` is the harvested `.d.ts` fragment that DECLARES those
- *  members (from `fullPrelude`/`harvestHostLeaves`). Pass BOTH together — `hostMembers` without
- *  the matching `preludeAppend` lowers host calls to `__arr.<name>` with no declaration, which
- *  regresses to a spurious `TS2339`. */
+/** Options for a diagnose run, both for typing a consumer's HOST functions (rosettas). The
+ *  consumer sources the signatures however it likes; this package types them:
+ *   - `hostMembers` is forwarded to emitTypes so those host heads lower through `__arr`;
+ *   - `preludeAppend` is a `.d.ts` fragment (e.g. `declare global { interface ArrShape { … } }`)
+ *     that DECLARES those members.
+ *  Pass BOTH together — `hostMembers` without the matching `preludeAppend` lowers host calls to
+ *  `__arr["<name>"]` with no declared member; under the checker's `--strict false` that resolves
+ *  to `any`, so the call goes SILENTLY UNTYPED (no bite on misuse) rather than erroring. */
 export interface DiagnoseOptions {
   readonly hostMembers?: Set<string>;
   readonly preludeAppend?: string;

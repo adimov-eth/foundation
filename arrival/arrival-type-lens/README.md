@@ -14,8 +14,9 @@ positions type errors back onto the `.scm` source.
 > What it is rebuilt from (all present in this repo):
 > - the **BITE contract** pinned by `@here.build/arrival-chain-view`'s `types-emit.test.ts`
 >   (`PRE + car.d.ts` must clean-check a good program *and* make `(car 5)` bite);
-> - the emitter's `__arr` / bare-identifier **lowering surface** (`types-emit.ts`);
-> - the host-rosetta **harvest surface** (`env.__rosettaTypes__`, populated by `defineRosetta`).
+> - the emitter's `__arr` / bare-identifier **lowering surface** (`types-emit.ts`), including its
+>   **host-function routing** (`hostMembers` → any host head lowers through `__arr`, so a consumer
+>   that supplies host-rosetta signatures gets them typed).
 >
 > Its runtime dependencies are honestly **what this code imports** — `arrival-chain-view`
 > (emit + span lens), `arrival-sweet` (top-form spans), `tsgo-wasm` (the checker). This is a
@@ -26,7 +27,7 @@ positions type errors back onto the `.scm` source.
 
 ## What's in it
 
-Three parts:
+Two parts, plus a host-function typing hook:
 
 1. **Base types** (`src/prelude/types.d.ts`) — the Scheme-value vocabulary: `List<T>`, `SNum`,
    `SBool`, `SStr`, `Sym`, `Char`, `Vec<T>`, `Dict`, `Unspecified`, plus the `__arr` table and
@@ -35,9 +36,16 @@ Three parts:
    common R7RS builtins (`car`/`cdr`/`map`/`filter`, arithmetic, strings, vectors, predicates).
    Generic so `(car 5)` bites (`5` is not `List<T>`). An **unmodelled** builtin degrades
    *loudly* — `(hash-table-ref h 0)` → `Cannot find name 'hashTableRef'` — never silently.
-3. **The harvester** (`harvestHostLeaves`) — reads a live env's `__rosettaTypes__` and assembles
-   `ArrShape` augmentations for host rosettas, so host entity types check too. Generated from the
-   interpreter's own colocated annotations; cannot drift from the impl.
+
+**Host functions (rosettas)** are typed by the *consumer*, not harvested here. A consumer that has
+host-function signatures — from a live env's `__rosettaTypes__`, a manifest, anywhere — passes
+`diagnoseScheme(scm, { hostMembers, preludeAppend })`: `hostMembers` routes those heads through
+`__arr` (the emitter's real capability), `preludeAppend` is a `.d.ts` fragment declaring them. This
+package deliberately ships **no** env-reader that harvests those sigs off `__rosettaTypes__` — the
+only in-tree consumer (`@here.build/arrival-ts-lsp`) checks pasted source with no env in hand, so a
+harvester had zero callers. Sourcing the signatures is the consumer's job; typing them is this
+package's. (History: the harvester shipped in an earlier reconstruction and was retracted as
+correct-but-unconsumed; the two options are the mechanism-agnostic contract that survived.)
 
 ## The checker
 

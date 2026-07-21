@@ -25,6 +25,30 @@ is architecture-induced, and is countered by the patterns in [[pattern-catalogue
 is intended to be reused as a *framework for agentic work on future projects* — see
 [[operating-as-agentic-framework]].
 
+## Provenance — which generation this tree is
+
+_Verified 2026-07-21 against live GitHub state; evidence trail in the
+[architecture deep-dive](./docs/95-research/foundation-architecture-deep-dive.md) and the
+[upstream successor map](./docs/95-research/upstream-second-generation.md)._
+
+This repo is a fork of `here-build/foundation` — the **first-generation public
+extraction** (June 2026) of a private monorepo's `foundations/` tier. Hold these
+facts together before comparing against upstream:
+
+- **Upstream is shelved, not dead.** `here-build/foundation` froze 2026-06-16 (not
+  archived, no redirect), but the private tier behind it kept moving — commit density
+  on these same packages *rose* after the freeze.
+- **A second-generation extraction exists.** Published 2026-07-18 via deterministic
+  filter-repo manifests: `here-build/arrival` (20 pkgs, `@inhuman.tools/*`) and
+  `here-build/commons` (8 pkgs, `@here.build/*`). Overlap is partial: the core arrival
+  packages continue there at 0.9.0 (`arrival-sweet` renamed `arrival-sugarcoat`);
+  `arrival-chain`, `arrival-inference`, and the scheme-env packs have **no public successor**.
+- **This tree is the sole public copy of `plexus`** — and of the chain/inference layer.
+  Every upstream extraction has deliberately withheld plexus (unpublished CRDT research:
+  genesis hash seeds, Feistel id encoding, liminality).
+- The vault maps **this** tree, not the second generation. Claims here are current for
+  this snapshot's lineage; don't project them onto upstream's successors.
+
 ## Current repo state — read before running anything
 
 This repo is the extraction-repaired workspace: `corepack pnpm install --frozen-lockfile`
@@ -61,6 +85,7 @@ corepack pnpm install --frozen-lockfile
 | A step recipe for a concrete task | `docs/50-playbooks/` |
 | What's broken / missing / drifted | `docs/30-reconciliation/`, `docs/90-backlog/` |
 | The current verified architecture — what's built vs aspirational, with an evidence ledger | [docs/95-research/foundation-architecture-deep-dive.md](./docs/95-research/foundation-architecture-deep-dive.md) — derived, adversarially verified |
+| What upstream did after this snapshot (successor repos, package fate map, watch signals) | [docs/95-research/upstream-second-generation.md](./docs/95-research/upstream-second-generation.md) — derived, adversarially verified |
 | Term definitions | [[glossary]] |
 
 ## Working rules in this repo

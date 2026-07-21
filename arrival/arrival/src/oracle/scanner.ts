@@ -9,7 +9,7 @@
 //
 // === Why this is a single-pass scanner, not the Lexer FSM ===
 //
-// The integration plan (docs/audit-2026-06-09-workplan-dag.md, Track O §2) is explicit that O1
+// The integration plan (docs/30-reconciliation/dangling-doc-map.md, Track O §2) is explicit that O1
 // "can be self-sufficient on comment depth" and "carry its own nesting counter (as the prototype
 // does)." The decisive, verified reason: the oracle is DEFINED ON TRUNCATED INPUT — EOF is its
 // normal case — but the real Lexer (src/Lexer.ts) THROWS `Unterminated` on exactly the truncated

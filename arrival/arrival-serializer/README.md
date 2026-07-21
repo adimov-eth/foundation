@@ -13,7 +13,7 @@ on data expression via s-expression syntax.
 - **Stepped serialization**: Convert JS objects to s-expressions first, and format them as strings later
 - **Simple array IR**: you can simply spread one representation inside another
 - **Configurable, specific serialization**: Use `Symbol.toSExpr` for custom type representations
-- **Scheme type support**: Built-in handling for `@here.build/arrival-scheme` runtime types
+- **Scheme type support**: Built-in handling for `@here.build/arrival` runtime types
 - **Smart formatting**: Automatic pretty-printing with context-aware indentation
 - **Type-safe**: Full TypeScript support
 
@@ -377,7 +377,7 @@ The context object provides:
 
 ## Scheme Integration
 
-The serializer has built-in support for `@here.build/arrival-scheme` runtime types:
+The serializer has built-in support for `@here.build/arrival` runtime types:
 
 - `SchemeExact` (exact integers / rationals) → Numbers or `num/denom`
 - `SchemeInexact` (floats / complex) → Numbers or `real+imagi`
@@ -393,7 +393,7 @@ The serializer has built-in support for `@here.build/arrival-scheme` runtime typ
 This package is part of the Arrival ecosystem:
 
 - **@here.build/arrival-env** - Type definitions and protocols
-- **@here.build/arrival-scheme** - Scheme interpreter integration
+- **@here.build/arrival** - Scheme interpreter integration
 - **@here.build/arrival-serializer** - This package
 - **@here.build/arrival** - Umbrella package exposing everything
 

@@ -1,0 +1,116 @@
+[
+  {
+    "ref": "docs/membrane-design.md",
+    "status": "recoverable",
+    "referenced_by": "arrival/arrival/src/membrane.ts:15",
+    "recovered_as": "40-history/membrane-design.archived"
+  },
+  {
+    "ref": "docs/sandbox-security-model.md",
+    "status": "recoverable",
+    "referenced_by": "arrival/arrival/src/interop-access.ts:14",
+    "recovered_as": "40-history/sandbox-security-model.archived"
+  },
+  {
+    "ref": "docs/foundations/arrival-scheme/language-design-foundations.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/README.md:20",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/foundations/arrival-scheme/reference/provenance-model.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-provenance/src/trace.ts:25",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/spec/arrival-chain.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/index.ts:25, arrival/arrival/src/values/AValue.ts:8",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/plan-2026-06-10-boxing-track.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/values/SchemeVector.ts:13, SchemeBytevector.ts:10",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/plan-2026-06-11-purity-pass.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/env/core.ts:41, arrival/arrival/src/stdlib.ts:1092",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/values/HalfBaked.ts:3, arrival/arrival/src/bridge.ts:196",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/trace-provenance-idempotence-fix-2026-06-04.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-provenance/src/trace.ts:350",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/provenance-region-model-plan-2026-06-02.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-provenance/src/trace-to-regions.ts:54, region-boundaries.ts:3",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/env-pack-capability-dag-2026-06-13.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/env/kernel.ts:7",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/arrival-sweet-extension-design-ideation-2026-06-15.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/reader/curly-infix.ts:12",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/proposals/in-flight/lexical-js-naming.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-chain-view/src/names.ts:3",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/proposals/in-flight/arrival-resources.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-mcp/src/resources/index.ts:3",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/proposals/in-flight/ref-wiring-via-componentdataquery.md",
+    "status": "lost",
+    "referenced_by": "plexus/src/__tests__/2-entity-lifecycle/entity-keyed-map-references.test.ts:3",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/audit-2026-06-09-workplan-dag.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/oracle/scanner.ts:12",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/todo/require-import-loader.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-chain/src/loader.ts:9",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/working-proposals/require-as-capability-and-prompt-support-2026-06-15.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival-chain/src/loader-extensions.ts:7",
+    "recovered_as": ""
+  },
+  {
+    "ref": "docs/CONSTRAINT-KERNEL-SPEC.md",
+    "status": "lost",
+    "referenced_by": "arrival/arrival/src/oracle/index.ts:4",
+    "recovered_as": ""
+  }
+]

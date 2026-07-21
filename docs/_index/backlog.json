@@ -1,0 +1,82 @@
+[
+  {
+    "id": "01-p0-install-frozen-lockfile",
+    "order": 1,
+    "priority": "P0",
+    "slug": "install-frozen-lockfile",
+    "title": "P0 — frozen-lockfile install fails (stale lockfile)",
+    "note": "docs/90-backlog/items/01-p0-install-frozen-lockfile.md"
+  },
+  {
+    "id": "02-p0-ghost-workspace-packages",
+    "order": 2,
+    "priority": "P0",
+    "slug": "ghost-workspace-packages",
+    "title": "P0 — ghost packages in pnpm-workspace.yaml",
+    "note": "docs/90-backlog/items/02-p0-ghost-workspace-packages.md"
+  },
+  {
+    "id": "03-p1-ci-submodules-recursive",
+    "order": 3,
+    "priority": "P1",
+    "slug": "ci-submodules-recursive",
+    "title": "P1 — ci.yml checkout missing submodules:recursive",
+    "note": "docs/90-backlog/items/03-p1-ci-submodules-recursive.md"
+  },
+  {
+    "id": "04-p1-chibi-scheme-submodule-uninit",
+    "order": 4,
+    "priority": "P1",
+    "slug": "chibi-scheme-submodule-uninit",
+    "title": "P1 — chibi-scheme submodule uninitialized",
+    "note": "docs/90-backlog/items/04-p1-chibi-scheme-submodule-uninit.md"
+  },
+  {
+    "id": "05-p2-readme-rename-drift",
+    "order": 5,
+    "priority": "P2",
+    "slug": "readme-rename-drift",
+    "title": "P2 — arrival README still names arrival-scheme",
+    "note": "docs/90-backlog/items/05-p2-readme-rename-drift.md"
+  },
+  {
+    "id": "06-p2-serializer-console-error-leak",
+    "order": 6,
+    "priority": "P2",
+    "slug": "serializer-console-error-leak",
+    "title": "P2 — serializer console.error leaks object on circular ref",
+    "note": "docs/90-backlog/items/06-p2-serializer-console-error-leak.md"
+  },
+  {
+    "id": "07-p3-dangling-design-doc-refs",
+    "order": 7,
+    "priority": "P3",
+    "slug": "dangling-design-doc-refs",
+    "title": "P3 — dangling design-doc references in code",
+    "note": "docs/90-backlog/items/07-p3-dangling-design-doc-refs.md"
+  },
+  {
+    "id": "08-p1-lint-debt-after-install-repair",
+    "order": 8,
+    "priority": "P1",
+    "slug": "lint-debt-after-install-repair",
+    "title": "P1 — lint debt exposed after install repair",
+    "note": "docs/90-backlog/items/08-p1-lint-debt-after-install-repair.md"
+  },
+  {
+    "id": "09-p1-arrival-chain-view-type-lens-test",
+    "order": 9,
+    "priority": "P1",
+    "slug": "arrival-chain-view-type-lens-test",
+    "title": "P1 — arrival-chain-view type-lens semantic fixture restored",
+    "note": "docs/90-backlog/items/09-p1-arrival-chain-view-type-lens-test.md"
+  },
+  {
+    "id": "10-p1-timing-sensitive-tests-under-load",
+    "order": 10,
+    "priority": "P1",
+    "slug": "timing-sensitive-tests-under-load",
+    "title": "P1 — timing-sensitive tests fail under full-suite load",
+    "note": "docs/90-backlog/items/10-p1-timing-sensitive-tests-under-load.md"
+  }
+]

@@ -9,7 +9,7 @@
  *   3. BITE — compile `PRE + car.d.ts + <emitted program>` through the tsc API and
  *      assert a clean program type-checks while a deliberately-ill `(car 5)` bites.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -21,17 +21,21 @@ import { emitTypes } from "../types-emit.js";
 const { dirname, join } = path;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const LENS_PRELUDE = join(__dirname, "../../../arrival-type-lens/src/prelude");
-const PRE = readFileSync(join(LENS_PRELUDE, "types.d.ts"), "utf8");
-
-// Load EVERY builtin leaf that currently exists (the 34-way fan-out lands
-// concurrently). The bite tests check emitted programs against whatever leaves
-// are present — `car` is guaranteed (the reference leaf); the rest ride along so
-// `(list …)`/`(cdr …)`/etc. resolve as they land.
+const LENS_PRELUDE = join(__dirname, "fixtures/type-lens-prelude");
+const PRE_PATH = join(LENS_PRELUDE, "types.d.ts");
 const BUILTINS_DIR = join(LENS_PRELUDE, "builtins");
-const LEAVES: { name: string; text: string }[] = readdirSync(BUILTINS_DIR)
-  .filter((f) => f.endsWith(".d.ts") && !f.startsWith("_"))
-  .map((f) => ({ name: `__leaf_${f}`, text: readFileSync(join(BUILTINS_DIR, f), "utf8") }));
+const HAS_TYPE_LENS_FIXTURE = existsSync(PRE_PATH) && existsSync(BUILTINS_DIR);
+const PRE = HAS_TYPE_LENS_FIXTURE ? readFileSync(PRE_PATH, "utf8") : "";
+
+// Load EVERY builtin leaf available in the vendored type-lens fixture. The minimal
+// extraction fixture deliberately carries only `list` + `car`: enough to keep the
+// semantic bite signal alive without pretending the removed full type-lens pocket
+// was extracted.
+const LEAVES: { name: string; text: string }[] = HAS_TYPE_LENS_FIXTURE
+  ? readdirSync(BUILTINS_DIR)
+      .filter((f) => f.endsWith(".d.ts") && !f.startsWith("_"))
+      .map((f) => ({ name: `__leaf_${f}`, text: readFileSync(join(BUILTINS_DIR, f), "utf8") }))
+  : [];
 
 // ── 1. snapshots ────────────────────────────────────────────────────────────
 
@@ -148,7 +152,9 @@ function semanticDiagnostics(emittedTs: string): readonly tsc.Diagnostic[] {
   return svc.getSemanticDiagnostics("__prog.ts");
 }
 
-describe("emitTypes — bites under tsc against the type-lens prelude", () => {
+const describeTypeLensBites = HAS_TYPE_LENS_FIXTURE ? describe : describe.skip;
+
+describeTypeLensBites("emitTypes — bites under tsc against the type-lens prelude", () => {
   it("a clean (car <list>) program type-checks with no diagnostics", () => {
     const { ts: emitted, droppedForms } = emitTypes(`(define xs (list 1 2 3))\n(define h (car xs))`);
     expect(droppedForms).toEqual([]);

@@ -278,7 +278,11 @@ export class DiscoveryTool {
   private async inputSchema(clientInfo?: Record<string, unknown>): Promise<Tool["inputSchema"]> {
     const verbs = await this.catalog();
     const dynamic = verbs.some((v) => v.dynamic);
-    const aiName = clientInfo?.name === "claude-ai" ? "Claude" : "";
+    // Any Claude surface greets by name: claude-ai (web/API), claude-code (the CLI), claude-desktop.
+    // The predicate was `=== "claude-ai"`, which silently missed `claude-code` — the name Claude Code
+    // actually sends — so the personalized welcome never reached the very agent it was written for.
+    const clientName = typeof clientInfo?.name === "string" ? clientInfo.name : "";
+    const aiName = clientName.startsWith("claude") ? "Claude" : "";
 
     // ONE zod object is the source — the capability's `configuration` (transforms and all) merged
     // with expr/intent. `toJSONSchema` derives the wire shape; nothing hand-assembled, and the

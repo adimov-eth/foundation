@@ -11,19 +11,24 @@ verified-against: claude/vibrant-meitner-ask7xn
 # Dangling doc map
 
 The pre-repair source tree referenced **19 design docs** that no longer shipped in the tree. Each
-reference was an in-code comment pointing at a `docs/…` path that did not exist at that path.
+reference was an in-code comment pointing at a `docs/…` path that did not exist at that path. One
+source has since been restored at its canonical path from a user-supplied copy.
 Every referencing `path:line` below was verified by `grep` against the working tree on
 2026-06-18, then fixed in [[90-backlog/items/07-p3-dangling-design-doc-refs]]. This note is the
 historical reconciliation ledger, not a list of currently dangling refs.
 
-> 📐 **Recovery:** all **17** lost docs below now have **code-grounded reconstructions** — each
+> 📐 **Recovery:** all **17** formerly lost docs have **code-grounded reconstructions** — each
 > reverse-engineered from the code it governed and anchored to `file:line` — under
 > [[reconstructed/_moc]] (`authority: derived`: *reconstructions, not originals*; they record what
-> each doc *must have specified* given the implementation, not its original text).
+> each doc *must have specified* given the implementation, not its original text). The source for
+> `language-design-foundations.md` was subsequently restored on 2026-07-21; its reconstruction is
+> retained as the pre-recovery evidence artifact.
 
 Status legend:
 - **RECOVERABLE** — the doc survives in `tmp/Archive` on `origin/tmp-6164624` and has been
   re-vendored into `40-history/`. The in-code refs now point at the archived copies.
+- **RESTORED SOURCE** — a source copy was supplied after the reconstruction and restored at the
+  canonical path. Later-lineage claims remain explicitly bounded from this repository snapshot.
 - **LOST EVERYWHERE** — not in the tree and not in the Archive; the snapshot predates it
   (see [[source-layers]]). It survives only as the inline comment that names it.
 
@@ -34,14 +39,19 @@ Status legend:
 | `docs/membrane-design.md` | `arrival/arrival/src/membrane.ts:15` | [[40-history/membrane-design.archived\|membrane-design.archived]] |
 | `docs/sandbox-security-model.md` | `arrival/arrival/src/interop-access.ts:14` | [[40-history/sandbox-security-model.archived\|sandbox-security-model.archived]] |
 
-## LOST EVERYWHERE (17)
+## RESTORED SOURCE (1)
 
-The 17 lost docs survived only as inline comments. Pre-repair referencing `path:line` anchors were
+| Referenced doc | Referencing code (verified) | Restored as |
+|---|---|---|
+| `docs/foundations/arrival-scheme/language-design-foundations.md` | `arrival/arrival/README.md:20` (also `:139`) | [`language-design-foundations.md`](../foundations/arrival-scheme/language-design-foundations.md) |
+
+## LOST EVERYWHERE (16)
+
+The 16 still-lost docs survived only as inline comments. Pre-repair referencing `path:line` anchors were
 verified by grep on 2026-06-18 before the comments were repointed to this ledger.
 
 | Referenced doc | Referencing code (verified) |
 |---|---|
-| `docs/foundations/arrival-scheme/language-design-foundations.md` | `arrival/arrival/README.md:20` (also `:139`) |
 | `docs/foundations/arrival-scheme/reference/provenance-model.md` | `arrival/arrival-provenance/src/trace.ts:25` |
 | `docs/spec/arrival-chain.md` | `arrival/arrival/src/index.ts:25` (also `arrival/arrival/src/values/AValue.ts:8`, `:95`) |
 | `docs/plan-2026-06-10-boxing-track.md` | `arrival/arrival/src/values/SchemeVector.ts:13` (also `SchemeBytevector.ts:10`) |
@@ -61,7 +71,7 @@ verified by grep on 2026-06-18 before the comments were repointed to this ledger
 
 ## Why so many are lost
 
-The 17 lost docs cluster in `arrival-chain`, `arrival-provenance`, `arrival-sweet`,
+The 16 still-lost docs cluster in `arrival-chain`, `arrival-provenance`, `arrival-sweet`,
 `arrival-chain-view`, `arrival-mcp/resources`, and the `oracle`/`env` subsystems of `arrival` —
 all of which postdate the `origin/tmp-6164624` snapshot. The Archive is a smaller, earlier
 universe and simply never contained them. See [[source-layers]] input #2.

@@ -246,16 +246,24 @@ for line in open(f"{DOCS}/30-reconciliation/dangling-doc-map.md", encoding="utf-
     mds = re.findall(r"[\w./\-]+\.md", cells[0])
     if not mds:
         continue
-    status = "recoverable" if "40-history" in line else "lost"
+    ref = mds[0]
+    if os.path.exists(os.path.join(ROOT, ref)):
+        status = "restored"
+    elif "40-history" in line:
+        status = "recoverable"
+    else:
+        status = "lost"
     code = ""
     if len(cells) > 1:
         cm = re.findall(r"`([^`]+:\d+)`", cells[1])
         code = ", ".join(cm)
     rec = ""
-    if status == "recoverable":
+    if status == "restored":
+        rec = ref
+    elif status == "recoverable":
         rm = re.search(r"\[\[([^\]|#]+)", line.replace("\\|", "|"))
         rec = rm.group(1) if rm else ""
-    dang.append({"ref": mds[0], "status": status, "referenced_by": code, "recovered_as": rec})
+    dang.append({"ref": ref, "status": status, "referenced_by": code, "recovered_as": rec})
 
 # ── write ───────────────────────────────────────────────────────────────────────
 out = {"packages.json": packages, "symbols.json": symbols, "concepts.json": concepts,

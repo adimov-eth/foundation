@@ -22,6 +22,11 @@ these are *reverse-engineered from the code each doc governed*, anchored to `fil
 > an explicit "not recoverable from code" ledger. When code and a reconstruction disagree, the code
 > (and its living reference/method note) wins.
 
+> **Source recovery update (2026-07-21):** the source for
+> [`language-design-foundations.md`](../../foundations/arrival-scheme/language-design-foundations.md)
+> has been restored at its canonical path. Its reconstruction remains here as a replayable record of
+> what was inferred before the source became available. The other sixteen originals remain lost.
+
 **Fidelity legend:** **high** = the mechanism is present in code, often with dense comments;
 **medium** = a point-in-time plan/audit, recovered as "what the resulting code shows was decided";
 **low** = the governed concept is largely outside this extraction (partial stub).
@@ -34,7 +39,7 @@ these are *reverse-engineered from the code each doc governed*, anchored to `fil
 | [[provenance-model-reference.reconstructed]] | `docs/foundations/arrival-scheme/reference/provenance-model.md` | `arrival-provenance/src/trace.ts:25` | high | [[provenance-model]] |
 | [[trace-provenance-idempotence-fix.reconstructed]] | `docs/working-proposals/trace-provenance-idempotence-fix-2026-06-04.md` | `arrival-provenance/src/trace.ts:350` | medium | [[provenance-model]] |
 | [[provenance-region-model-plan.reconstructed]] | `docs/working-proposals/provenance-region-model-plan-2026-06-02.md` | `trace-to-regions.ts:54`, `region-boundaries.ts:3` | high | [[provenance-model]] |
-| [[language-design-foundations.reconstructed]] | `docs/foundations/arrival-scheme/language-design-foundations.md` | `arrival/README.md:20,139` | high | [[arrival]], [[membrane]] |
+| [[language-design-foundations.reconstructed]] | [`docs/foundations/arrival-scheme/language-design-foundations.md`](../../foundations/arrival-scheme/language-design-foundations.md) (restored) | `arrival/README.md:20,139` | high | [[arrival]], [[membrane]] |
 | [[boxing-track-plan.reconstructed]] | `docs/plan-2026-06-10-boxing-track.md` | `values/SchemeVector.ts:13`, `SchemeBytevector.ts:10` | medium | [[arrival]] |
 | [[purity-pass-plan.reconstructed]] | `docs/plan-2026-06-11-purity-pass.md` | `env/core.ts:41`, `stdlib.ts:1092` | medium | [[determinism-and-effects]] |
 | [[speculative-evaluation-promise-functor.reconstructed]] | `docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md` | `values/HalfBaked.ts:3`, `bridge.ts:196` | high | [[arrival]] |
@@ -53,5 +58,5 @@ these are *reverse-engineered from the code each doc governed*, anchored to `fil
 Each reconstruction was produced by opening the referencing site, reading the comment + the
 implementation it points to, then reading the surrounding subsystem — every claim re-anchored to a
 real `path:line` on `claude/vibrant-meitner-ask7xn`. Plan/audit docs separate code-evidenced facts
-from "not recoverable from code." The originals remain lost; this recovers their *content shape*, not
-their text. See [[dangling-doc-map]] for the full referencing ledger.
+from "not recoverable from code." Sixteen originals remain lost; the restored language-design source
+now provides its actual text. See [[dangling-doc-map]] for the full referencing ledger.

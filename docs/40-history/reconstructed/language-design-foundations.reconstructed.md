@@ -24,6 +24,11 @@ code-anchors:
 
 > ⚠️ **RECONSTRUCTION — not the original.** The original `docs/foundations/arrival-scheme/language-design-foundations.md` is lost everywhere (see [[dangling-doc-map]]). This note is reverse-engineered from the code it governed, anchored to `file:line`. Fidelity: **high**. It records what the doc *must have specified* given the implementation — not its original wording, nor rationale not evidenced in code.
 
+> **Recovery update (2026-07-21):** the source has since been restored as
+> [`language-design-foundations.md`](../../foundations/arrival-scheme/language-design-foundations.md).
+> This reconstruction is retained as the derived pre-recovery evidence artifact; use the restored
+> source for the actual wording and this note only to audit what had previously been inferred.
+
 # Language Design Foundations (reconstructed)
 
 The README calls this doc the **charter** for arrival's language stance and demands it be read "before adding a reader macro, literal, or dialect borrowing" (`arrival/arrival/README.md:16-21`, `:139`). The README names three charter clauses verbatim, which fix the doc's spine:

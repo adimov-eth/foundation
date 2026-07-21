@@ -13,9 +13,9 @@
   },
   {
     "ref": "docs/foundations/arrival-scheme/language-design-foundations.md",
-    "status": "lost",
+    "status": "restored",
     "referenced_by": "arrival/arrival/README.md:20",
-    "recovered_as": ""
+    "recovered_as": "docs/foundations/arrival-scheme/language-design-foundations.md"
   },
   {
     "ref": "docs/foundations/arrival-scheme/reference/provenance-model.md",

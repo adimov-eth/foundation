@@ -17,7 +17,7 @@ Scheme without triggering state changes or side effects.
 
 The language stance — an R7RS-small sandboxed base, a forgiving superset layered *under* strict
 (never beside it), and the reserved-zone rule that keeps it non-conflicting with any SRFI — is
-tracked in the lost-doc reconciliation ledger at [`docs/30-reconciliation/dangling-doc-map.md`](../../docs/30-reconciliation/dangling-doc-map.md).
+defined in [`language-design-foundations.md`](../../docs/foundations/arrival-scheme/language-design-foundations.md).
 Read it before adding a reader macro, literal, or dialect borrowing.
 
 ## Why Scheme for AI Agents?
@@ -136,7 +136,7 @@ exceptionally useful for complex structures like trees.
 
 ### 4. Polyglot runtime
 
-Some features from other Lisp dialects were added as expression means — e.g. the `(dict :key value …)` map constructor (the canonical dict surface; the serializer prints it, and arrival-chain-view transpiles it to `{ }`) and its `(:key d)` accessor. See the lost-doc ledger at [`docs/30-reconciliation/dangling-doc-map.md`](../../docs/30-reconciliation/dangling-doc-map.md).
+Some features from other Lisp dialects were added as expression means — e.g. the `(dict :key value …)` map constructor (the canonical dict surface; the serializer prints it, and arrival-chain-view transpiles it to `{ }`) and its `(:key d)` accessor. See [`language-design-foundations.md`](../../docs/foundations/arrival-scheme/language-design-foundations.md).
 
 ## Sandbox Architecture
 

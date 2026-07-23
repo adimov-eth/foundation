@@ -23,6 +23,33 @@ code-anchors:
 ---
 
 > ⚠️ **RECONSTRUCTION — not the original.** The original `docs/working-proposals/speculative-evaluation-promise-functor-2026-06-05.md` is lost everywhere (see [[dangling-doc-map]]). This note is reverse-engineered from the code it governed, anchored to `file:line`. Fidelity: **high** — the implementing files carry unusually dense design commentary. Rationale beyond what the code states (rejected designs, perf measurements) is **not recoverable from code**.
+>
+> **Post-snapshot outcome (added 2026-07-23; dated to the actual commits in
+> `here-build/arrival` — see [[upstream-second-generation]]).** Everything below marked
+> "(realized)" was true **as of this snapshot** — `HalfBaked.ts` and the `bridge.ts:194-262`
+> hook were live, wired, and covered by dedicated tests (`half-baked.test.ts`,
+> `speculative-eval.test.ts`). In later, private development the design was found unsound
+> and formally killed:
+>
+> - **2026-06-25, `3e7e73eb`** — the hermetic-ctx migration surfaces the exact defect: a
+>   `HalfBaked`/`AHalfBaked` carrier captures its *producing run's* live closures, so
+>   ctx-on-the-value is "necessary but not sufficient." Eager `map`/`filter` forces to a
+>   settled value before egress (fine); but with `speculate:true`, the carrier **escapes
+>   the egress boundary still live** — "8 green [tests] characterize the hazard... 4 todo
+>   spec force-on-egress" (the fix was speced, never built).
+> - **2026-07-08, `6d89a703`** — *"AHalfBaked dissolved — speculation feature removed per
+>   D2 KILL verdict."* Six clean steps, −910 net lines (the class, its dispatch plumbing,
+>   the run-state flag, tests). Before killing it they grepped every downstream consumer —
+>   **`chain`/`mcp`/`scheme`/`provenance`/`second-foundation`/`inhuman` — zero hits** — and
+>   proved the removal behavior-neutral by diffing the full test-failure set against a
+>   clean-HEAD worktree: byte-identical. The commit also notes the successor design
+>   ("wireframe doc gains the motivating program as §8 acceptance criterion") — i.e. the
+>   cardinality-narrowing capability HalfBaked chased is being rebuilt as a **static,
+>   non-runtime-carrier mechanism** ("struct-fact wires") in `execution-plan-wireframe.md`,
+>   not abandoned outright.
+>
+> Do not read "(realized)" below as a claim about current upstream state — it is accurate
+> history of this snapshot's tree, superseded by the above two commits.
 
 # Speculative Evaluation — Promise Functor (reconstructed)
 

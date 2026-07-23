@@ -179,3 +179,15 @@ Lowered packs carry `windDown()`/`resume()` over their resource cells (`capabili
 `:146-153`), backed by `ResourceCell` — a re-acquirable cycle around TC39
 `Symbol.asyncDispose` giving lazy spawn, parallel acquire, and reconstruction
 (`arrival/arrival/src/env/resources.ts:1-16`).
+
+## Where the `prelude` mechanism goes next (forward pointer, added 2026-07-23)
+
+This snapshot's capability preludes are still opaque scheme-source strings assembled per-DAG-node
+(the mechanics this doc describes). A later, private design —
+`here-build/arrival:packages/arrival/docs/design-history/symbol-define-static-program-validation.md`
+— decomposes that "opaque string of defines with no per-define identity" into individually
+contracted, content-hashed `symbol.define`/`symbol.defineSyntax` declarations, enabling an
+eslint-style static validation pass over a sealed environment before any evaluation. Confirmed
+absent from this snapshot (no `symbol.define` call site exists in `arrival/arrival/src/env`), so
+this is later-generation context, not a correction to the DAG-assembly mechanics above — see
+[[upstream-second-generation]].

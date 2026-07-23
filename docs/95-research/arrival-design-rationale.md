@@ -39,9 +39,16 @@ under its own pressure. The throughline comes at the end; first, the pieces.
 
 ## The language charter: intent, platform, quirks, and the discipline of bless/recover
 
-*Source: `language-design-foundations.md` — see [[language-design-foundations.reconstructed]] for
-how our own code-derived reconstruction compares (high fidelity on mechanism, missed this entire
-philosophical spine).*
+*Source: `docs/foundations/arrival-scheme/language-design-foundations.md` — the real original,
+now restored in this tree at its canonical path (`authority: historical`, recovered 2026-07-21).
+See [[language-design-foundations.reconstructed]] for how our own code-derived reconstruction
+compares (high fidelity on mechanism, missed this entire philosophical spine). **Lineage
+boundary, already flagged in the restored file itself:** the `{}`/`[]` amendment below describes
+**later, successor-lineage** behavior — this snapshot's own tests confirm `[a b]` still reads as
+an ordinary list (`(a b)`, not a vector) and curly-infix is still default-**on**
+(`arrival/arrival/src/__tests__/curly-infix.test.ts:160-171`), the opposite of what the amendment
+describes. Read the amendment as upstream direction the charter itself later took, not as this
+tree's current parsing behavior.*
 
 arrival-scheme's reader charter starts from a three-way sort applied to every piece of surface
 syntax a designer might want to add: is this **intent** ("a sequence of these", "a map from
